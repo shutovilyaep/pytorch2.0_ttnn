@@ -8,6 +8,9 @@ import sysconfig
 import torch
 
 
+PROJECT_SOURCE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+
 class CMakeExtension(Extension):
     def __init__(self, name, source_dir=".", cmake_args=None, **kwargs):
         Extension.__init__(self, name, sources=[])
@@ -55,6 +58,10 @@ class CMakeBuild(build_ext):
 
         cmake_args.extend(ext.cmake_args)
 
+        # Printing full CMD to run (to copy-paste easily later to rerun manually)
+
+        print(f"Running: cmake in {build_dir}: {ext.source_dir} {' '.join(cmake_args)}")
+
         # Build the extension
         source_dir = os.environ.get("EXT_SOURCE_DIR", ext.source_dir)
         subprocess.check_call(["cmake", source_dir] + cmake_args, cwd=build_dir)
@@ -72,7 +79,7 @@ setup(
     ext_modules=[
         CMakeExtension(
             name="ttnn_device_extension",
-            source_dir=".",
+            source_dir=PROJECT_SOURCE_DIR,
             cmake_args=[],
         ),
     ],
