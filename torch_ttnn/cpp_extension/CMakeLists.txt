@@ -60,15 +60,24 @@ endif()
 target_include_directories(ttnn_device_extension PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}/ttnn_cpp_extension/include
     ${PYTHON_INCLUDE_DIRS}
+    ${TTNN_INCLUDE_DIRS}
 )
 
 # Needed for torch_python
 target_link_directories(ttnn_device_extension PRIVATE "${TORCH_INSTALL_PREFIX}/lib")
 
-target_link_libraries(ttnn_device_extension PUBLIC
-    Metalium::Metal
-    Metalium::TTNN
-)
+# Link Metalium libraries only if the imported targets exist.
+# This enables partial configuration on machines without the prebuilt TTNN/TT_Metal libs.
+if(TARGET Metalium::Metal)
+    target_link_libraries(ttnn_device_extension PUBLIC Metalium::Metal)
+else()
+    message(STATUS "Skipping link to Metalium::Metal (target not found)")
+endif()
+if(TARGET Metalium::TTNN)
+    target_link_libraries(ttnn_device_extension PUBLIC Metalium::TTNN)
+else()
+    message(STATUS "Skipping link to Metalium::TTNN (target not found)")
+endif()
 
 target_link_libraries(ttnn_device_extension PUBLIC 
     ${TORCH_LIBRARIES} 
