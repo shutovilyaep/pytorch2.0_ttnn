@@ -15,13 +15,11 @@ inline ttnn::Tensor to_ttnn_tile_checked(const at::Tensor& t, const char* arg_na
     at::TtnnTensorImpl* impl = static_cast<at::TtnnTensorImpl*>(t.unsafeGetTensorImpl());
     auto tt = impl->get_ttnn_tensor();
     if (tt.layout() == ttnn::ROW_MAJOR_LAYOUT) {
-        tt = ttnn::to_layout(
-            tt, ttnn::TILE_LAYOUT, std::nullopt, std::nullopt, tt.device());
+        tt = ttnn::to_layout(tt, ttnn::TILE_LAYOUT, std::nullopt, std::nullopt, tt.device());
     }
 
     return tt;
 }
-
 
 inline at::Tensor make_empty_like_tt(const at::Tensor& t) {
     return tt_eager::ops::create::custom_empty_memory_format(
@@ -33,15 +31,13 @@ inline at::Tensor make_empty_like_tt(const at::Tensor& t) {
     );
 }
 
- // TODO: parameter order might be confusing, to think about
+// TODO: parameter order might be confusing, to think about
 inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, const ttnn::Tensor& result) {
     auto* out_impl = static_cast<at::TtnnTensorImpl*>(out.unsafeGetTensorImpl());
     out_impl->set_sizes_and_strides_as(like);
     out_impl->set_ttnn_tensor(result);
     return out;
 }
-
-
 
 // Invokers
 struct binary {
@@ -57,15 +53,15 @@ struct binary {
         ttnn::Tensor a_tile = to_ttnn_tile_checked(a);
         ttnn::Tensor b_tile = to_ttnn_tile_checked(b);
         auto result = op(a_tile, b_tile);
-        
+
         return write_from_ttnn(out, a, result);
     }
-}; // namespace binary
+};  // namespace binary
 
 // "Kernel" generators (TODO: not kernels, just a wrapper for the invoker)
 template <auto TTNN_BINARY>
 struct binary_kernel {
-    static at::Tensor func(const at::Tensor& a, const at::Tensor& b) { // TODO: scalar alpha?
+    static at::Tensor func(const at::Tensor& a, const at::Tensor& b) {  // TODO: scalar alpha?
         return binary::run(a, b, TTNN_BINARY);
     }
 
@@ -73,6 +69,5 @@ struct binary_kernel {
         return binary::out_(a, b, out, TTNN_BINARY);
     }
 }
-
 
 }  // namespace tt_eager::ext

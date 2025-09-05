@@ -14,7 +14,6 @@
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
 
-
 /*
 from NamesRegistrations.cpp
   m.impl("_cdist_forward", CppFunction::makeFallthrough());
@@ -526,7 +525,6 @@ from NamesRegistrations.cpp
   m.impl("zero_", CppFunction::makeFallthrough());
   m.impl("zeros_like", CppFunction::makeFallthrough());
 */
-
 
 // This macro registers the kernels to the PyTorch Dispatcher.
 // More details on the dispatcher can be found at
