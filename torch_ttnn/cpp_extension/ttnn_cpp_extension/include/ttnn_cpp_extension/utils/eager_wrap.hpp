@@ -42,16 +42,16 @@ inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, cons
 // Invokers
 struct binary {
     template <class TNNBinary>
-    static at::Tensor run(const at::Tensor& a, const at::Tensor& b, TTNBinary&& op) {
+    static at::Tensor run(const at::Tensor& a, const at::Tensor& b, TNNBinary&& op) {
         at::Tensor out = make_empty_like_tt(a);
-        out_(a, b, out, std::forward<TTNBinary>(op));
+        out_(a, b, out, std::forward<TNNBinary>(op));
         return out;
     }
 
     template <class TNNBinary>
     static at::Tensor& out_(const at::Tensor& a, const at::Tensor& b, at::Tensor& out, TNNBinary&& op) {
-        ttnn::Tensor a_tile = to_ttnn_tile_checked(a);
-        ttnn::Tensor b_tile = to_ttnn_tile_checked(b);
+        ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a");
+        ttnn::Tensor b_tile = to_ttnn_tile_checked(b, "b");
         auto result = op(a_tile, b_tile);
 
         return write_from_ttnn(out, a, result);
@@ -68,6 +68,6 @@ struct binary_kernel {
     static at::Tensor& func_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
         return binary::out_(a, b, out, TTNN_BINARY);
     }
-}
+};
 
 }  // namespace tt_eager::ext
