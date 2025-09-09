@@ -16,6 +16,7 @@ file(GLOB TTNN_INCLUDE_DIRS
 )
 
 set(TTNN_INCLUDE_DIRS
+    ${TT_METAL_HOME}/build/include
     ${TT_METAL_HOME}/ttnn/cpp
     ${TT_METAL_HOME}/ttnn
     ${TT_METAL_HOME}/tt_metal/api

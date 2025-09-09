@@ -39,4 +39,6 @@ pip3 install -e $CUR_DIR/third-party/tt-metal/
 export TT_METAL_HOME=$CUR_DIR/third-party/tt-metal
 echo "> TT_METAL_HOME: $TT_METAL_HOME"
 echo "> Building cpp extension"
-CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE};-DCMAKE_C_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER=g++-12;-DCMAKE_C_COMPILER=gcc-12" python3 setup.py develop
+# Ensure spdlog uses external fmt (installed via CPM) to avoid missing bundled headers
+EXT_CXX_FLAGS="${TORCH_ABI_FLAGS} -std=c++20 -DSPDLOG_FMT_EXTERNAL"
+CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE};-DCMAKE_C_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER=g++-12;-DCMAKE_C_COMPILER=gcc-12;-DCMAKE_CXX_FLAGS=${EXT_CXX_FLAGS}" python3 setup.py develop

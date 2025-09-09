@@ -51,6 +51,7 @@ set(TTNN_CPP_EXTENSION_SOURCES
 add_library(ttnn_device_extension SHARED ${TTNN_CPP_EXTENSION_SOURCES})
 target_compile_options(ttnn_device_extension PRIVATE
     -DFMT_HEADER_ONLY
+    -DSPDLOG_FMT_EXTERNAL
     -DTORCH_EXTENSION_NAME=ttnn_device_extension
     -DTORCH_API_INCLUDE_EXTENSION_H
 )
