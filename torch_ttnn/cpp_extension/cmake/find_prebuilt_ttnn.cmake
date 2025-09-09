@@ -17,6 +17,8 @@ file(GLOB TTNN_INCLUDE_DIRS
 
 # Determine include roots depending on layout (wheel vs submodule)
 set(_TTNN_INC_CANDIDATES
+    # ttnn public API headers (decorators.hpp, device.hpp, tensor.hpp, etc.)
+    ${TT_METAL_HOME}/ttnn/api
     ${TT_METAL_HOME}/cpp
     ${TT_METAL_HOME}/ttnn/cpp
     ${TT_METAL_HOME}/ttnn
@@ -36,6 +38,12 @@ foreach(dir IN LISTS _TTNN_INC_CANDIDATES)
     endif()
 endforeach()
 list(APPEND TTNN_INCLUDE_DIRS ${TTNN_INCLUDE_DIRS})
+
+# Add specific third-party includes discovered in CPM cache (tt-logger)
+if(EXISTS ${TT_METAL_HOME}/.cpmcache/tt-logger)
+    file(GLOB _TT_LOGGER_INC "${TT_METAL_HOME}/.cpmcache/tt-logger/*/include")
+    list(APPEND TTNN_INCLUDE_DIRS ${_TT_LOGGER_INC})
+endif()
 
 # Now wrap all the headers and .so files nicely into one target
 if(NOT TARGET Metalium::TTNN)
