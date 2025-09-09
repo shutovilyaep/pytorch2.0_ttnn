@@ -34,13 +34,11 @@ at::Tensor ttnn_copy_from(const at::Tensor& self, const at::Tensor& dst, bool no
 
             auto self_bfloat16_storage_ptr = static_cast<bfloat16*>(self.storage().data_ptr().get());
 
-            // Create TTNN Tensor on CPU
-            ttnn::Tensor src_cpu = ttnn::Tensor(
-                tt::tt_metal::HostStorage{tt::tt_metal::host_buffer::create<bfloat16>(
-                    tt::stl::Span(self_bfloat16_storage_ptr, logical_volume))},
-                logical_shape,
-                dtype,
-                ttnn::Layout::ROW_MAJOR);
+            // Create TTNN Tensor on CPU using new HostBuffer/HostStorage API
+            auto hb = tt::tt_metal::HostBuffer(
+                tt::stl::Span<bfloat16>(self_bfloat16_storage_ptr, logical_volume), tt::tt_metal::MemoryPin{});
+            auto hs = tt::tt_metal::HostStorage(hb);
+            ttnn::Tensor src_cpu = ttnn::Tensor(hs, logical_shape, dtype, ttnn::Layout::ROW_MAJOR);
 
             ttnn::Tensor src_dev = src_cpu.to_device(ttnn_device);
 
@@ -53,13 +51,11 @@ at::Tensor ttnn_copy_from(const at::Tensor& self, const at::Tensor& dst, bool no
             auto self_int = self.toType(at::ScalarType::Int);
             auto self_int_storage_ptr = static_cast<uint32_t*>(self_int.storage().data_ptr().get());
 
-            // First create ttnn Tensor on CPU
-            ttnn::Tensor src_cpu = ttnn::Tensor(
-                tt::tt_metal::HostStorage{
-                    tt::tt_metal::host_buffer::create<uint32_t>(tt::stl::Span(self_int_storage_ptr, logical_volume))},
-                logical_shape,
-                dtype,
-                ttnn::Layout::ROW_MAJOR);
+            // First create ttnn Tensor on CPU using new HostBuffer/HostStorage API
+            auto hb = tt::tt_metal::HostBuffer(
+                tt::stl::Span<uint32_t>(self_int_storage_ptr, logical_volume), tt::tt_metal::MemoryPin{});
+            auto hs = tt::tt_metal::HostStorage(hb);
+            ttnn::Tensor src_cpu = ttnn::Tensor(hs, logical_shape, dtype, ttnn::Layout::ROW_MAJOR);
 
             // Initialized as ROW_MAJOR for this dtype because of an issue with ttnn.embedding if this tensor was
             // converted later: https://github.com/tenstorrent/tt-metal/issues/22257
