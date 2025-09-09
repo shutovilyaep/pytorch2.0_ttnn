@@ -8,6 +8,21 @@
 
 namespace tt_eager::ext {
 
+
+/* TODO: Switch to concepts
+
+template <class F>
+concept TNNBinary = requires(F f, const at::Tensor& a, const at::Tensor& b) {
+    { f(a, b) } -> std::same_as<ttnn::Tensor>;
+};
+
+template <class F>
+concept TNNUnary = requires(F f, const at::Tensor& a) {
+    { f(a) } -> std::same_as<ttnn::Tensor>;
+};
+
+*/
+
 // Helper functions
 inline ttnn::Tensor to_ttnn_tile_checked(const at::Tensor& t, const char* arg_name) {
     TORCH_CHECK(t.device().type() == c10::DeviceType::PrivateUse1, arg_name, " must be on TTNN device");
@@ -56,6 +71,27 @@ struct binary {
 
         return write_from_ttnn(out, a, result);
     }
+
+
+/* Concepts version ~:
+    template <TNNBinary F>
+    static at::Tensor run(const at::Tensor& a, const at::Tensor& b, F&& op) {
+        at::Tensor out = make_empty_like_tt(a);
+        out_(a, b, out, std::forward<F>(op));
+        return out;
+    }
+
+    template <TNNBinary F>
+    static at::Tensor& out_(const at::Tensor& a, const at::Tensor& b, at::Tensor& out, F&& op) {
+        ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a");
+        ttnn::Tensor b_tile = to_ttnn_tile_checked(b, "b");
+        auto result = op(a_tile, b_tile);
+
+        return write_from_ttnn(out, a, result);
+    }
+*/
+
+
 };  // namespace binary
 
 // "Kernel" generators (TODO: not kernels, just a wrapper for the invoker)
@@ -69,5 +105,6 @@ struct binary_kernel {
         return binary::out_(a, b, out, TTNN_BINARY);
     }
 };
+
 
 }  // namespace tt_eager::ext
