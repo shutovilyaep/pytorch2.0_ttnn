@@ -65,7 +65,7 @@ struct binary {
 
     template <class TNNBinary>
     static at::Tensor& out_(const at::Tensor& a, const at::Tensor& b, at::Tensor& out, TNNBinary&& op) {
-        ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a");
+        ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a"); // TODO: viaraible names are not correct, placeholders
         ttnn::Tensor b_tile = to_ttnn_tile_checked(b, "b");
         auto result = op(a_tile, b_tile);
 
