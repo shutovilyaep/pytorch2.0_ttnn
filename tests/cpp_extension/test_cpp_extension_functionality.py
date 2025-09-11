@@ -19,8 +19,6 @@ import logging
     ),
 )
 def test_cpp_extension(device, input_shape, dtype):
-    # in pytest the device has already been initialized before this call
-    # so instead we can wrap this around the custom device
     ttnn_torch_device = ttnn_module.as_torch_device(device)
 
     logging.info("Creating bfloat tensor from -1 to 1")
@@ -66,8 +64,6 @@ def test_cpp_extension(device, input_shape, dtype):
     (torch.bfloat16, torch.int, torch.long),
 )
 def test_add_cpp_extension(device, input_shape, dtype):
-    # in pytest the device has already been initialized before this call
-    # so instead we can wrap this around the custom device
     ttnn_torch_device = ttnn_module.as_torch_device(device)
 
     logging.info("Creating bfloat tensor from -1 to 1")

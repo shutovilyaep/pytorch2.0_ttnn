@@ -1,0 +1,52 @@
+v0.58.1 migration notes
+
+C++ API changes verified vs scripts/v0.58.1.diff
+- HostStorage + host_buffer::create(...) was removed/replaced.
+  - New pattern: construct tt::tt_metal::HostBuffer directly, either from
+    - owned data: HostBuffer(std::vector<T> &&/const&)
+    - borrowed data: HostBuffer(tt::stl::Span<T>, tt::tt_metal::MemoryPin)
+  - ttnn::Tensor constructors now accept HostBuffer directly instead of HostStorage.
+- Borrowed buffers require explicit lifetime pinning via MemoryPin.
+  - Diff shows both callback-based and shared_ptr-based pins are valid.
+
+Edits applied in ttnn_cpp_extension/src/core/copy.cpp
+- Replaced:
+  - HostStorage{host_buffer::create<T>(Span(ptr, size))}
+  - Tensor(HostStorage{...}, logical_shape, dtype, Layout)
+- With:
+  - HostBuffer(Span<T>(ptr, size), MemoryPin(resource))
+  - Tensor(HostBuffer, logical_shape, dtype, Layout)
+- BF16 path:
+  - Created std::shared_ptr<at::Tensor> to pin source storage
+  - HostBuffer constructed from Span<bfloat16> + MemoryPin(shared_ptr)
+- UINT32 path:
+  - Casted to Int Tensor as before
+  - Created std::shared_ptr<at::Tensor> to pin the cast tensor
+  - HostBuffer constructed from Span<uint32_t> + MemoryPin(shared_ptr)
+- Includes: added <tt-metalium/memory_pin.hpp> and <memory>
+
+References in v0.58.1.diff confirming approach
+- HostStorage{host_buffer::create(...)} → HostBuffer(std::move(...))
+- Borrowed data example:
+  HostBuffer(span, MemoryPin(...)); Tensor(std::move(buffer), shape, dtype, layout)
+- Multi-device: Tensor now constructed with storage + spec + distributed config
+
+Outcome
+- Fix compiles in cpp extension build and aligns with tt-metal v0.58.1 API.
+
+Python dependency alignment to avoid downgrades vs tt-metal base
+- Goal: during installation, avoid installing package versions lower than tt-metal's environment expects.
+- Changes to apply in this repo:
+  - setup.py: change ttnn==0.60.1 → ttnn>=0.58.1
+  - requirements.txt: replace direct wheel URL with ttnn>=0.58.1
+  - requirements-dev.txt:
+    - huggingface_hub[cli] → huggingface_hub[cli]>=0.25.2
+    - pydantic==2.8.2 → pydantic>=2.9.2
+    - datasets (unversioned) → datasets>=2.9.0
+    - librosa (unversioned) → librosa>=0.10.0
+    - add numpy>=1.24.4,<2 to match base constraints
+- Torch/torchvision remain pinned to 2.2.1+cpu / 0.17.1+cpu to match base.
+
+Notes
+- Using lower-bounds prevents accidental downgrades while staying compatible with tt-metal v0.58.1.
+- If strict sync with submodule is desired instead, pin ttnn==0.58.1 in both setup.py and requirements.txt.

@@ -14,9 +14,8 @@ def get_torch_abi_related_compiler_flags():
     if abi_match:
         cxx_flags.append(f"-D_GLIBCXX_USE_CXX11_ABI={abi_match.group(1)}")
 
-    fabi_match = re.search(r"-fabi-version=(\d+)", config_str)
-    if fabi_match:
-        cxx_flags.append(f"-fabi-version={fabi_match.group(1)}")
+    # Do not propagate GCC-specific -fabi-version to our builds. It breaks clang
+    # builds and is not required when _GLIBCXX_USE_CXX11_ABI is set consistently.
 
     return cxx_flags
 
