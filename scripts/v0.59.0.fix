@@ -1,0 +1,51 @@
+v0.59.0 migration notes
+
+Scope: cpp extension build fixes after tt-metal submodule bump; aligned with scripts/v0.59.0.diff
+
+1) TTNN public headers moved under ttnn/api
+- Upstream change (see v0.59.0.diff):
+  - ttnn/cpp/ttnn/core.hpp → ttnn/api/ttnn/core.hpp
+  - ttnn/cpp/ttnn/device.hpp → ttnn/api/ttnn/device.hpp
+  - ttnn/cpp/ttnn/tensor/tensor.hpp → ttnn/api/ttnn/tensor/tensor.hpp
+- Our fix:
+  - Updated CMake helper to add `${TT_METAL_HOME}/ttnn/api` to include dirs.
+  - File: torch_ttnn/cpp_extension/cmake/find_prebuilt_ttnn.cmake
+
+2) Third-party includes: tt-logger/spdlog, reflect
+- Upstream change: tt-metal now vendors boost-ext/reflect v1.2.6 and uses <reflect> (module-style layout).
+  - v0.59.0.diff shows CPM bump: reflect v1.1.1 → v1.2.6
+- Observed build errors:
+  - fatal error: tt-logger/tt-logger.hpp: No such file or directory
+  - fatal error: reflect: No such file or directory
+- Our fix:
+  - Added CPM cache include globs for:
+    - `${TT_METAL_HOME}/.cpmcache/tt-logger/*/include`
+    - `${TT_METAL_HOME}/.cpmcache/spdlog/*/include`
+  - Adjusted reflect glob to point at package root (headers live at root in v1.2.6):
+    - `${TT_METAL_HOME}/.cpmcache/reflect/*/` (not `*/include`)
+  - File: torch_ttnn/cpp_extension/cmake/find_prebuilt_ttnn.cmake
+
+3) Deprecated APIs in TTNN and tt_stl
+- Upstream deprecations visible in headers:
+  - ttnn::Tensor::get_logical_shape() → use logical_shape()
+  - ttnn::SmallVector → use tt::stl::SmallVector
+- Our code edits:
+  - ttnn_cpp_extension/src/utils/vector_utils.cpp
+    - get_logical_shape() → logical_shape()
+  - ttnn_cpp_extension/src/ops/creation.cpp
+    - ttnn::SmallVector<uint32_t> → tt::stl::SmallVector<uint32_t>
+  - ttnn_cpp_extension/src/core/TtnnTensorImpl.cpp
+    - ttnn::SmallVector<uint32_t> → tt::stl::SmallVector<uint32_t>
+
+4) Notes on new include order
+- Some TTNN public headers now include tt-metal API and tt_stl headers transitively (e.g., core_coord.hpp, reflection.hpp).
+- Ensuring the CMake INTERFACE include dirs contain:
+  - `${TT_METAL_HOME}/tt_metal/api`
+  - `${TT_METAL_HOME}/tt_stl`
+  - CPM caches for fmt, magic_enum, nlohmann_json, boost, tt-logger, spdlog, reflect
+  is sufficient for the extension to compile.
+
+Outcome
+- C++ extension builds successfully past missing-header errors.
+- Deprecation warnings resolved where applicable.
+- Remaining warnings are benign and tracked by upstream.
