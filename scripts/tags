@@ -549,7 +549,7 @@ v0.58.0-rc7
 v0.58.0-rc8
 v0.58.0-rc9
 + v0.58.1 C++ errors, fixed
-~ v0.59.0 C++ build errors
++ v0.59.0 C++ build errors, fixed
 v0.59.0-rc1
 v0.59.0-rc10
 v0.59.0-rc11
@@ -609,7 +609,7 @@ v0.59.0-rc61
 v0.59.0-rc7
 v0.59.0-rc8
 v0.59.0-rc9
-v0.59.1
+~v0.59.1 C++ build errors, log-related, fixed, linker-related undefined symbol: _ZN2tt8tt_metal6TensoraSEOS1_
 v0.60.0
 v0.60.0-rc1
 v0.60.0-rc10
