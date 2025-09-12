@@ -56,6 +56,10 @@ target_compile_options(ttnn_device_extension PRIVATE
     -DTORCH_API_INCLUDE_EXTENSION_H
 )
 target_compile_definitions(ttnn_device_extension PRIVATE NTEST)
+if(DEFINED TTNN_EXT_CXX11_ABI)
+    # Pin ABI used by the extension to match torch/tt-metal choice without forcing GCC-only flags
+    target_compile_definitions(ttnn_device_extension PRIVATE _GLIBCXX_USE_CXX11_ABI=${TTNN_EXT_CXX11_ABI})
+endif()
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_definitions(ttnn_device_extension PRIVATE DISABLE_NAMESPACE_STATIC_ASSERT)
 endif()
