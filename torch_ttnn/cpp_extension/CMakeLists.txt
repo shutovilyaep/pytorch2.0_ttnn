@@ -164,6 +164,8 @@ set_target_properties(ttnn_device_extension PROPERTIES
     PREFIX ""
     SUFFIX ""
     OUTPUT_NAME ${OUTPUT_NAME}
+    BUILD_RPATH "${TT_METAL_HOME}/build/lib"
+    INSTALL_RPATH "${TT_METAL_HOME}/build/lib"
 )
 
 if (BUILD_EXAMPLES)
