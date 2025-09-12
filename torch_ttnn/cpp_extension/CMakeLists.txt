@@ -10,7 +10,9 @@ option(ENABLE_SUBMODULE_TT_METAL_BUILD "Enable submodule TT_Metal build" OFF)
 option(BUILD_EXAMPLES "Build examples" OFF)
 
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/third-party/tt-metal/cmake")
 include(utils)
+include(CPM)
 
 # Prepare tt-metal build
 # TODO: Add debian integration with ttnn once ready
@@ -50,7 +52,6 @@ set(TTNN_CPP_EXTENSION_SOURCES
 
 add_library(ttnn_device_extension SHARED ${TTNN_CPP_EXTENSION_SOURCES})
 target_compile_options(ttnn_device_extension PRIVATE
-    -DFMT_HEADER_ONLY
     -DTORCH_EXTENSION_NAME=ttnn_device_extension
     -DTORCH_API_INCLUDE_EXTENSION_H
 )
@@ -63,8 +64,52 @@ target_include_directories(ttnn_device_extension PRIVATE
     ${PYTHON_INCLUDE_DIRS}
 )
 
+
 # Needed for torch_python
 target_link_directories(ttnn_device_extension PRIVATE "${TORCH_INSTALL_PREFIX}/lib")
+
+# Bring Boost headers via CPM (match tt-metal third_party integration)
+# Requires CPM to be available from included cmake/utils
+CPMAddPackage(
+    NAME Boost
+    VERSION 1.86.0
+    URL https://github.com/boostorg/boost/releases/download/boost-1.86.0/boost-1.86.0-cmake.tar.xz
+    URL_HASH SHA256=2c5ec5edcdff47ff55e27ed9560b0a0b94b07bd07ed9928b476150e16b0efc57
+    OPTIONS
+        "BOOST_ENABLE_CMAKE ON"
+        "BOOST_SKIP_INSTALL_RULES ON"
+        "BUILD_SHARED_LIBS OFF"
+        "BOOST_INCLUDE_LIBRARIES core\;container\;smart_ptr\;interprocess\;asio\;lockfree"
+    FIND_PACKAGE_ARGUMENTS "CONFIG REQUIRED"
+)
+
+if(TARGET Boost::headers)
+    target_link_libraries(ttnn_device_extension PRIVATE Boost::headers)
+endif()
+if(TARGET Boost::core)
+    target_link_libraries(ttnn_device_extension PRIVATE Boost::core)
+endif()
+
+# Bring fmt (header-only) matching tt-metal version
+CPMAddPackage(NAME fmt GITHUB_REPOSITORY fmtlib/fmt GIT_TAG 11.1.4)
+if(TARGET fmt::fmt-header-only)
+    target_link_libraries(ttnn_device_extension PRIVATE fmt::fmt-header-only)
+endif()
+
+# Bring spdlog matching tt-metal version and use external fmt header-only
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME spdlog-dev)
+CPMAddPackage(
+    NAME spdlog
+    GITHUB_REPOSITORY gabime/spdlog
+    VERSION 1.15.2
+    OPTIONS
+        "SPDLOG_FMT_EXTERNAL_HO ON"
+        "SPDLOG_INSTALL ON"
+)
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME ${DEFAULT_COMPONENT_NAME})
+if(TARGET spdlog::spdlog_header_only)
+    target_link_libraries(ttnn_device_extension PRIVATE spdlog::spdlog_header_only)
+endif()
 
 target_link_libraries(ttnn_device_extension PUBLIC
     Metalium::Metal
