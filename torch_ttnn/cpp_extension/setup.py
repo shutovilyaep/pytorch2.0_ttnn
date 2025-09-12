@@ -41,10 +41,13 @@ class CMakeBuild(build_ext):
         if "-DENABLE_SUBMODULE_TT_METAL_BUILD=ON" in extra_cmake_flags:
             extra_cmake_flags.append("-DENABLE_LOCAL_TT_METAL_BUILD=OFF")
 
-        torch_cxx_flags = get_torch_abi_related_compiler_flags()
-        if torch_cxx_flags:
-            flags_str = " ".join(torch_cxx_flags)
-            extra_cmake_flags.append(f"-DCMAKE_CXX_FLAGS={flags_str}")
+        # Derive only the _GLIBCXX ABI value from torch and pass it as a dedicated CMake var
+        abi_flags = get_torch_abi_related_compiler_flags()
+        for f in abi_flags:
+            if f.startswith("-D_GLIBCXX_USE_CXX11_ABI="):
+                abi_val = f.split("=")[-1]
+                extra_cmake_flags.append(f"-DTTNN_EXT_CXX11_ABI={abi_val}")
+                break
 
         if extra_cmake_flags:
             cmake_args.extend(extra_cmake_flags)
