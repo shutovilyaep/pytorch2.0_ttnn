@@ -89,6 +89,37 @@ if(TARGET Boost::core)
     target_link_libraries(ttnn_device_extension PRIVATE Boost::core)
 endif()
 
+# Reflect and others (header-only) in case sources include headers directly
+CPMAddPackage(NAME reflect GITHUB_REPOSITORY boost-ext/reflect GIT_TAG v1.2.6)
+if(reflect_ADDED AND NOT TARGET Reflect::Reflect)
+    add_library(reflect INTERFACE)
+    add_library(Reflect::Reflect ALIAS reflect)
+    target_include_directories(reflect SYSTEM INTERFACE "$<BUILD_INTERFACE:${reflect_SOURCE_DIR}>")
+endif()
+CPMAddPackage(NAME magic_enum GITHUB_REPOSITORY Neargye/magic_enum GIT_TAG v0.9.7)
+if(TARGET magic_enum)
+    target_link_libraries(ttnn_device_extension PRIVATE magic_enum::magic_enum)
+endif()
+CPMAddPackage(NAME nlohmann_json GITHUB_REPOSITORY nlohmann/json GIT_TAG v3.11.3)
+if(TARGET nlohmann_json)
+    target_link_libraries(ttnn_device_extension PRIVATE nlohmann_json::nlohmann_json)
+endif()
+
+# tt-logger headers (for assert.hpp include)
+CPMAddPackage(
+    NAME tt-logger
+    GITHUB_REPOSITORY tenstorrent/tt-logger
+    VERSION 1.1.3
+    OPTIONS
+        "TT_LOGGER_INSTALL OFF"
+        "TT_LOGGER_BUILD_TESTING OFF"
+)
+if(TARGET tt-logger::tt-logger)
+    target_link_libraries(ttnn_device_extension PRIVATE tt-logger::tt-logger)
+elseif(DEFINED tt_logger_SOURCE_DIR)
+    target_include_directories(ttnn_device_extension SYSTEM PRIVATE ${tt_logger_SOURCE_DIR}/include)
+endif()
+
 # Bring fmt (header-only) matching tt-metal version
 CPMAddPackage(NAME fmt GITHUB_REPOSITORY fmtlib/fmt GIT_TAG 11.1.4)
 if(TARGET fmt::fmt-header-only)
@@ -113,6 +144,9 @@ endif()
 target_link_libraries(ttnn_device_extension PUBLIC
     Metalium::Metal
     Metalium::TTNN
+    fmt::fmt-header-only
+    spdlog::spdlog_header_only
+    Reflect::Reflect
 )
 
 target_link_libraries(ttnn_device_extension PUBLIC 
