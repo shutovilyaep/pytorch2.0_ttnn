@@ -1,0 +1,4 @@
+v0.59.1 migration notes (immediate change only)
+
+- Removed -DFMT_HEADER_ONLY from torch_ttnn/cpp_extension/CMakeLists.txt
+  - Rationale: Upstream tt-metal switched logging/asserts to use spdlog with fmt compile-time formatting (see v0.59.1 diff: assert.hpp changes and tt-logger/spdlog updates). Keeping FMT_HEADER_ONLY caused compile errors in assert.hpp due to fmt/spdlog mismatch. Removing the define lets spdlog use its compatible fmt symbols.
