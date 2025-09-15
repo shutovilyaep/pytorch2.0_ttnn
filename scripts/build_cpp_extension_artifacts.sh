@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# TT_METAL_VERSION=v0.59.0
+# source /home/epam/shutov/tt-metal/$TT_METAL_VERSION/tt-metal/python_env/bin/activate
+# source /home/epam/shutov/pytorch2.0_ttnn/torch_ttnn/cpp_extension/third-party/tt-metal/python_env/bin/activate
+
 CACHE_DIR=/home/epam/shutov/.cache/cpp-extension-cache
 
 # # Added pre-build steps with venv recreation for clean build
