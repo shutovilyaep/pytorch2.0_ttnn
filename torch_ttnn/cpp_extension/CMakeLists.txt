@@ -54,6 +54,7 @@ target_compile_options(ttnn_device_extension PRIVATE
     -DTORCH_EXTENSION_NAME=ttnn_device_extension
     -DTORCH_API_INCLUDE_EXTENSION_H
 )
+target_compile_definitions(ttnn_device_extension PRIVATE NTEST)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_definitions(ttnn_device_extension PRIVATE DISABLE_NAMESPACE_STATIC_ASSERT)
 endif()
