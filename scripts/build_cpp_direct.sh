@@ -8,4 +8,9 @@ pushd torch_ttnn/cpp_extension/
 ./build_cpp_extension.sh
 popd
 
+# Ensure modern build tooling in the active venv for editable installs
+python -m pip install --upgrade pip setuptools wheel setuptools_scm build
+
+pip3 install -e . --use-pep517
+
 python scripts/test_script.py
