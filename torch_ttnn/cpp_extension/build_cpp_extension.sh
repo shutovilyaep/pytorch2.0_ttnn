@@ -15,6 +15,9 @@ echo "> TORCH_ABI_FLAGS: $TORCH_ABI_FLAGS"
 # Configure ttnn
 # TODO: check if c++17 is enough
 echo "> Configuring ttnn"
+
+export MPICC=/usr/bin/mpicc
+export MPICXX=/usr/bin/mpicxx
 cmake -B $CUR_DIR/third-party/tt-metal/build \
     -G Ninja \
     -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
@@ -25,6 +28,8 @@ cmake -B $CUR_DIR/third-party/tt-metal/build \
     -DTT_UNITY_BUILDS=ON \
     -DTT_ENABLE_LIGHT_METAL_TRACE=ON \
     -DWITH_PYTHON_BINDINGS=ON \
+    -DMPI_C_COMPILER=${MPICC} \
+    -DMPI_CXX_COMPILER=${MPICXX} \
     -DCMAKE_TOOLCHAIN_FILE=$CUR_DIR/cmake/x86_64-linux-torch-toolchain.cmake \
     -DCMAKE_CXX_FLAGS="${TORCH_ABI_FLAGS} -std=c++20" \
     -S $CUR_DIR/third-party/tt-metal
