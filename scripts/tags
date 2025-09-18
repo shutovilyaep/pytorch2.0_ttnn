@@ -549,9 +549,9 @@ v0.58.0-rc7
 v0.58.0-rc8
 v0.58.0-rc9
 + v0.58.1 C++ errors, fixed
-~ v0.59.0 C++ build errors
++ v0.59.0 C++ build errors, fixed
 v0.59.0-rc1
-v0.59.0-rc10
++v0.59.0-rc10, no errors, commit is the same as 0.59.0
 v0.59.0-rc11
 v0.59.0-rc12
 v0.59.0-rc13
@@ -562,7 +562,7 @@ v0.59.0-rc17
 v0.59.0-rc18
 v0.59.0-rc19
 v0.59.0-rc2
-v0.59.0-rc20
++v0.59.0-rc20, no errors, commit is the same as 0.59.0
 v0.59.0-rc21
 v0.59.0-rc22
 v0.59.0-rc23
@@ -573,7 +573,7 @@ v0.59.0-rc27
 v0.59.0-rc28
 v0.59.0-rc29
 v0.59.0-rc3
-v0.59.0-rc30
++v0.59.0-rc30, no errors, commit is the same as 0.59.0
 v0.59.0-rc31
 v0.59.0-rc32
 v0.59.0-rc33
@@ -584,7 +584,7 @@ v0.59.0-rc37
 v0.59.0-rc38
 v0.59.0-rc39
 v0.59.0-rc4
-v0.59.0-rc40
++v0.59.0-rc40, no errors, commit is the same as 0.59.0
 v0.59.0-rc41
 v0.59.0-rc42
 v0.59.0-rc43
@@ -595,7 +595,7 @@ v0.59.0-rc47
 v0.59.0-rc48
 v0.59.0-rc49
 v0.59.0-rc5
-v0.59.0-rc50
++v0.59.0-rc50, no errors, commit is the same as 0.59.0
 v0.59.0-rc51
 v0.59.0-rc52
 v0.59.0-rc53
@@ -603,7 +603,7 @@ v0.59.0-rc54
 v0.59.0-rc55
 v0.59.0-rc56
 v0.59.0-rc57
-v0.59.0-rc58
+~v0.59.0-rc58, build errors - to_layout + link errors undefined symbol: _ZN2tt8tt_metal6TensoraSEOS1_
 v0.59.0-rc6
 v0.59.0-rc61
 v0.59.0-rc7
