@@ -599,11 +599,15 @@ v0.59.0-rc5
 v0.59.0-rc51
 +v0.59.0-rc52, no errors, commit is the same as 0.59.0
 +v0.59.0-rc53, no errors, commit is the same as 0.59.0
+
 -v0.59.0-rc54, ! tt-metal build errors, cmake build failed at first (distributed something), created venv
     cpp_extension build failed - ImportError: cannot import name 'initialize_fabric_config' from 'ttnn._ttnn.fabric' (unknown location)
-        ~TODO: NOW: diff with 0.59.0-rc53
--v0.59.0-rc55 NOT BUILDABLE
-v0.59.0-rc56
+-v0.59.0-rc55, ! tt-metal build errors
+~v0.59.0-rc56
+    tt-metal IS BUILDABLE
+    WORKS, code is the same as 0.59.0
+
+
 v0.59.0-rc57
 -v0.59.0-rc58, (v0.59.0-rc58.upd branch) build errors - to_layout + link errors undefined symbol: _ZN2tt8tt_metal6TensoraSEOS1_
 v0.59.0-rc6
