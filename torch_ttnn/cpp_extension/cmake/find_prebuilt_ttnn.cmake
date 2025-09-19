@@ -5,24 +5,8 @@ endif()
 
 set(TT_METAL_HOME $ENV{TT_METAL_HOME})
 
-# TODO: figure out the way to fetch those from ttnn
-# Glob to find needed includes from cpm cache
-file(GLOB TTNN_INCLUDE_DIRS 
-    "${TT_METAL_HOME}/.cpmcache/reflect/*/"
-    "${TT_METAL_HOME}/.cpmcache/fmt/*/include"
-    "${TT_METAL_HOME}/.cpmcache/magic_enum/*/include"
-    "${TT_METAL_HOME}/.cpmcache/nlohmann_json/*/include"
-    "${TT_METAL_HOME}/.cpmcache/boost/*/*/*/include"
-    "${TT_METAL_HOME}/.cpmcache/tt-logger/*/include"
-    "${TT_METAL_HOME}/.cpmcache/spdlog/*/include"
-    # New dependencies introduced upstream
-    "${TT_METAL_HOME}/build_Release/_deps/enchantum-src"
-    "${TT_METAL_HOME}/build/_deps/enchantum-src"
-    "${TT_METAL_HOME}/build_Release/_deps/enchantum-src/single_include"
-    "${TT_METAL_HOME}/build/_deps/enchantum-src/single_include"
-    "${TT_METAL_HOME}/build_Release/_deps/reflect-src/single_include"
-    "${TT_METAL_HOME}/build/_deps/reflect-src/single_include"
-)
+# Prefer relying on tt-metal exported CMake targets instead of manual include hacks
+set(TTNN_INCLUDE_DIRS "")
 
 set(TTNN_INCLUDE_DIRS
     ${TT_METAL_HOME}/ttnn/cpp
@@ -33,7 +17,6 @@ set(TTNN_INCLUDE_DIRS
     ${TT_METAL_HOME}/tt_metal/hostdevcommon/api
     ${TT_METAL_HOME}/tt_metal/third_party/tracy/public
     ${TT_METAL_HOME}/tt_stl
-    ${TTNN_INCLUDE_DIRS}
 )
 
 # Now wrap all the headers and .so files nicely into one target
@@ -74,6 +57,18 @@ if(NOT TARGET Metalium::TTNN)
         message(STATUS "Successfully found _ttnn.so at ${TTNN_LIBRARY}")
     else()
         message(FATAL_ERROR "_ttnn.so not found in ${METALIUM_LIB_PATH}")
+    endif()
+
+    # Also expose TT::STL if tt_stl is installed in this tree
+    if(EXISTS "${TT_METAL_HOME}/tt_stl/CMakeLists.txt")
+        # If tt-metal exported config is present, include it to define TT::STL
+        if(EXISTS "${TT_METAL_HOME}/build_Release/lib/cmake/tt-metalium/tt-metalium-config.cmake")
+            list(APPEND CMAKE_PREFIX_PATH "${TT_METAL_HOME}/build_Release")
+            find_package(tt-metalium CONFIG REQUIRED PATHS "${TT_METAL_HOME}/build_Release" NO_DEFAULT_PATH)
+        elseif(EXISTS "${TT_METAL_HOME}/build/lib/cmake/tt-metalium/tt-metalium-config.cmake")
+            list(APPEND CMAKE_PREFIX_PATH "${TT_METAL_HOME}/build")
+            find_package(tt-metalium CONFIG REQUIRED PATHS "${TT_METAL_HOME}/build" NO_DEFAULT_PATH)
+        endif()
     endif()
 else()
     message(STATUS "Metalium targets already exists")

@@ -71,6 +71,14 @@ target_link_libraries(ttnn_device_extension PUBLIC
     Metalium::TTNN
 )
 
+# Bring in TT::STL which propagates enchantum/reflect/nlohmann includes
+if(TARGET TT::STL)
+    target_link_libraries(ttnn_device_extension PUBLIC TT::STL)
+elseif(TARGET enchantum::enchantum)
+    # Fallback if TT::STL target not exported
+    target_link_libraries(ttnn_device_extension PUBLIC enchantum::enchantum)
+endif()
+
 target_link_libraries(ttnn_device_extension PUBLIC 
     ${TORCH_LIBRARIES} 
     ${PYTHON_LIBRARIES}
