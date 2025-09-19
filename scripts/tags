@@ -653,7 +653,7 @@ v0.60.0-rc9
 v0.60.1-rc1
 
 ~v0.60.2
-    - Pytorch 2.7.1
+    + Pytorch 2.7.1, updated, tt-metal API changed
 
 v0.61.0
 v0.61.0-rc1
