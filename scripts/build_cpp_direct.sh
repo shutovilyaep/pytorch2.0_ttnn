@@ -12,6 +12,6 @@ pushd torch_ttnn/cpp_extension/
 ./build_cpp_extension.sh
 popd
 
-pip3 install -e . --use-pep517 --no-build-isolation
+pip3 install -e . --use-pep517 --no-build-isolation --no-deps
 
 python scripts/test_script.py
