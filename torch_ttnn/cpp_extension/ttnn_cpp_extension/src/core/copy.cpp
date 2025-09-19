@@ -39,7 +39,7 @@ at::Tensor ttnn_copy_from(const at::Tensor& self, const at::Tensor& dst, bool no
             // Create TTNN Tensor on CPU using borrowed HostBuffer with lifetime pin
             auto self_tensor_shared = std::make_shared<at::Tensor>(self);
             tt::tt_metal::HostBuffer host_buffer(
-                tt::stl::Span<bfloat16>(self_bfloat16_storage_ptr, logical_volume),
+                ttsl::Span<bfloat16>(self_bfloat16_storage_ptr, logical_volume),
                 tt::tt_metal::MemoryPin(self_tensor_shared));
             ttnn::Tensor src_cpu = ttnn::Tensor(host_buffer, logical_shape, dtype, ttnn::Layout::ROW_MAJOR);
 
@@ -57,7 +57,7 @@ at::Tensor ttnn_copy_from(const at::Tensor& self, const at::Tensor& dst, bool no
             // First create ttnn Tensor on CPU using borrowed HostBuffer with lifetime pin
             auto self_int_shared = std::make_shared<at::Tensor>(self_int);
             tt::tt_metal::HostBuffer host_buffer_u32(
-                tt::stl::Span<uint32_t>(self_int_storage_ptr, logical_volume),
+                ttsl::Span<uint32_t>(self_int_storage_ptr, logical_volume),
                 tt::tt_metal::MemoryPin(self_int_shared));
             ttnn::Tensor src_cpu = ttnn::Tensor(host_buffer_u32, logical_shape, dtype, ttnn::Layout::ROW_MAJOR);
 

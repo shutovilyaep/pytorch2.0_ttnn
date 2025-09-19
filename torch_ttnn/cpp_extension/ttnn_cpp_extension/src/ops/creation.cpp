@@ -34,7 +34,7 @@ at::Tensor create_empty_tensor(
     TtnnGuard device_guard(device);
     ttnn::MeshDevice* ttnn_device = device_guard.get_open_ttnn_device(device.index());
     auto ttnn_dtype = dtype_torch_to_ttnn(dtype);
-    tt::stl::SmallVector<uint32_t> logical_dims(size.begin(), size.end());
+    ttsl::SmallVector<uint32_t> logical_dims(size.begin(), size.end());
     auto logical_shape = ttnn::Shape(logical_dims);
 
     // Create ttnn::empty tensor on device
