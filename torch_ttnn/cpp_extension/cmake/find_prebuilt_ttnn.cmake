@@ -15,6 +15,13 @@ file(GLOB TTNN_INCLUDE_DIRS
     "${TT_METAL_HOME}/.cpmcache/boost/*/*/*/include"
     "${TT_METAL_HOME}/.cpmcache/tt-logger/*/include"
     "${TT_METAL_HOME}/.cpmcache/spdlog/*/include"
+    # New dependencies introduced upstream
+    "${TT_METAL_HOME}/build_Release/_deps/enchantum-src"
+    "${TT_METAL_HOME}/build/_deps/enchantum-src"
+    "${TT_METAL_HOME}/build_Release/_deps/enchantum-src/single_include"
+    "${TT_METAL_HOME}/build/_deps/enchantum-src/single_include"
+    "${TT_METAL_HOME}/build_Release/_deps/reflect-src/single_include"
+    "${TT_METAL_HOME}/build/_deps/reflect-src/single_include"
 )
 
 set(TTNN_INCLUDE_DIRS
@@ -31,7 +38,12 @@ set(TTNN_INCLUDE_DIRS
 
 # Now wrap all the headers and .so files nicely into one target
 if(NOT TARGET Metalium::TTNN)
-    set(METALIUM_LIB_PATH "${TT_METAL_HOME}/build/lib")
+    # Prefer build_Release if present, otherwise fall back to build
+    if(EXISTS "${TT_METAL_HOME}/build_Release/lib")
+        set(METALIUM_LIB_PATH "${TT_METAL_HOME}/build_Release/lib")
+    else()
+        set(METALIUM_LIB_PATH "${TT_METAL_HOME}/build/lib")
+    endif()
     find_library(TT_METAL_LIBRARY NAMES "tt_metal" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
     find_library(DEVICE_LIBRARY NAMES "device" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
     find_library(TTNN_LIBRARY NAMES "_ttnn.so" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
