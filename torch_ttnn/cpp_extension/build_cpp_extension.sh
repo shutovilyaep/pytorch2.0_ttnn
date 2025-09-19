@@ -22,6 +22,11 @@ echo "> TT_METAL_HOME: $TT_METAL_HOME"
 echo "> Building tt-metal via build_metal.sh"
 pushd "$TT_METAL_HOME" >/dev/null
 ./build_metal.sh --build-type "$BUILD_TYPE"
+
+rm -rf python_env
+./create_venv.sh
+source ./python_env/bin/activate
+
 popd >/dev/null
 
 # Ensure tt-metal python package is available in the active environment
@@ -36,6 +41,7 @@ if [[ "$FLAVOR" == "ubuntu" && "$VERSION" == "20.04" ]]; then
 fi
 echo "> Using toolchain file: $TT_METAL_HOME/$TOOLCHAIN_PATH"
 
-# Build cpp extension using the same toolchain (and keep ccache launchers)
+# Build cpp extension using pip editable install with the same toolchain
 echo "> Building cpp extension"
-CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE};-DCMAKE_C_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER_LAUNCHER=ccache;-DCMAKE_TOOLCHAIN_FILE=$TT_METAL_HOME/$TOOLCHAIN_PATH" python3 setup.py develop
+CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE};-DCMAKE_C_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER_LAUNCHER=ccache;-DCMAKE_TOOLCHAIN_FILE=$TT_METAL_HOME/$TOOLCHAIN_PATH" \
+    pip install -e "$CUR_DIR" --use-pep517 --no-build-isolation
