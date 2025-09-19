@@ -31,8 +31,8 @@ setup(
     packages=find_packages(exclude=["tests", "tests.*"]),
     python_requires=">=3.10",
     install_requires=[
-        "torch>=2.7.1",
-        "torchvision>=0.22.1",
+        "torch==2.2.1+cpu",
+        "torchvision==0.17.1+cpu",
         "tabulate==0.9.0",
         "networkx==3.1",
         "graphviz",
