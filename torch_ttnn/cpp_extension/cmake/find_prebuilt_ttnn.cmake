@@ -59,15 +59,22 @@ if(NOT TARGET Metalium::TTNN)
         message(FATAL_ERROR "_ttnn.so not found in ${METALIUM_LIB_PATH}")
     endif()
 
-    # Also expose TT::STL if tt_stl is installed in this tree
+    # Also expose TT::STL/other deps via tt-metal exported config. Ensure its prefix
+    # (which contains lib/cmake/{fmt,spdlog,...}) is on CMAKE_PREFIX_PATH so find_dependency works.
     if(EXISTS "${TT_METAL_HOME}/tt_stl/CMakeLists.txt")
-        # If tt-metal exported config is present, include it to define TT::STL
         if(EXISTS "${TT_METAL_HOME}/build_Release/lib/cmake/tt-metalium/tt-metalium-config.cmake")
-            list(APPEND CMAKE_PREFIX_PATH "${TT_METAL_HOME}/build_Release")
-            find_package(tt-metalium CONFIG REQUIRED PATHS "${TT_METAL_HOME}/build_Release" NO_DEFAULT_PATH)
+            set(_TT_METAL_PREFIX "${TT_METAL_HOME}/build_Release")
+            set(_TT_METAL_MODULE_DIR "${_TT_METAL_PREFIX}/lib/cmake/tt-metalium")
         elseif(EXISTS "${TT_METAL_HOME}/build/lib/cmake/tt-metalium/tt-metalium-config.cmake")
-            list(APPEND CMAKE_PREFIX_PATH "${TT_METAL_HOME}/build")
-            find_package(tt-metalium CONFIG REQUIRED PATHS "${TT_METAL_HOME}/build" NO_DEFAULT_PATH)
+            set(_TT_METAL_PREFIX "${TT_METAL_HOME}/build")
+            set(_TT_METAL_MODULE_DIR "${_TT_METAL_PREFIX}/lib/cmake/tt-metalium")
+        endif()
+
+        if(DEFINED _TT_METAL_PREFIX)
+            # Ensure dependencies like fmt/spdlog are discoverable
+            list(PREPEND CMAKE_PREFIX_PATH "${_TT_METAL_PREFIX}")
+            # Force using the exported config under lib/cmake to avoid the root-level shim
+            find_package(tt-metalium CONFIG REQUIRED PATHS "${_TT_METAL_MODULE_DIR}" NO_DEFAULT_PATH)
         endif()
     endif()
 else()
