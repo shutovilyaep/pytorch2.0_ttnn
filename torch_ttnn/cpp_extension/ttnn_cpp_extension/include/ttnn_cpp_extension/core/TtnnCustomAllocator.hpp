@@ -7,13 +7,11 @@
 // This should not use any actual space (data is stored in DRAM, not CPU RAM)
 struct TtnnCustomAllocator final : c10::Allocator {
     TtnnCustomAllocator() = default;
-    c10::DataPtr allocate(size_t nbytes) override;
+    c10::DataPtr allocate(size_t nbytes) const override;
 
     static void ReportAndDelete(void* ptr);
 
     c10::DeleterFnPtr raw_deleter() const override;
-
-    void copy_data(void* dest, const void* src, std::size_t count) const override;
 };
 
 TtnnCustomAllocator& get_ttnn_custom_allocator();
