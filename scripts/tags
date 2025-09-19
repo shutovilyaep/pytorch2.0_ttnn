@@ -659,9 +659,11 @@ v0.60.1-rc1
     Pytorch back to 2.2.1 ???
     tt-metal API changes - Allocator
         pytorch2.0_ttnn/torch_ttnn/cpp_extension/third-party/tt-metal/tt_metal/api/tt-metalium/allocator.hpp
-    - linking error on start
+   +? - linking error on start
         import ttnn_device_extension as ttnn_module
         ImportError: /home/ilia_shutov/pytorch2.0_ttnn/torch_ttnn/cpp_extension/ttnn_device_extension.cpython-310-x86_64-linux-gnu.so: undefined symbol: _ZN4ttnn10operations6binary15BinaryOperationILNS1_12BinaryOpTypeE0EE6invokeEN4ttsl10StrongTypeIhNS_10QueueIdTagEEERKN2tt8tt_metal6TensorESD_RKSt8optionalIKNSA_8DataTypeEERKSE_INSA_12MemoryConfigEERKSE_ISB_ENS5_4SpanIKNS0_5unary14UnaryWithParamELm18446744073709551615EEESV_SV_RKSE_IbE
+
++        Hm, rebuilt venv, test runs
 
 v0.61.0-rc1
 v0.61.1-rc1
