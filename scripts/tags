@@ -621,7 +621,7 @@ v0.59.0-rc9
 !    cpp_extension build errors, but built the 2nd time? [when just strted today]
     + Fixed
 
-v0.60.0
++v0.60.0 works
 v0.60.0-rc1
 v0.60.0-rc10
 v0.60.0-rc11
@@ -647,7 +647,10 @@ v0.60.0-rc6
 v0.60.0-rc7
 v0.60.0-rc8
 v0.60.0-rc9
-v0.60.1
+
+~v0.60.1
+    venv
+
 v0.60.1-rc1
 v0.60.2
 v0.61.0
