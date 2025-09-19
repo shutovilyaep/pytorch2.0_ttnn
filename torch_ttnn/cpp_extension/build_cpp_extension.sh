@@ -18,19 +18,19 @@ if [ -z "$TT_METAL_HOME" ]; then
 fi
 echo "> TT_METAL_HOME: $TT_METAL_HOME"
 
-# Build tt-metal using its own script to ensure identical toolchain/config
-echo "> Building tt-metal via build_metal.sh"
-pushd "$TT_METAL_HOME" >/dev/null
-./build_metal.sh --build-type "$BUILD_TYPE"
+# # Build tt-metal using its own script to ensure identical toolchain/config
+# echo "> Building tt-metal via build_metal.sh"
+# pushd "$TT_METAL_HOME" >/dev/null
+# ./build_metal.sh --build-type "$BUILD_TYPE"
 
-rm -rf python_env
-./create_venv.sh
-source ./python_env/bin/activate
+# rm -rf python_env
+# ./create_venv.sh
+# source ./python_env/bin/activate
 
-popd >/dev/null
+# popd >/dev/null
 
-# Ensure tt-metal python package is available in the active environment
-pip3 install -e "$TT_METAL_HOME/" --no-build-isolation
+# # Ensure tt-metal python package is available in the active environment
+# pip3 install -e "$TT_METAL_HOME/" --no-build-isolation
 
 # Select the same toolchain file as tt-metal's build_metal.sh would use
 FLAVOR=`grep '^ID=' /etc/os-release | awk -F= '{print $2}' | tr -d '"'`
