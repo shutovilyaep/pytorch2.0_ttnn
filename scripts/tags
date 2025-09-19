@@ -603,7 +603,7 @@ v0.59.0-rc51
 -v0.59.0-rc54, ! tt-metal build errors, cmake build failed at first (distributed something), created venv
     cpp_extension build failed - ImportError: cannot import name 'initialize_fabric_config' from 'ttnn._ttnn.fabric' (unknown location)
 -v0.59.0-rc55, ! tt-metal build errors
-~v0.59.0-rc56
++v0.59.0-rc56
     tt-metal IS BUILDABLE
     WORKS, code is the same as 0.59.0
 
@@ -615,7 +615,12 @@ v0.59.0-rc61
 v0.59.0-rc7
 v0.59.0-rc8
 v0.59.0-rc9
-v0.59.1
++ v0.59.1
+    build/v0.59.1.upd + to_layout fix
+    + venv
+!    cpp_extension build errors, but built the 2nd time? [when just strted today]
+    + Fixed
+
 v0.60.0
 v0.60.0-rc1
 v0.60.0-rc10
