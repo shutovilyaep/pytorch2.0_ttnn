@@ -18,7 +18,9 @@ pushd /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/ >/dev/null
 if ! command -v ccache >/dev/null 2>&1; then
   sudo apt-get update && sudo apt-get install -y ccache
 fi
-./build_cpp_extension.sh
+# ./build_cpp_extension.sh
+./build_cpp_extension.sh RelWithDebInfo
+
 popd >/dev/null
 
 python /workspace/pytorch2.0_ttnn/scripts/test_script.py

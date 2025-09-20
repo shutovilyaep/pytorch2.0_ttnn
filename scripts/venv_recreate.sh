@@ -15,7 +15,8 @@ if ! command -v ccache >/dev/null 2>&1; then
     sudo apt-get update && sudo apt-get install -y ccache
 fi
 rm -rf .cpmcache build build_Release build_Debug ~/.cache/tt-metal-cache /tmp/tt-metal-cache
-./build_metal.sh
+./build_metal.sh --without-distributed --build-type RelWithDebInfo
+# ./build_metal.sh
 rm -rf python_env
 export PYTHON_ENV_DIR="$(pwd)/python_env"
 ./create_venv.sh
