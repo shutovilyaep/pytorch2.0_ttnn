@@ -110,6 +110,22 @@ if(TARGET nlohmann_json)
     target_link_libraries(ttnn_device_extension PRIVATE nlohmann_json::nlohmann_json)
 endif()
 
+# Enchantum (match tt-metal/main/third_party/CMakeLists.txt)
+CPMAddPackage(
+    NAME enchantum
+    GIT_REPOSITORY https://github.com/ZXShady/enchantum.git
+    GIT_TAG 8ca5b0eb7e7ebe0252e5bc6915083f1dd1b8294e
+    OPTIONS "CMAKE_MESSAGE_LOG_LEVEL NOTICE"
+)
+if(TARGET enchantum::enchantum)
+    target_link_libraries(ttnn_device_extension PRIVATE enchantum::enchantum)
+else()
+    # Fallback include dirs if target not exported
+    if(DEFINED enchantum_SOURCE_DIR)
+        target_include_directories(ttnn_device_extension SYSTEM PRIVATE ${enchantum_SOURCE_DIR}/include)
+    endif()
+endif()
+
 # tt-logger headers (for assert.hpp include)
 CPMAddPackage(
     NAME tt-logger
