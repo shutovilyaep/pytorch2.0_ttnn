@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 
+# Ensure Rust toolchain is available
+export CARGO_HOME="${HOME}/.cargo"
+export RUSTUP_HOME="${HOME}/.rustup"
+mkdir -p "${CARGO_HOME}" "${RUSTUP_HOME}"
+export PATH="${HOME}/.cargo/bin:${PATH}"
+if ! command -v rustup >/dev/null 2>&1; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain 1.89.0
+    export PATH="${HOME}/.cargo/bin:${PATH}"
+fi
 rustup default 1.89.0
 rustc --version && cargo --version
-export PATH="${HOME}/.cargo/bin:${PATH}"
 
 # Added pre-build steps with venv recreation for clean build
 pushd torch_ttnn/cpp_extension/third-party/tt-metal >/dev/null
 unset Boost_DIR BOOST_ROOT
-export CARGO_HOME="${HOME}/.cargo"
-export RUSTUP_HOME="${HOME}/.rustup"
-mkdir -p "${CARGO_HOME}" "${RUSTUP_HOME}"
 # Ensure ccache is available (build uses it)
 if ! command -v ccache >/dev/null 2>&1; then
     sudo apt-get update && sudo apt-get install -y ccache
