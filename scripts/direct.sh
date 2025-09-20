@@ -6,6 +6,8 @@ source /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/third-party/tt-metal/
 export TT_METAL_HOME="/workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/third-party/tt-metal"
 export TT_METAL_KERNEL_PATH="${TT_METAL_HOME}"
 export CARGO_HOME="${HOME}/.cargo"; export RUSTUP_HOME="${HOME}/.rustup"; export PATH="${HOME}/.cargo/bin:${PATH}"
+export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${LD_LIBRARY_PATH:-}"
+export PYTHONFAULTHANDLER=1
 mkdir -p "${CARGO_HOME}" "${RUSTUP_HOME}"
 pip install -e . --use-pep517 --no-cache-dir --no-build-isolation
 
