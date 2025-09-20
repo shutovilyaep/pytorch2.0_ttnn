@@ -24,6 +24,7 @@ cmake -B $CUR_DIR/third-party/tt-metal/build \
     -DCMAKE_EXPORT_COMPILE_COMMANDS=OFF \
     -DTT_UNITY_BUILDS=ON \
     -DTT_ENABLE_LIGHT_METAL_TRACE=ON \
+    -DENABLE_DISTRIBUTED=OFF \
     -DWITH_PYTHON_BINDINGS=ON \
     -DCMAKE_TOOLCHAIN_FILE=$CUR_DIR/cmake/x86_64-linux-torch-toolchain.cmake \
     -DCMAKE_CXX_FLAGS="${TORCH_ABI_FLAGS} -std=c++20" \
