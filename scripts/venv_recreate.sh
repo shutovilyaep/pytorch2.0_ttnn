@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+rustup default 1.89.0
+rustc --version && cargo --version
+
 # Added pre-build steps with venv recreation for clean build
 pushd torch_ttnn/cpp_extension/third-party/tt-metal >/dev/null
 unset Boost_DIR BOOST_ROOT
