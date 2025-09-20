@@ -165,6 +165,7 @@ endif()
 target_link_libraries(ttnn_device_extension PUBLIC
     Metalium::Metal
     Metalium::TTNN
+    Metalium::TTNN_CPP
     fmt::fmt-header-only
     spdlog::spdlog_header_only
     Reflect::Reflect
@@ -184,8 +185,8 @@ set_target_properties(ttnn_device_extension PROPERTIES
     PREFIX ""
     SUFFIX ""
     OUTPUT_NAME ${OUTPUT_NAME}
-    BUILD_RPATH "${TT_METAL_HOME}/build/lib"
-    INSTALL_RPATH "${TT_METAL_HOME}/build/lib"
+    BUILD_RPATH "${TT_METAL_HOME}/build/lib;${TORCH_INSTALL_PREFIX}/lib"
+    INSTALL_RPATH "${TT_METAL_HOME}/build/lib;${TORCH_INSTALL_PREFIX}/lib"
 )
 
 if (BUILD_EXAMPLES)

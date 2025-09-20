@@ -25,6 +25,7 @@ if(NOT TARGET Metalium::TTNN)
     find_library(TT_METAL_LIBRARY NAMES "tt_metal" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
     find_library(DEVICE_LIBRARY NAMES "device" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
     find_library(TTNN_LIBRARY NAMES "_ttnn.so" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
+    find_library(TTNNCPP_LIBRARY NAMES "_ttnncpp.so" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
 
     if(TT_METAL_LIBRARY)
         add_library(Metalium::Metal SHARED IMPORTED GLOBAL)
@@ -52,6 +53,18 @@ if(NOT TARGET Metalium::TTNN)
         message(STATUS "Successfully found _ttnn.so at ${TTNN_LIBRARY}")
     else()
         message(FATAL_ERROR "_ttnn.so not found in ${METALIUM_LIB_PATH}")
+    endif()
+    if(TTNNCPP_LIBRARY)
+        add_library(Metalium::TTNN_CPP SHARED IMPORTED)
+        set_target_properties(
+            Metalium::TTNN_CPP
+            PROPERTIES
+                IMPORTED_LOCATION "${TTNNCPP_LIBRARY}"
+                INTERFACE_INCLUDE_DIRECTORIES "${TTNN_INCLUDE_DIRS}"
+        )
+        message(STATUS "Successfully found _ttnncpp.so at ${TTNNCPP_LIBRARY}")
+    else()
+        message(FATAL_ERROR "_ttnncpp.so not found in ${METALIUM_LIB_PATH}")
     endif()
 else()
     message(STATUS "Metalium targets already exists")
