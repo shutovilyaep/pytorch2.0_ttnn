@@ -3,8 +3,13 @@
 #include <c10/util/Optional.h>
 // #include <c10/core/ScalarType.h>
 #include <c10/util/Exception.h>
+#include <ATen/core/Tensor.h>
+#include <ATen/core/Scalar.h>
+#include "ttnn_cpp_extension/core/TtnnTensorImpl.hpp"
+#include "ttnn_cpp_extension/ops/creation.hpp"
 // #include <fmt/format.h>
-// #include <ttnn/operations/core/core.hpp>
+#include <ttnn/operations/core/core.hpp>
+#include <ttnn/operations/eltwise/binary/binary.hpp>
 
 namespace tt_eager::ext {
 
@@ -104,6 +109,31 @@ struct binary_kernel {
 
     static at::Tensor& func_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
         return binary::out_(a, b, out, TTNN_BINARY);
+    }
+};
+
+
+// Binary kernel wrapper that applies scalar alpha to the second operand and then executes the binary op
+template <auto TTNN_BINARY>
+struct binary_with_scalar_kernel {
+    static at::Tensor func(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
+        return binary::run(a, b, [&](const ttnn::Tensor& a_tile, const ttnn::Tensor& b_tile) {
+            const double alpha_value = alpha.toDouble();
+            if (alpha_value == 1.0) {
+                return TTNN_BINARY(a_tile, b_tile);
+            }
+            return TTNN_BINARY(a_tile, ttnn::multiply(b_tile, static_cast<float>(alpha_value)));
+        });
+    }
+
+    static at::Tensor& func_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
+        return binary::out_(a, b, out, [&](const ttnn::Tensor& a_tile, const ttnn::Tensor& b_tile) {
+            const double alpha_value = alpha.toDouble();
+            if (alpha_value == 1.0) {
+                return TTNN_BINARY(a_tile, b_tile);
+            }
+            return TTNN_BINARY(a_tile, ttnn::multiply(b_tile, static_cast<float>(alpha_value)));
+        });
     }
 };
 
