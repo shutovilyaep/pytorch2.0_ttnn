@@ -3,11 +3,16 @@
 #include <ATen/core/Tensor.h>
 #include <ATen/core/Scalar.h>
 
-namespace tt_eager::ops::binary {
-// Signatures matching PyTorch schemas (alpha included)
-at::Tensor ttnn_add_tensor(const at::Tensor& input, const at::Tensor& other, const c10::Scalar& alpha);
-at::Tensor& ttnn_add_out(const at::Tensor& input, const at::Tensor& other, const c10::Scalar& alpha, at::Tensor& out);
+#include <ttnn/operations/eltwise/binary/binary.hpp>
 
-at::Tensor ttnn_sub_tensor(const at::Tensor& input, const at::Tensor& other, const c10::Scalar& alpha);
-at::Tensor& ttnn_sub_out(const at::Tensor& input, const at::Tensor& other, const c10::Scalar& alpha, at::Tensor& out);
+#include "ttnn_cpp_extension/utils/eager_wrap.hpp"
+
+namespace tt_eager::ops::binary {
+
+// Kernel aliases for aten::add / aten::sub with scalar alpha handling
+using ttnn_add = tt_eager::ext::binary_with_scalar_kernel<ttnn::add>;
+using ttnn_sub = tt_eager::ext::binary_with_scalar_kernel<ttnn::subtract>;
+
 }  // namespace tt_eager::ops::binary
+
+

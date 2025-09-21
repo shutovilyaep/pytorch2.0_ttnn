@@ -8,8 +8,8 @@
 #include "ttnn_cpp_extension/core/copy.hpp"
 
 #include "ttnn_cpp_extension/ops/unary.hpp"
-#include "ttnn_cpp_extension/ops/binary.hpp"
 #include "ttnn_cpp_extension/ops/creation.hpp"
+#include "ttnn_cpp_extension/ops/binary.hpp"
 
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
@@ -535,11 +535,11 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("_copy_from", &ttnn_copy_from);
     m.impl("abs.out", &tt_eager::ops::unary::ttnn_abs_out);
 
-    m.impl("add.out", TORCH_FN(tt_eager::ops::binary::ttnn_add_out));
-    m.impl("add.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_add_tensor));
+    m.impl("add.out", TORCH_FN(tt_eager::ops::binary::ttnn_add::func_out));
+    m.impl("add.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_add::func));
 
-    m.impl("sub.out", TORCH_FN(tt_eager::ops::binary::ttnn_sub_out));
-    m.impl("sub.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_sub_tensor));
+    m.impl("sub.out", TORCH_FN(tt_eager::ops::binary::ttnn_sub::func_out));
+    m.impl("sub.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_sub::func));
 
     // TODO: to add other ops here.
     // FUTURETODO: to generate this part via CMake
