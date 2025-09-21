@@ -10,6 +10,7 @@
 #include "ttnn_cpp_extension/ops/unary.hpp"
 #include "ttnn_cpp_extension/ops/creation.hpp"
 #include "ttnn_cpp_extension/ops/binary.hpp"
+#include "ttnn_cpp_extension/ops/reduction.hpp"
 
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
@@ -292,6 +293,70 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("logaddexp2.out", TORCH_FN(tt_eager::ops::binary::ttnn_logaddexp2::invoke_out));
     m.impl("logaddexp2", TORCH_FN(tt_eager::ops::binary::ttnn_logaddexp2::invoke));
 
+    // =========================
+    // Reductions
+    // =========================
+    // Sum
+    //  m.impl("sum", CppFunction::makeFallthrough());
+    m.impl("sum", TORCH_FN(tt_eager::ops::reduction::ttnn_sum::invoke));
+    //  m.impl("sum.DimnameList_out", CppFunction::makeFallthrough());
+    //  m.impl("sum.IntList_out", CppFunction::makeFallthrough());
+    //  m.impl("sum.dim_DimnameList", CppFunction::makeFallthrough());
+    //  m.impl("sum.dim_IntList", CppFunction::makeFallthrough());
+
+    // Mean
+    //  m.impl("mean", CppFunction::makeFallthrough());
+    m.impl("mean", TORCH_FN(tt_eager::ops::reduction::ttnn_mean::invoke));
+    //  m.impl("mean.dim", CppFunction::makeFallthrough());
+    //  m.impl("mean.names_dim", CppFunction::makeFallthrough());
+    //  m.impl("mean.names_out", CppFunction::makeFallthrough());
+    //  m.impl("mean.out", CppFunction::makeFallthrough());
+
+    // Max / Min
+    //  m.impl("max", CppFunction::makeFallthrough());
+    m.impl("max", TORCH_FN(tt_eager::ops::reduction::ttnn_max_reduce::invoke));
+    //  m.impl("max.dim", CppFunction::makeFallthrough());
+    //  m.impl("max.dim_max", CppFunction::makeFallthrough());
+    //  m.impl("max.names_dim", CppFunction::makeFallthrough());
+    //  m.impl("max.names_dim_max", CppFunction::makeFallthrough());
+    //  m.impl("min", CppFunction::makeFallthrough());
+    m.impl("min", TORCH_FN(tt_eager::ops::reduction::ttnn_min_reduce::invoke));
+    //  m.impl("min.dim", CppFunction::makeFallthrough());
+    //  m.impl("min.dim_min", CppFunction::makeFallthrough());
+    //  m.impl("min.names_dim", CppFunction::makeFallthrough());
+    //  m.impl("min.names_dim_min", CppFunction::makeFallthrough());
+
+    // Std / Var
+    //  m.impl("std", CppFunction::makeFallthrough());
+    m.impl("std", TORCH_FN(tt_eager::ops::reduction::ttnn_std_reduce::invoke));
+    //  m.impl("std.dim", CppFunction::makeFallthrough());
+    //  m.impl("std.names_dim", CppFunction::makeFallthrough());
+    //  m.impl("std.names_out", CppFunction::makeFallthrough());
+    //  m.impl("std.out", CppFunction::makeFallthrough());
+    //  m.impl("std.correction", CppFunction::makeFallthrough());
+    //  m.impl("std.correction_out", CppFunction::makeFallthrough());
+    //  m.impl("std.correction_names", CppFunction::makeFallthrough());
+    //  m.impl("std.correction_names_out", CppFunction::makeFallthrough());
+    //  m.impl("std_mean", CppFunction::makeFallthrough());
+    //  m.impl("std_mean.dim", CppFunction::makeFallthrough());
+    //  m.impl("std_mean.names_dim", CppFunction::makeFallthrough());
+    //  m.impl("std_mean.correction", CppFunction::makeFallthrough());
+    //  m.impl("std_mean.correction_names", CppFunction::makeFallthrough());
+    //  m.impl("var", CppFunction::makeFallthrough());
+    m.impl("var", TORCH_FN(tt_eager::ops::reduction::ttnn_var_reduce::invoke));
+    //  m.impl("var.dim", CppFunction::makeFallthrough());
+    //  m.impl("var.names_dim", CppFunction::makeFallthrough());
+    //  m.impl("var.names_out", CppFunction::makeFallthrough());
+    //  m.impl("var.out", CppFunction::makeFallthrough());
+    //  m.impl("var.correction", CppFunction::makeFallthrough());
+    //  m.impl("var.correction_out", CppFunction::makeFallthrough());
+    //  m.impl("var.correction_names", CppFunction::makeFallthrough());
+    //  m.impl("var.correction_names_out", CppFunction::makeFallthrough());
+    //  m.impl("var_mean", CppFunction::makeFallthrough());
+    //  m.impl("var_mean.dim", CppFunction::makeFallthrough());
+    //  m.impl("var_mean.names_dim", CppFunction::makeFallthrough());
+    //  m.impl("var_mean.correction", CppFunction::makeFallthrough());
+    //  m.impl("var_mean.correction_names", CppFunction::makeFallthrough());
     
     // Core tensor ops (shape/view/manipulation)
     //  m.impl("alias", CppFunction::makeFallthrough());
@@ -391,69 +456,26 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     //  m.impl("logsumexp.names", CppFunction::makeFallthrough());
     //  m.impl("logsumexp.names_out", CppFunction::makeFallthrough());
     //  m.impl("logsumexp.out", CppFunction::makeFallthrough());
-    //  m.impl("max", CppFunction::makeFallthrough());
-    //  m.impl("max.dim", CppFunction::makeFallthrough());
-    //  m.impl("max.dim_max", CppFunction::makeFallthrough());
-    //  m.impl("max.names_dim", CppFunction::makeFallthrough());
-    //  m.impl("max.names_dim_max", CppFunction::makeFallthrough());
-    //  m.impl("mean", CppFunction::makeFallthrough());
-    //  m.impl("mean.dim", CppFunction::makeFallthrough());
-    //  m.impl("mean.names_dim", CppFunction::makeFallthrough());
-    //  m.impl("mean.names_out", CppFunction::makeFallthrough());
-    //  m.impl("mean.out", CppFunction::makeFallthrough());
+    
+    
     //  m.impl("median", CppFunction::makeFallthrough());
     //  m.impl("median.dim", CppFunction::makeFallthrough());
     //  m.impl("median.dim_values", CppFunction::makeFallthrough());
     //  m.impl("median.names_dim", CppFunction::makeFallthrough());
     //  m.impl("median.names_dim_values", CppFunction::makeFallthrough());
-    //  m.impl("min", CppFunction::makeFallthrough());
-    //  m.impl("min.dim", CppFunction::makeFallthrough());
-    //  m.impl("min.dim_min", CppFunction::makeFallthrough());
-    //  m.impl("min.names_dim", CppFunction::makeFallthrough());
-    //  m.impl("min.names_dim_min", CppFunction::makeFallthrough());
+    
     //  m.impl("prod", CppFunction::makeFallthrough());
     //  m.impl("prod.Dimname_out", CppFunction::makeFallthrough());
     //  m.impl("prod.dim_Dimname", CppFunction::makeFallthrough());
     //  m.impl("prod.dim_int", CppFunction::makeFallthrough());
     //  m.impl("prod.int_out", CppFunction::makeFallthrough());
-    //  m.impl("sum", CppFunction::makeFallthrough());
-    //  m.impl("sum.DimnameList_out", CppFunction::makeFallthrough());
-    //  m.impl("sum.IntList_out", CppFunction::makeFallthrough());
-    //  m.impl("sum.dim_DimnameList", CppFunction::makeFallthrough());
-    //  m.impl("sum.dim_IntList", CppFunction::makeFallthrough());
+    
 
     // Probability / statistics
     //  m.impl("polygamma", CppFunction::makeFallthrough());
     //  m.impl("polygamma.out", CppFunction::makeFallthrough());
     //  m.impl("polygamma_", CppFunction::makeFallthrough());
-    //  m.impl("std", CppFunction::makeFallthrough());
-    //  m.impl("std.dim", CppFunction::makeFallthrough());
-    //  m.impl("std.names_dim", CppFunction::makeFallthrough());
-    //  m.impl("std.names_out", CppFunction::makeFallthrough());
-    //  m.impl("std.out", CppFunction::makeFallthrough());
-    //  m.impl("std.correction", CppFunction::makeFallthrough());
-    //  m.impl("std.correction_out", CppFunction::makeFallthrough());
-    //  m.impl("std.correction_names", CppFunction::makeFallthrough());
-    //  m.impl("std.correction_names_out", CppFunction::makeFallthrough());
-    //  m.impl("std_mean", CppFunction::makeFallthrough());
-    //  m.impl("std_mean.dim", CppFunction::makeFallthrough());
-    //  m.impl("std_mean.names_dim", CppFunction::makeFallthrough());
-    //  m.impl("std_mean.correction", CppFunction::makeFallthrough());
-    //  m.impl("std_mean.correction_names", CppFunction::makeFallthrough());
-    //  m.impl("var", CppFunction::makeFallthrough());
-    //  m.impl("var.dim", CppFunction::makeFallthrough());
-    //  m.impl("var.names_dim", CppFunction::makeFallthrough());
-    //  m.impl("var.names_out", CppFunction::makeFallthrough());
-    //  m.impl("var.out", CppFunction::makeFallthrough());
-    //  m.impl("var.correction", CppFunction::makeFallthrough());
-    //  m.impl("var.correction_out", CppFunction::makeFallthrough());
-    //  m.impl("var.correction_names", CppFunction::makeFallthrough());
-    //  m.impl("var.correction_names_out", CppFunction::makeFallthrough());
-    //  m.impl("var_mean", CppFunction::makeFallthrough());
-    //  m.impl("var_mean.dim", CppFunction::makeFallthrough());
-    //  m.impl("var_mean.names_dim", CppFunction::makeFallthrough());
-    //  m.impl("var_mean.correction", CppFunction::makeFallthrough());
-    //  m.impl("var_mean.correction_names", CppFunction::makeFallthrough());
+    
 
     // Random
     //  m.impl("bernoulli", CppFunction::makeFallthrough());

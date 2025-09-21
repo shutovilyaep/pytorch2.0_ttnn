@@ -7,6 +7,8 @@
 
 #include <concepts>                // std::same_as, std::convertible_to
 #include <type_traits>             // std::remove_cvref_t
+#include <optional>
+#include <variant>
 #include <c10/util/Optional.h>
 // #include <c10/core/ScalarType.h>
 #include <c10/util/Exception.h>
@@ -18,6 +20,7 @@
 // #include <fmt/format.h>
 #include <ttnn/operations/core/core.hpp>
 #include <ttnn/operations/eltwise/binary/binary.hpp>
+#include <ttnn/tensor/tensor.hpp>
 
 namespace tt_eager::ext {
 
@@ -195,6 +198,52 @@ struct unary_wrapper {
 
     static at::Tensor& invoke_out(const at::Tensor& a, at::Tensor& out) {
         return unary_logic<TTNN_UNARY>::invoke_out(a, out);
+    }
+};
+
+//===========================
+//   Reduction Wrapper
+//===========================
+
+template <auto TTNN_REDUCTION>
+struct reduction_wrapper {
+    static at::Tensor invoke(const at::Tensor& a) {
+        at::Tensor out = make_empty_like_tt(a);
+        invoke_out(a, out);
+        return out;
+    }
+
+    static at::Tensor& invoke_out(const at::Tensor& a, at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor result = TTNN_REDUCTION(
+            a_tile,
+            std::nullopt /*dim_arg*/,
+            false /*keepdim*/, std::nullopt /*mem cfg*/, std::nullopt /*kernel cfg*/);
+        return write_from_ttnn(out, a, result);
+    }
+
+    static at::Tensor invoke_dim_IntList(const at::Tensor& a, at::IntArrayRef dims, bool keepdim = false) {
+        at::Tensor out = make_empty_like_tt(a);
+        invoke_out_dim_IntList(a, dims, keepdim, out);
+        return out;
+    }
+
+    static at::Tensor& invoke_out_dim_IntList(
+        const at::Tensor& a, at::IntArrayRef dims, bool keepdim, at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+
+        ttnn::SmallVector<int> reduce_dims;
+        reduce_dims.reserve(dims.size());
+        for (auto d : dims) {
+            reduce_dims.push_back(static_cast<int>(d));
+        }
+
+        std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_arg(
+            std::in_place, std::in_place_index<1>, reduce_dims);
+
+        ttnn::Tensor result = TTNN_REDUCTION(
+            a_tile, dim_arg, keepdim, std::nullopt /*mem cfg*/, std::nullopt /*kernel cfg*/);
+        return write_from_ttnn(out, a, result);
     }
 };
 
