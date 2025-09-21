@@ -541,6 +541,50 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("sub.out", TORCH_FN(tt_eager::ops::binary::ttnn_sub::invoke_out));
     m.impl("sub.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_sub::invoke));
 
+    // Multiply / Divide
+    m.impl("mul.out", TORCH_FN(tt_eager::ops::binary::ttnn_multiply::invoke_out));
+    m.impl("mul.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_multiply::invoke));
+
+    m.impl("div.out", TORCH_FN(tt_eager::ops::binary::ttnn_divide::invoke_out));
+    m.impl("div.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_divide::invoke));
+
+    // Logical ops
+    m.impl("logical_and.out", TORCH_FN(tt_eager::ops::binary::ttnn_logical_and::invoke_out));
+    m.impl("logical_and", TORCH_FN(tt_eager::ops::binary::ttnn_logical_and::invoke));
+
+    m.impl("logical_or.out", TORCH_FN(tt_eager::ops::binary::ttnn_logical_or::invoke_out));
+    m.impl("logical_or", TORCH_FN(tt_eager::ops::binary::ttnn_logical_or::invoke));
+
+    m.impl("logical_xor.out", TORCH_FN(tt_eager::ops::binary::ttnn_logical_xor::invoke_out));
+    m.impl("logical_xor", TORCH_FN(tt_eager::ops::binary::ttnn_logical_xor::invoke));
+
+    // Relational ops (Tensor versions only)
+    m.impl("eq.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_eq::invoke_out));
+    m.impl("eq.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_eq::invoke));
+
+    m.impl("ne.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_ne::invoke_out));
+    m.impl("ne.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_ne::invoke));
+
+    m.impl("ge.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_ge::invoke_out));
+    m.impl("ge.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_ge::invoke));
+
+    m.impl("gt.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_gt::invoke_out));
+    m.impl("gt.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_gt::invoke));
+
+    m.impl("le.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_le::invoke_out));
+    m.impl("le.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_le::invoke));
+
+    m.impl("lt.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_lt::invoke_out));
+    m.impl("lt.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_lt::invoke));
+
+    // logaddexp
+    m.impl("logaddexp.out", TORCH_FN(tt_eager::ops::binary::ttnn_logaddexp::invoke_out));
+    m.impl("logaddexp", TORCH_FN(tt_eager::ops::binary::ttnn_logaddexp::invoke));
+
+    // logaddexp2
+    m.impl("logaddexp2.out", TORCH_FN(tt_eager::ops::binary::ttnn_logaddexp2::invoke_out));
+    m.impl("logaddexp2", TORCH_FN(tt_eager::ops::binary::ttnn_logaddexp2::invoke));
+
     // TODO: to add other ops here.
     // FUTURETODO: to generate this part via CMake
 }
