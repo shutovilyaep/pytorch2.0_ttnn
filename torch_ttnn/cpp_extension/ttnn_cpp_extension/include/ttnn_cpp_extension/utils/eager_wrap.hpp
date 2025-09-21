@@ -58,14 +58,14 @@ inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, cons
 
 // Invokers
 struct binary {
-    template <class Op>
+    template <TTNNBinary Op>
     static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, Op&& op) {
         at::Tensor out = make_empty_like_tt(a);
         invoke_out(a, b, out, std::forward<Op>(op));
         return out;
     }
 
-    template <class Op>
+    template <TTNNBinary Op>
     static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out, Op&& op) {
         ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a"); // TODO: viaraible names are not correct, placeholders
         ttnn::Tensor b_tile = to_ttnn_tile_checked(b, "b");
