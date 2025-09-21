@@ -15,17 +15,25 @@ namespace tt_eager::ops::binary {
 // torch_ttnn/cpp_extension/ttnn_cpp_extension/src/open_registration_extension.cpp
 using add_k = tt_eager::ext::binary_kernel<ttnn::add>;
 
-inline at::Tensor ttnn_add_tensor(const at::Tensor& a, const at::Tensor& b) { return add_k::func(a, b); }
+at::Tensor ttnn_add_tensor(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
+    (void)alpha;
+    return add_k::func(a, b);
+}
 
-inline at::Tensor& ttnn_add_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
+at::Tensor& ttnn_add_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
+    (void)alpha;  // alpha not used in TT backend path currently
     return add_k::func_out(a, b, out);
 }
 
 using sub_k = tt_eager::ext::binary_kernel<ttnn::subtract>;
 
-inline at::Tensor ttnn_sub_tensor(const at::Tensor& a, const at::Tensor& b) { return sub_k::func(a, b); }
+at::Tensor ttnn_sub_tensor(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
+    (void)alpha;
+    return sub_k::func(a, b);
+}
 
-inline at::Tensor& ttnn_sub_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
+at::Tensor& ttnn_sub_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
+    (void)alpha;
     return sub_k::func_out(a, b, out);
 }
 
