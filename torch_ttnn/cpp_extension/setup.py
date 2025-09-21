@@ -56,7 +56,8 @@ class CMakeBuild(build_ext):
         cmake_args.extend(ext.cmake_args)
 
         # Build the extension
-        subprocess.check_call(["cmake", ext.source_dir] + cmake_args, cwd=build_dir)
+        source_dir = os.environ.get("EXT_SOURCE_DIR", ext.source_dir)
+        subprocess.check_call(["cmake", source_dir] + cmake_args, cwd=build_dir)
         subprocess.check_call(["cmake", "--build", ".", "--parallel"], cwd=build_dir)
 
         # Copy the extension to the correct location
