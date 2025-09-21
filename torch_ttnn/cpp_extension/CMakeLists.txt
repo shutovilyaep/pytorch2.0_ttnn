@@ -169,11 +169,14 @@ endif()
 target_link_libraries(ttnn_device_extension PUBLIC
     Metalium::Metal
     Metalium::TTNN
-    Metalium::TTNN_CPP
     fmt::fmt-header-only
     spdlog::spdlog_header_only
     Reflect::Reflect
 )
+
+if(TARGET Metalium::TTNN_CPP)
+    target_link_libraries(ttnn_device_extension PUBLIC Metalium::TTNN_CPP)
+endif()
 
 target_link_libraries(ttnn_device_extension PUBLIC 
     ${TORCH_LIBRARIES} 
