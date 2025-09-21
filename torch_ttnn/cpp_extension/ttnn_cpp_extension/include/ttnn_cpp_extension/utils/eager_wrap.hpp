@@ -137,7 +137,7 @@ struct binary_wrapper {
 
 template <auto TTNN_BINARY>
     requires TTNNBinaryFn<TTNN_BINARY>
-struct binary_with_scalar_wrapper {
+struct binary_b_scaled_wrapper {
     static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
         const double alpha_value = alpha.toDouble();
         if (alpha_value == 1.0) {
