@@ -9,6 +9,8 @@ export CARGO_HOME="${HOME}/.cargo"; export RUSTUP_HOME="${HOME}/.rustup"; export
 export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONFAULTHANDLER=1
 mkdir -p "${CARGO_HOME}" "${RUSTUP_HOME}"
+# Hardcoded host workspace mapping (used to rewrite compile_commands for host IDE)
+HOST_WORKSPACE="/home/kilka/Projects/ML/TT-NN/dev.docker/workspace"
 pip install -e . --use-pep517 --no-cache-dir --no-build-isolation
 
 popd >/dev/null
@@ -23,7 +25,15 @@ fi
 
 # Export compile_commands.json to workspace root for editor tooling
 if [ -f /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/build/temp.linux-x86_64-3.10/ttnn_device_extension/compile_commands.json ]; then
-  cp /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/build/temp.linux-x86_64-3.10/ttnn_device_extension/compile_commands.json /workspace/compile_commands.json
+  cp /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/build/temp.linux-x86_64-3.10/ttnn_device_extension/compile_commands.json /workspace/pytorch2.0_ttnn/compile_commands.json
+  # Optionally emit host-adjusted compile_commands.json if HOST_WORKSPACE is provided
+  if [ -n "${HOST_WORKSPACE:-}" ]; then
+    python3 /workspace/pytorch2.0_ttnn/scripts/rewrite_compile_commands.py \
+      /workspace/pytorch2.0_ttnn/compile_commands.json \
+      /workspace/pytorch2.0_ttnn/compile_commands.host.json \
+      /workspace \
+      ${HOST_WORKSPACE}
+  fi
 fi
 
 popd >/dev/null
