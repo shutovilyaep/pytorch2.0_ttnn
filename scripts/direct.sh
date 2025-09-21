@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 # Added pre-build steps with venv recreation for clean build
 pushd /workspace/pytorch2.0_ttnn/ >/dev/null
 source /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/third-party/tt-metal/python_env/bin/activate
@@ -11,6 +13,9 @@ export PYTHONFAULTHANDLER=1
 mkdir -p "${CARGO_HOME}" "${RUSTUP_HOME}"
 # Hardcoded host workspace mapping (used to rewrite compile_commands for host IDE)
 HOST_WORKSPACE="/home/kilka/Projects/ML/TT-NN/dev.docker/workspace"
+# Clean previous extension build artifacts to avoid stale CMake cache
+rm -rf /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/build || true
+
 pip install -e . --use-pep517 --no-cache-dir --no-build-isolation
 
 popd >/dev/null
