@@ -535,11 +535,11 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("_copy_from", &ttnn_copy_from);
     m.impl("abs.out", &tt_eager::ops::unary::ttnn_abs_out);
 
-    m.impl("add.out", TORCH_FN(tt_eager::ops::binary::ttnn_add::func_out));
-    m.impl("add.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_add::func));
+    m.impl("add.out", TORCH_FN(tt_eager::ops::binary::add::invoke_out));
+    m.impl("add.Tensor", TORCH_FN(tt_eager::ops::binary::add::invoke));
 
-    m.impl("sub.out", TORCH_FN(tt_eager::ops::binary::ttnn_sub::func_out));
-    m.impl("sub.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_sub::func));
+    m.impl("sub.out", TORCH_FN(tt_eager::ops::binary::sub::invoke_out));
+    m.impl("sub.Tensor", TORCH_FN(tt_eager::ops::binary::sub::invoke));
 
     // TODO: to add other ops here.
     // FUTURETODO: to generate this part via CMake
