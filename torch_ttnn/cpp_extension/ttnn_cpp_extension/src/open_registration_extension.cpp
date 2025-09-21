@@ -11,6 +11,7 @@
 #include "ttnn_cpp_extension/ops/creation.hpp"
 #include "ttnn_cpp_extension/ops/binary.hpp"
 #include "ttnn_cpp_extension/ops/reduction.hpp"
+#include "ttnn_cpp_extension/ops/random.hpp"
 
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
@@ -479,6 +480,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 
     // Random
     //  m.impl("bernoulli", CppFunction::makeFallthrough());
+    m.impl("bernoulli", TORCH_FN(tt_eager::ops::random::ttnn_bernoulli::invoke));
     //  m.impl("bernoulli.out", CppFunction::makeFallthrough());
     //  m.impl("bernoulli_.Tensor", CppFunction::makeFallthrough());
     //  m.impl("bernoulli_.float", CppFunction::makeFallthrough());
