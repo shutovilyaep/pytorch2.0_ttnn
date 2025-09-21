@@ -14,19 +14,15 @@
 namespace tt_eager::ext {
 
 
-/* TODO: Switch to concepts
-
 template <class F>
-concept TTNNBinary = requires(F f, const at::Tensor& a, const at::Tensor& b) {
+concept TTNNBinary = requires(F f, const ttnn::Tensor& a, const ttnn::Tensor& b) {
     { f(a, b) } -> std::same_as<ttnn::Tensor>;
 };
 
 template <class F>
-concept TTNNUnary = requires(F f, const at::Tensor& a) {
+concept TTNNUnary = requires(F f, const ttnn::Tensor& a) {
     { f(a) } -> std::same_as<ttnn::Tensor>;
 };
-
-*/
 
 // Helper functions
 inline ttnn::Tensor to_ttnn_tile_checked(const at::Tensor& t, const char* arg_name) {
@@ -62,15 +58,15 @@ inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, cons
 
 // Invokers
 struct binary {
-    template <class TNNBinary>
-    static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, TNNBinary&& op) {
+    template <class Op>
+    static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, Op&& op) {
         at::Tensor out = make_empty_like_tt(a);
-        invoke_out_(a, b, out, std::forward<TNNBinary>(op));
+        invoke_out(a, b, out, std::forward<Op>(op));
         return out;
     }
 
-    template <class TNNBinary>
-    static at::Tensor& invoke_out_(const at::Tensor& a, const at::Tensor& b, at::Tensor& out, TNNBinary&& op) {
+    template <class Op>
+    static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out, Op&& op) {
         ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a"); // TODO: viaraible names are not correct, placeholders
         ttnn::Tensor b_tile = to_ttnn_tile_checked(b, "b");
         auto result = op(a_tile, b_tile);
@@ -100,19 +96,22 @@ struct binary {
 
 };  // struct binary
 
+// Wrappers (these are not kernels, just thin wrappers over the invoker)
 template <auto TTNN_BINARY>
+    requires TTNNBinary<decltype(TTNN_BINARY)>
 struct binary_wrapper {
     static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
         return binary::invoke(a, b, TTNN_BINARY);
     }
 
     static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
-        return binary::invoke_out_(a, b, out, TTNN_BINARY);
+        return binary::invoke_out(a, b, out, TTNN_BINARY);
     }
 };
 
 // Binary wrapper that applies scalar alpha to the second operand and then executes the binary op
 template <auto TTNN_BINARY>
+    requires TTNNBinary<decltype(TTNN_BINARY)>
 struct binary_with_scalar_wrapper {
     static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
         return binary::invoke(a, b, [&](const ttnn::Tensor& a_tile, const ttnn::Tensor& b_tile) {
@@ -125,7 +124,7 @@ struct binary_with_scalar_wrapper {
     }
 
     static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
-        return binary::invoke_out_(a, b, out, [&](const ttnn::Tensor& a_tile, const ttnn::Tensor& b_tile) {
+        return binary::invoke_out(a, b, out, [&](const ttnn::Tensor& a_tile, const ttnn::Tensor& b_tile) {
             const double alpha_value = alpha.toDouble();
             if (alpha_value == 1.0) {
                 return TTNN_BINARY(a_tile, b_tile);

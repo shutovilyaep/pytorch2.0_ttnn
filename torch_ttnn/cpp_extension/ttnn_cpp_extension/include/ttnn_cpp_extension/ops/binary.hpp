@@ -10,8 +10,8 @@
 namespace tt_eager::ops::binary {
 
 // Wrapper aliases for aten::add / aten::sub with scalar alpha handling
-using add = tt_eager::ext::binary_with_scalar_wrapper<ttnn::add>;
-using sub = tt_eager::ext::binary_with_scalar_wrapper<ttnn::subtract>;
+using ttnn_add = tt_eager::ext::binary_with_scalar_wrapper<ttnn::add>;
+using ttnn_sub = tt_eager::ext::binary_with_scalar_wrapper<ttnn::subtract>;
 
 }  // namespace tt_eager::ops::binary
 
