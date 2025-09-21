@@ -1,10 +1,17 @@
 #pragma once
 
+// PR-ready: clean C++20 wrappers around TTNN binary ops for PyTorch dispatch
+// - Uses concepts to validate op signatures at compile time
+// - Avoids passing raw function pointers for TTNN ops; binds ops as NTTPs
+// - Provides out/inplace-style invokers compatible with aten schema
+
+#include <concepts>                // std::same_as, std::convertible_to
 #include <c10/util/Optional.h>
 // #include <c10/core/ScalarType.h>
 #include <c10/util/Exception.h>
 #include <ATen/core/Tensor.h>
 #include <ATen/core/Scalar.h>
+
 #include "ttnn_cpp_extension/core/TtnnTensorImpl.hpp"
 #include "ttnn_cpp_extension/ops/creation.hpp"
 // #include <fmt/format.h>
@@ -14,14 +21,14 @@
 namespace tt_eager::ext {
 
 
-template <class F>
-concept TTNNBinary = requires(F f, const ttnn::Tensor& a, const ttnn::Tensor& b) {
-    { f(a, b) } -> std::same_as<ttnn::Tensor>;
-};
+//===========================
+//   Concepts (C++20)
+//===========================
 
-template <class F>
-concept TTNNUnary = requires(F f, const ttnn::Tensor& a) {
-    { f(a) } -> std::same_as<ttnn::Tensor>;
+// Non-type template parameter variant for compile-time bound TTNN ops
+template <auto Op>
+concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
+    { Op(a, b) } -> std::convertible_to<ttnn::Tensor>;
 };
 
 // Helper functions
@@ -57,80 +64,73 @@ inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, cons
 }
 
 // Invokers
+//===========================
+//   Invoker
+//===========================
+
 struct binary {
-    template <TTNNBinary Op>
-    static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, Op&& op) {
+    // Compile-time bound operation: no runtime op parameter is passed.
+    template <auto Op>
+        requires TTNNBinaryFn<Op>
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
         at::Tensor out = make_empty_like_tt(a);
-        invoke_out(a, b, out, std::forward<Op>(op));
+        invoke_out<Op>(a, b, out);
         return out;
     }
 
-    template <TTNNBinary Op>
-    static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out, Op&& op) {
-        ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a"); // TODO: viaraible names are not correct, placeholders
-        ttnn::Tensor b_tile = to_ttnn_tile_checked(b, "b");
-        auto result = op(a_tile, b_tile);
-
-        return write_from_ttnn(out, a, result);
-    }
-
-
-/* Concepts version ~:
-    template <TTNNBinary F>
-    static at::Tensor run(const at::Tensor& a, const at::Tensor& b, F&& op) {
-        at::Tensor out = make_empty_like_tt(a);
-        out_(a, b, out, std::forward<F>(op));
-        return out;
-    }
-
-    template <TTNNBinary F>
-    static at::Tensor& out_(const at::Tensor& a, const at::Tensor& b, at::Tensor& out, F&& op) {
+    template <auto Op>
+        requires TTNNBinaryFn<Op>
+    static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
         ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a");
         ttnn::Tensor b_tile = to_ttnn_tile_checked(b, "b");
-        auto result = op(a_tile, b_tile);
-
+        ttnn::Tensor result = Op(a_tile, b_tile);
         return write_from_ttnn(out, a, result);
     }
-*/
-
-
 };  // struct binary
 
-// Wrappers (these are not kernels, just thin wrappers over the invoker)
+// Wrappers
+//===========================
+//   Wrappers
+//===========================
+
+// Thin wrapper binding a compile-time TTNN op (function or stateless lambda) without storing a pointer
+// Example: binary_wrapper<ttnn::add>::invoke(a, b)
+
 template <auto TTNN_BINARY>
-    requires TTNNBinary<decltype(TTNN_BINARY)>
+    requires TTNNBinaryFn<TTNN_BINARY>
 struct binary_wrapper {
     static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
-        return binary::invoke(a, b, TTNN_BINARY);
+        return binary::invoke<TTNN_BINARY>(a, b);
     }
 
     static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
-        return binary::invoke_out(a, b, out, TTNN_BINARY);
+        return binary::invoke_out<TTNN_BINARY>(a, b, out);
     }
 };
 
 // Binary wrapper that applies scalar alpha to the second operand and then executes the binary op
+// Wrapper that applies scalar alpha to the second operand before TTNN_BINARY
+// Matches aten::add/sub semantics: out = a (op) (alpha * b)
+
 template <auto TTNN_BINARY>
-    requires TTNNBinary<decltype(TTNN_BINARY)>
+    requires TTNNBinaryFn<TTNN_BINARY>
 struct binary_with_scalar_wrapper {
     static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
-        return binary::invoke(a, b, [&](const ttnn::Tensor& a_tile, const ttnn::Tensor& b_tile) {
-            const double alpha_value = alpha.toDouble();
-            if (alpha_value == 1.0) {
-                return TTNN_BINARY(a_tile, b_tile);
-            }
-            return TTNN_BINARY(a_tile, ttnn::multiply(b_tile, static_cast<float>(alpha_value)));
-        });
+        at::Tensor out = make_empty_like_tt(a);
+        invoke_out(a, b, alpha, out);
+        return out;
     }
 
     static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
-        return binary::invoke_out(a, b, out, [&](const ttnn::Tensor& a_tile, const ttnn::Tensor& b_tile) {
-            const double alpha_value = alpha.toDouble();
-            if (alpha_value == 1.0) {
-                return TTNN_BINARY(a_tile, b_tile);
-            }
-            return TTNN_BINARY(a_tile, ttnn::multiply(b_tile, static_cast<float>(alpha_value)));
-        });
+        ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a");
+        ttnn::Tensor b_tile = to_ttnn_tile_checked(b, "b");
+
+        const double alpha_value = alpha.toDouble();
+        const bool is_identity = alpha_value == 1.0;
+        const ttnn::Tensor& rhs = is_identity ? b_tile : ttnn::multiply(b_tile, static_cast<float>(alpha_value));
+
+        ttnn::Tensor result = TTNN_BINARY(a_tile, rhs);
+        return write_from_ttnn(out, a, result);
     }
 };
 
