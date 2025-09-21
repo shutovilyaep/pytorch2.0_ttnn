@@ -481,7 +481,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // Random
     //  m.impl("bernoulli", CppFunction::makeFallthrough());
     m.impl("bernoulli", TORCH_FN(tt_eager::ops::random::ttnn_bernoulli::invoke));
-    //  m.impl("bernoulli.out", CppFunction::makeFallthrough());
+    m.impl("bernoulli.out", TORCH_FN(tt_eager::ops::random::ttnn_bernoulli::invoke_out));
     //  m.impl("bernoulli_.Tensor", CppFunction::makeFallthrough());
     //  m.impl("bernoulli_.float", CppFunction::makeFallthrough());
     //  m.impl("cauchy_", CppFunction::makeFallthrough());
