@@ -10,7 +10,7 @@
 #include <optional>
 #include <variant>
 #include <c10/util/Optional.h>
-// #include <c10/core/ScalarType.h>
+#include <c10/core/ScalarType.h>
 #include <c10/util/Exception.h>
 #include <ATen/core/Tensor.h>
 #include <ATen/core/Scalar.h>
@@ -80,6 +80,18 @@ inline at::Tensor make_empty_like_tt(const at::Tensor& t) {
         c10::optional<at::Device>(t.device()),
         c10::nullopt  // pin_memory
     );
+}
+
+inline at::Tensor make_empty_like_tt(const at::Tensor& t, c10::optional<at::ScalarType> dtype_override) {
+    c10::optional<at::ScalarType> dtype_opt = dtype_override.has_value()
+        ? c10::optional<at::ScalarType>(*dtype_override)
+        : c10::optional<at::ScalarType>(t.scalar_type());
+    return tt_eager::ops::create::custom_empty_memory_format(
+        t.sizes(),
+        dtype_opt,
+        c10::nullopt,
+        c10::optional<at::Device>(t.device()),
+        c10::nullopt);
 }
 
 // TODO: parameter order might be confusing, to think about
@@ -220,6 +232,25 @@ struct reduction_wrapper {
             std::nullopt /*dim_arg*/,
             false /*keepdim*/, std::nullopt /*mem cfg*/, std::nullopt /*kernel cfg*/);
         return write_from_ttnn(out, a, result);
+    }
+
+    // Matches schemas like: aten::std(Tensor self, bool unbiased=True) and aten::var(Tensor self, bool unbiased=True)
+    static at::Tensor invoke_unbiased(const at::Tensor& a, bool unbiased) {
+        at::Tensor out = make_empty_like_tt(a);
+        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor result = TTNN_REDUCTION(
+            a_tile,
+            std::nullopt /*dim_arg*/,
+            false /*keepdim*/, std::nullopt /*mem cfg*/, std::nullopt /*kernel cfg*/,
+            1.0f /*scalar*/, static_cast<bool>(unbiased) /*correction*/);
+        return write_from_ttnn(out, a, result);
+    }
+
+    // Matches schemas like: aten::sum(Tensor self, *, ScalarType? dtype=None)
+    static at::Tensor invoke_dtype(const at::Tensor& a, c10::optional<at::ScalarType> dtype) {
+        at::Tensor out = make_empty_like_tt(a, dtype);
+        invoke_out(a, out);
+        return out;
     }
 
     static at::Tensor invoke_dim_IntList(const at::Tensor& a, at::IntArrayRef dims, bool keepdim = false) {

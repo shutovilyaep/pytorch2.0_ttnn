@@ -298,7 +298,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // =========================
     // Sum
     //  m.impl("sum", CppFunction::makeFallthrough());
-    m.impl("sum", TORCH_FN(tt_eager::ops::reduction::ttnn_sum::invoke));
+    m.impl("sum", TORCH_FN(tt_eager::ops::reduction::ttnn_sum::invoke_dtype));
     //  m.impl("sum.DimnameList_out", CppFunction::makeFallthrough());
     //  m.impl("sum.IntList_out", CppFunction::makeFallthrough());
     //  m.impl("sum.dim_DimnameList", CppFunction::makeFallthrough());
@@ -306,7 +306,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 
     // Mean
     //  m.impl("mean", CppFunction::makeFallthrough());
-    m.impl("mean", TORCH_FN(tt_eager::ops::reduction::ttnn_mean::invoke));
+    m.impl("mean", TORCH_FN(tt_eager::ops::reduction::ttnn_mean::invoke_dtype));
     //  m.impl("mean.dim", CppFunction::makeFallthrough());
     //  m.impl("mean.names_dim", CppFunction::makeFallthrough());
     //  m.impl("mean.names_out", CppFunction::makeFallthrough());
@@ -328,7 +328,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 
     // Std / Var
     //  m.impl("std", CppFunction::makeFallthrough());
-    m.impl("std", TORCH_FN(tt_eager::ops::reduction::ttnn_std_reduce::invoke));
+    m.impl("std", TORCH_FN(tt_eager::ops::reduction::ttnn_std_reduce::invoke_unbiased));
     //  m.impl("std.dim", CppFunction::makeFallthrough());
     //  m.impl("std.names_dim", CppFunction::makeFallthrough());
     //  m.impl("std.names_out", CppFunction::makeFallthrough());
@@ -343,7 +343,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     //  m.impl("std_mean.correction", CppFunction::makeFallthrough());
     //  m.impl("std_mean.correction_names", CppFunction::makeFallthrough());
     //  m.impl("var", CppFunction::makeFallthrough());
-    m.impl("var", TORCH_FN(tt_eager::ops::reduction::ttnn_var_reduce::invoke));
+    m.impl("var", TORCH_FN(tt_eager::ops::reduction::ttnn_var_reduce::invoke_unbiased));
     //  m.impl("var.dim", CppFunction::makeFallthrough());
     //  m.impl("var.names_dim", CppFunction::makeFallthrough());
     //  m.impl("var.names_out", CppFunction::makeFallthrough());
