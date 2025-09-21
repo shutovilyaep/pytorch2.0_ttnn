@@ -6,6 +6,7 @@
 // - Provides out/inplace-style invokers compatible with aten schema
 
 #include <concepts>                // std::same_as, std::convertible_to
+#include <type_traits>             // std::remove_cvref_t
 #include <c10/util/Optional.h>
 // #include <c10/core/ScalarType.h>
 #include <c10/util/Exception.h>
@@ -31,9 +32,14 @@ concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
     { Op(a, b) } -> std::convertible_to<ttnn::Tensor>;
 };
 
+// Accept either at::Tensor or ttnn::Tensor for operand adaptation
+template <class T>
+concept AtOrTtnnTensor =
+    std::same_as<std::remove_cvref_t<T>, at::Tensor> || std::same_as<std::remove_cvref_t<T>, ttnn::Tensor>;
+
 // Helper functions
-inline ttnn::Tensor to_ttnn_tile_checked(const at::Tensor& t, const char* arg_name) {
-    TORCH_CHECK(t.device().type() == c10::DeviceType::PrivateUse1, arg_name, " must be on TTNN device");
+inline ttnn::Tensor to_ttnn_tile_checked(const at::Tensor& t) {
+    TORCH_CHECK(t.device().type() == c10::DeviceType::PrivateUse1, "Tensor must be on TTNN device");
 
     at::TtnnTensorImpl* impl = static_cast<at::TtnnTensorImpl*>(t.unsafeGetTensorImpl());
     auto tt = impl->get_ttnn_tensor();
@@ -43,6 +49,18 @@ inline ttnn::Tensor to_ttnn_tile_checked(const at::Tensor& t, const char* arg_na
     }
 
     return tt;
+}
+
+template <AtOrTtnnTensor Tens>
+inline ttnn::Tensor tileify(const Tens& t) {
+    if constexpr (std::same_as<std::remove_cvref_t<Tens>, at::Tensor>) {
+        return to_ttnn_tile_checked(t);
+    } else {
+        if (t.layout() == ttnn::ROW_MAJOR_LAYOUT) {
+            return ttnn::to_layout(t, ttnn::TILE_LAYOUT);
+        }
+        return t;
+    }
 }
 
 inline at::Tensor make_empty_like_tt(const at::Tensor& t) {
@@ -68,25 +86,28 @@ inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, cons
 //   Invoker
 //===========================
 
-struct binary {
-    // Compile-time bound operation: no runtime op parameter is passed.
-    template <auto Op>
-        requires TTNNBinaryFn<Op>
-    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
+template <auto Op>
+    requires TTNNBinaryFn<Op>
+struct binary_logic {
+    template <AtOrTtnnTensor Tens>
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const Tens& b) {
         at::Tensor out = make_empty_like_tt(a);
-        invoke_out<Op>(a, b, out);
+        invoke_out(a, b, out);
         return out;
     }
 
-    template <auto Op>
-        requires TTNNBinaryFn<Op>
-    static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
-        ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a");
-        ttnn::Tensor b_tile = to_ttnn_tile_checked(b, "b");
+    template <AtOrTtnnTensor Tens>
+    static at::Tensor& invoke_out(const at::Tensor& a, const Tens& b, at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor b_tile = tileify(b);
         ttnn::Tensor result = Op(a_tile, b_tile);
         return write_from_ttnn(out, a, result);
     }
-};  // struct binary
+
+    // No helpers for precomputed tiles here to keep core minimal; wrappers can adapt inputs.
+
+    // scaling logic intentionally left out; handled in wrappers to compose with other wrappers
+};  // struct binary_logic
 
 // Wrappers
 //===========================
@@ -99,12 +120,14 @@ struct binary {
 template <auto TTNN_BINARY>
     requires TTNNBinaryFn<TTNN_BINARY>
 struct binary_wrapper {
-    static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
-        return binary::invoke<TTNN_BINARY>(a, b);
+    template <AtOrTtnnTensor Tens>
+    static at::Tensor invoke(const at::Tensor& a, const Tens& b) {
+        return binary_logic<TTNN_BINARY>::invoke(a, b);
     }
 
-    static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
-        return binary::invoke_out<TTNN_BINARY>(a, b, out);
+    template <AtOrTtnnTensor Tens>
+    static at::Tensor& invoke_out(const at::Tensor& a, const Tens& b, at::Tensor& out) {
+        return binary_logic<TTNN_BINARY>::invoke_out(a, b, out);
     }
 };
 
@@ -116,21 +139,21 @@ template <auto TTNN_BINARY>
     requires TTNNBinaryFn<TTNN_BINARY>
 struct binary_with_scalar_wrapper {
     static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
-        at::Tensor out = make_empty_like_tt(a);
-        invoke_out(a, b, alpha, out);
-        return out;
+        const double alpha_value = alpha.toDouble();
+        if (alpha_value == 1.0) {
+            return binary_wrapper<TTNN_BINARY>::invoke(a, b);
+        }
+        ttnn::Tensor b_tile = tileify(b);
+        return binary_wrapper<TTNN_BINARY>::invoke(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)));
     }
 
     static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
-        ttnn::Tensor a_tile = to_ttnn_tile_checked(a, "a");
-        ttnn::Tensor b_tile = to_ttnn_tile_checked(b, "b");
-
         const double alpha_value = alpha.toDouble();
-        const bool is_identity = alpha_value == 1.0;
-        const ttnn::Tensor& rhs = is_identity ? b_tile : ttnn::multiply(b_tile, static_cast<float>(alpha_value));
-
-        ttnn::Tensor result = TTNN_BINARY(a_tile, rhs);
-        return write_from_ttnn(out, a, result);
+        if (alpha_value == 1.0) {
+            return binary_wrapper<TTNN_BINARY>::invoke_out(a, b, out);
+        }   
+        ttnn::Tensor b_tile = tileify(b);
+        return binary_wrapper<TTNN_BINARY>::invoke_out(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)), out);
     }
 };
 
