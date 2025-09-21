@@ -27,6 +27,7 @@ class CMakeBuild(build_ext):
         # Configure CMake
         cmake_args = [
             f"-DCMAKE_BUILD_TYPE=Release",
+            f"-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
             f"-DTORCH_INSTALL_PREFIX={sysconfig.get_paths()['purelib']}",
             f"-DCMAKE_PREFIX_PATH={torch.utils.cmake_prefix_path}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",

@@ -28,6 +28,7 @@ if(NOT TARGET Metalium::TTNN)
     find_library(TT_METAL_LIBRARY NAMES "tt_metal" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
     find_library(DEVICE_LIBRARY NAMES "device" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
     find_library(TTNN_LIBRARY NAMES "_ttnn.so" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
+    find_library(TTNNCPP_LIBRARY NAMES "_ttnncpp.so" PATHS "${METALIUM_LIB_PATH}" NO_DEFAULT_PATH)
 
     if(TT_METAL_LIBRARY)
         add_library(Metalium::Metal SHARED IMPORTED GLOBAL)
@@ -57,6 +58,47 @@ if(NOT TARGET Metalium::TTNN)
     else()
         message(FATAL_ERROR "_ttnn.so not found in ${METALIUM_LIB_PATH}")
     endif()
+    if(TTNNCPP_LIBRARY)
+        add_library(Metalium::TTNN_CPP SHARED IMPORTED GLOBAL)
+        set_target_properties(
+            Metalium::TTNN_CPP
+            PROPERTIES
+                IMPORTED_LOCATION "${TTNNCPP_LIBRARY}"
+                INTERFACE_INCLUDE_DIRECTORIES "${METALIUM_INCLUDE_DIRS}"
+        )
+        message(STATUS "Successfully found _ttnncpp.so at ${TTNNCPP_LIBRARY}")
+    else()
+        message(FATAL_ERROR "_ttnncpp.so not found in ${METALIUM_LIB_PATH}")
+    endif()
 else()
     message(STATUS "Metalium targets already exists")
+endif()
+
+# Ensure Metalium::TTNN_CPP exists even if tt-metal already exported other Metalium targets
+if(NOT TARGET Metalium::TTNN_CPP)
+    # Try to locate _ttnncpp.so next to Metalium::TTNN imported location
+    set(_ttnn_dir_guess "")
+    if(TARGET Metalium::TTNN)
+        get_target_property(_ttnn_loc Metalium::TTNN IMPORTED_LOCATION)
+        if(_ttnn_loc)
+            get_filename_component(_ttnn_dir_guess "${_ttnn_loc}" DIRECTORY)
+        endif()
+    endif()
+
+    if(_ttnn_dir_guess)
+        find_library(TTNNCPP_LIBRARY NAMES "_ttnncpp.so" PATHS "${_ttnn_dir_guess}" NO_DEFAULT_PATH)
+    endif()
+
+    if(NOT TTNNCPP_LIBRARY)
+        # Fallback to default subdir lib path
+        find_library(TTNNCPP_LIBRARY NAMES "_ttnncpp.so" PATHS "${CMAKE_BINARY_DIR}/lib" NO_DEFAULT_PATH)
+    endif()
+
+    if(TTNNCPP_LIBRARY)
+        add_library(Metalium::TTNN_CPP SHARED IMPORTED GLOBAL)
+        set_target_properties(Metalium::TTNN_CPP PROPERTIES IMPORTED_LOCATION "${TTNNCPP_LIBRARY}")
+        message(STATUS "Ensured _ttnncpp.so at ${TTNNCPP_LIBRARY}")
+    else()
+        message(FATAL_ERROR "_ttnncpp.so not found (neither near _ttnn.so nor in ${CMAKE_BINARY_DIR}/lib)")
+    endif()
 endif()

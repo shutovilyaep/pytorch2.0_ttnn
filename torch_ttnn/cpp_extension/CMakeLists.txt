@@ -15,8 +15,13 @@ include(utils)
 include(CPM)
 
 # Prepare tt-metal build
-# TODO: Add debian integration with ttnn once ready
-include(find_prebuilt_ttnn)
+# Если включен сбор подмодуля, собираем tt-metal как часть проекта.
+# Иначе используем предсобранные артефакты через find_prebuilt_ttnn.
+if (ENABLE_SUBMODULE_TT_METAL_BUILD)
+    add_subdirectory(third-party)
+else()
+    include(find_prebuilt_ttnn)
+endif()
 
 check_ubuntu_version_at_least(24 IS_UBUNTU_GE_24)
 message(STATUS "Ubuntu version > 24: ${IS_UBUNTU_GE_24}")

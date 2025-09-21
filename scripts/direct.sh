@@ -21,6 +21,11 @@ fi
 # ./build_cpp_extension.sh
 ./build_cpp_extension.sh RelWithDebInfo
 
+# Export compile_commands.json to workspace root for editor tooling
+if [ -f /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/build/temp.linux-x86_64-3.10/ttnn_device_extension/compile_commands.json ]; then
+  cp /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/build/temp.linux-x86_64-3.10/ttnn_device_extension/compile_commands.json /workspace/compile_commands.json
+fi
+
 popd >/dev/null
 
 python /workspace/pytorch2.0_ttnn/scripts/test_script.py

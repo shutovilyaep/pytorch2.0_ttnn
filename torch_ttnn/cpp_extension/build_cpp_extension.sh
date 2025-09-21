@@ -31,4 +31,6 @@ if ! python3 -c "import importlib.util, sys; sys.exit(0 if importlib.util.find_s
 fi
 
 echo "> Building cpp extension"
-CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE};-DCMAKE_C_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER=g++-12;-DCMAKE_C_COMPILER=gcc-12" python3 setup.py develop
+# Если правим подмодуль tt-metal и хотим отстроить его внутри CMake расширения:
+# export CMAKE_FLAGS="${CMAKE_FLAGS:-};-DENABLE_SUBMODULE_TT_METAL_BUILD=ON"
+CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE};-DCMAKE_C_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER=g++-12;-DCMAKE_C_COMPILER=gcc-12;${CMAKE_FLAGS}" python3 setup.py develop
