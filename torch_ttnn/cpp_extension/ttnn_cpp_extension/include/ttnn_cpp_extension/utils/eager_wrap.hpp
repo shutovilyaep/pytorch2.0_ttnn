@@ -32,6 +32,12 @@ concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
     { Op(a, b) } -> std::convertible_to<ttnn::Tensor>;
 };
 
+// Unary op concept
+template <auto Op>
+concept TTNNUnaryFn = requires(const ttnn::Tensor& a) {
+    { Op(a) } -> std::convertible_to<ttnn::Tensor>;
+};
+
 // Accept either at::Tensor or ttnn::Tensor for operand adaptation
 template <class T>
 concept AtOrTtnnTensor =
@@ -155,5 +161,41 @@ struct binary_b_scaled_wrapper {
     }
 };
 
+
+//===========================
+//   Unary Invoker
+//===========================
+
+template <auto Op>
+    requires TTNNUnaryFn<Op>
+struct unary_logic {
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a) {
+        at::Tensor out = make_empty_like_tt(a);
+        invoke_out(a, out);
+        return out;
+    }
+
+    static at::Tensor& invoke_out(const at::Tensor& a, at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor result = Op(a_tile);
+        return write_from_ttnn(out, a, result);
+    }
+};  // struct unary_logic
+
+//===========================
+//   Unary Wrappers
+//===========================
+
+template <auto TTNN_UNARY>
+    requires TTNNUnaryFn<TTNN_UNARY>
+struct unary_wrapper {
+    static at::Tensor invoke(const at::Tensor& a) {
+        return unary_logic<TTNN_UNARY>::invoke(a);
+    }
+
+    static at::Tensor& invoke_out(const at::Tensor& a, at::Tensor& out) {
+        return unary_logic<TTNN_UNARY>::invoke_out(a, out);
+    }
+};
 
 }  // namespace tt_eager::ext

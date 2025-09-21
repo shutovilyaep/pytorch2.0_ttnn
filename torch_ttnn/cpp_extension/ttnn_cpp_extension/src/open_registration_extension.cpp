@@ -533,8 +533,42 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("aten::empty_strided", &tt_eager::ops::create::custom_empty_strided);
     m.impl("empty.memory_format", &tt_eager::ops::create::custom_empty_memory_format);
     m.impl("_copy_from", &ttnn_copy_from);
-    m.impl("abs.out", &tt_eager::ops::unary::ttnn_abs_out);
+    // =========================
+    // Unary ops
+    // =========================
+    m.impl("abs.out", TORCH_FN(tt_eager::ops::unary::ttnn_abs::invoke_out));
+    m.impl("neg.out", TORCH_FN(tt_eager::ops::unary::ttnn_neg::invoke_out));
+    m.impl("reciprocal.out", TORCH_FN(tt_eager::ops::unary::ttnn_reciprocal::invoke_out));
+    m.impl("sqrt.out", TORCH_FN(tt_eager::ops::unary::ttnn_sqrt::invoke_out));
+    m.impl("rsqrt.out", TORCH_FN(tt_eager::ops::unary::ttnn_rsqrt::invoke_out));
+    m.impl("square.out", TORCH_FN(tt_eager::ops::unary::ttnn_square::invoke_out));
+    m.impl("sin.out", TORCH_FN(tt_eager::ops::unary::ttnn_sin::invoke_out));
+    m.impl("cos.out", TORCH_FN(tt_eager::ops::unary::ttnn_cos::invoke_out));
+    m.impl("tan.out", TORCH_FN(tt_eager::ops::unary::ttnn_tan::invoke_out));
+    m.impl("sinh.out", TORCH_FN(tt_eager::ops::unary::ttnn_sinh::invoke_out));
+    m.impl("cosh.out", TORCH_FN(tt_eager::ops::unary::ttnn_cosh::invoke_out));
+    m.impl("tanh.out", TORCH_FN(tt_eager::ops::unary::ttnn_tanh::invoke_out));
+    m.impl("floor.out", TORCH_FN(tt_eager::ops::unary::ttnn_floor::invoke_out));
+    m.impl("ceil.out", TORCH_FN(tt_eager::ops::unary::ttnn_ceil::invoke_out));
+    m.impl("trunc.out", TORCH_FN(tt_eager::ops::unary::ttnn_trunc::invoke_out));
+    m.impl("frac.out", TORCH_FN(tt_eager::ops::unary::ttnn_frac::invoke_out));
+    m.impl("bitwise_not.out", TORCH_FN(tt_eager::ops::unary::ttnn_bitwise_not::invoke_out));
+    m.impl("logical_not.out", TORCH_FN(tt_eager::ops::unary::ttnn_logical_not::invoke_out));
+    m.impl("sign.out", TORCH_FN(tt_eager::ops::unary::ttnn_sign::invoke_out));
+    m.impl("signbit.out", TORCH_FN(tt_eager::ops::unary::ttnn_signbit::invoke_out));
+    m.impl("i0.out", TORCH_FN(tt_eager::ops::unary::ttnn_i0::invoke_out));
+    m.impl("erf.out", TORCH_FN(tt_eager::ops::unary::ttnn_erf::invoke_out));
+    m.impl("erfc.out", TORCH_FN(tt_eager::ops::unary::ttnn_erfc::invoke_out));
+    m.impl("erfinv.out", TORCH_FN(tt_eager::ops::unary::ttnn_erfinv::invoke_out));
+    m.impl("exp.out", TORCH_FN(tt_eager::ops::unary::ttnn_exp::invoke_out));
+    m.impl("log.out", TORCH_FN(tt_eager::ops::unary::ttnn_log::invoke_out));
+    m.impl("log10.out", TORCH_FN(tt_eager::ops::unary::ttnn_log10::invoke_out));
+    m.impl("log2.out", TORCH_FN(tt_eager::ops::unary::ttnn_log2::invoke_out));
+    m.impl("log1p.out", TORCH_FN(tt_eager::ops::unary::ttnn_log1p::invoke_out));
 
+    // =========================
+    // Binary ops
+    // =========================
     m.impl("add.out", TORCH_FN(tt_eager::ops::binary::ttnn_add::invoke_out));
     m.impl("add.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_add::invoke));
 
