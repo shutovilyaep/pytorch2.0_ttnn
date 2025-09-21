@@ -120,13 +120,11 @@ struct binary_logic {
 template <auto TTNN_BINARY>
     requires TTNNBinaryFn<TTNN_BINARY>
 struct binary_wrapper {
-    template <AtOrTtnnTensor Tens>
-    static at::Tensor invoke(const at::Tensor& a, const Tens& b) {
+    static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
         return binary_logic<TTNN_BINARY>::invoke(a, b);
     }
 
-    template <AtOrTtnnTensor Tens>
-    static at::Tensor& invoke_out(const at::Tensor& a, const Tens& b, at::Tensor& out) {
+    static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
         return binary_logic<TTNN_BINARY>::invoke_out(a, b, out);
     }
 };
@@ -141,19 +139,19 @@ struct binary_b_scaled_wrapper {
     static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
         const double alpha_value = alpha.toDouble();
         if (alpha_value == 1.0) {
-            return binary_wrapper<TTNN_BINARY>::invoke(a, b);
+            return binary_logic<TTNN_BINARY>::invoke(a, b);
         }
         ttnn::Tensor b_tile = tileify(b);
-        return binary_wrapper<TTNN_BINARY>::invoke(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)));
+        return binary_logic<TTNN_BINARY>::invoke(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)));
     }
 
     static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
         const double alpha_value = alpha.toDouble();
         if (alpha_value == 1.0) {
-            return binary_wrapper<TTNN_BINARY>::invoke_out(a, b, out);
+            return binary_logic<TTNN_BINARY>::invoke_out(a, b, out);
         }   
         ttnn::Tensor b_tile = tileify(b);
-        return binary_wrapper<TTNN_BINARY>::invoke_out(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)), out);
+        return binary_logic<TTNN_BINARY>::invoke_out(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)), out);
     }
 };
 
