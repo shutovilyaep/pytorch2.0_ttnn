@@ -107,18 +107,16 @@ inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, cons
 //   Invoker
 //===========================
 
-template <auto Op>
+template <AtOrTtnnTensor RightT, auto Op>
     requires TTNNBinaryFn<Op>
 struct binary_logic {
-    template <AtOrTtnnTensor Tens>
-    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const Tens& b) {
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const RightT& b) {
         at::Tensor out = make_empty_like_tt(a);
         invoke_out(a, b, out);
         return out;
     }
 
-    template <AtOrTtnnTensor Tens>
-    static at::Tensor& invoke_out(const at::Tensor& a, const Tens& b, at::Tensor& out) {
+    static at::Tensor& invoke_out(const at::Tensor& a, const RightT& b, at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
         ttnn::Tensor result = Op(a_tile, b_tile);
@@ -138,19 +136,10 @@ struct binary_logic {
 // Thin wrapper binding a compile-time TTNN op (function or stateless lambda) without storing a pointer
 // Example: binary_wrapper<ttnn::add>::invoke(a, b)
 
-// Wrappers are passed to PyTorch dispatcher for function pointer resolution
-// They must have at::Tensor parameters, not templated ones
+// Thin wrapper with fixed at::Tensor signatures for dispatcher; forwards to logic
 template <auto TTNN_BINARY>
     requires TTNNBinaryFn<TTNN_BINARY>
-struct binary_wrapper {
-    static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
-        return binary_logic<TTNN_BINARY>::invoke(a, b);
-    }
-
-    static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
-        return binary_logic<TTNN_BINARY>::invoke_out(a, b, out);
-    }
-};
+using binary_wrapper = binary_logic<at::Tensor, TTNN_BINARY>;
 
 // Binary wrapper that applies scalar alpha to the second operand and then executes the binary op
 // Wrapper that applies scalar alpha to the second operand before TTNN_BINARY
@@ -162,19 +151,19 @@ struct binary_b_scaled_wrapper {
     static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
         const double alpha_value = alpha.toDouble();
         if (alpha_value == 1.0) {
-            return binary_logic<TTNN_BINARY>::invoke(a, b);
+            return binary_logic<at::Tensor, TTNN_BINARY>::invoke(a, b);
         }
         ttnn::Tensor b_tile = tileify(b);
-        return binary_logic<TTNN_BINARY>::invoke(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)));
+        return binary_logic<ttnn::Tensor, TTNN_BINARY>::invoke(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)));
     }
 
     static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
         const double alpha_value = alpha.toDouble();
         if (alpha_value == 1.0) {
-            return binary_logic<TTNN_BINARY>::invoke_out(a, b, out);
+            return binary_logic<at::Tensor, TTNN_BINARY>::invoke_out(a, b, out);
         }   
         ttnn::Tensor b_tile = tileify(b);
-        return binary_logic<TTNN_BINARY>::invoke_out(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)), out);
+        return binary_logic<ttnn::Tensor, TTNN_BINARY>::invoke_out(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)), out);
     }
 };
 
@@ -199,21 +188,10 @@ struct unary_logic {
     }
 };  // struct unary_logic
 
-//===========================
-//   Unary Wrappers
-//===========================
-
+// Unary wrapper with fixed signatures for dispatcher; forwards to logic
 template <auto TTNN_UNARY>
     requires TTNNUnaryFn<TTNN_UNARY>
-struct unary_wrapper {
-    static at::Tensor invoke(const at::Tensor& a) {
-        return unary_logic<TTNN_UNARY>::invoke(a);
-    }
-
-    static at::Tensor& invoke_out(const at::Tensor& a, at::Tensor& out) {
-        return unary_logic<TTNN_UNARY>::invoke_out(a, out);
-    }
-};
+using unary_wrapper = unary_logic<TTNN_UNARY>;
 
 //===========================
 //   Reduction Wrapper
