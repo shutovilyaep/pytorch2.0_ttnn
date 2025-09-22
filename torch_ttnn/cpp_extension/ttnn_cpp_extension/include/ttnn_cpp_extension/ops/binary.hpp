@@ -11,9 +11,9 @@ namespace tt_eager::ops::binary {
 
 // Wrapper aliases for TTNN binary operations
 
-// add/sub: aten semantics support alpha -> use b-scaled wrapper
-using ttnn_add = tt_eager::ext::binary_b_scaled_wrapper<ttnn::add>;
-using ttnn_sub = tt_eager::ext::binary_b_scaled_wrapper<ttnn::subtract>;
+// add/sub: aten semantics support alpha -> use native alpha ops where available
+using ttnn_add = tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>;
+using ttnn_sub = tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>;
 
 // arithmetic
 using ttnn_multiply = tt_eager::ext::binary_wrapper<ttnn::multiply>;

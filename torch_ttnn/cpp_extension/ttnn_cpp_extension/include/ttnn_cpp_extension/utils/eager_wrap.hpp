@@ -141,29 +141,27 @@ template <auto TTNN_BINARY>
     requires TTNNBinaryFn<TTNN_BINARY>
 using binary_wrapper = binary_logic<at::Tensor, TTNN_BINARY>;
 
-// Binary wrapper that applies scalar alpha to the second operand and then executes the binary op
-// Wrapper that applies scalar alpha to the second operand before TTNN_BINARY
-// Matches aten::add/sub semantics: out = a (op) (alpha * b)
+// Alternative wrapper that directly uses TTNN ops with explicit alpha parameter (e.g., ttnn::addalpha/subalpha)
+template <auto TTNN_BINARY_ALPHA>
+concept TTNNBinaryAlphaFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b, float alpha) {
+    { TTNN_BINARY_ALPHA(a, b, alpha) } -> std::convertible_to<ttnn::Tensor>;
+};
 
-template <auto TTNN_BINARY>
-    requires TTNNBinaryFn<TTNN_BINARY>
-struct binary_b_scaled_wrapper {
+template <auto TTNN_BINARY_ALPHA>
+    requires TTNNBinaryAlphaFn<TTNN_BINARY_ALPHA>
+struct binary_alpha_wrapper {
     static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
-        const double alpha_value = alpha.toDouble();
-        if (alpha_value == 1.0) {
-            return binary_logic<at::Tensor, TTNN_BINARY>::invoke(a, b);
-        }
-        ttnn::Tensor b_tile = tileify(b);
-        return binary_logic<ttnn::Tensor, TTNN_BINARY>::invoke(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)));
+        at::Tensor out = make_empty_like_tt(a);
+        invoke_out(a, b, alpha, out);
+        return out;
     }
 
     static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
-        const double alpha_value = alpha.toDouble();
-        if (alpha_value == 1.0) {
-            return binary_logic<at::Tensor, TTNN_BINARY>::invoke_out(a, b, out);
-        }   
+        ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
-        return binary_logic<ttnn::Tensor, TTNN_BINARY>::invoke_out(a, ttnn::multiply(b_tile, static_cast<float>(alpha_value)), out);
+        const float alpha_value = static_cast<float>(alpha.toDouble());
+        ttnn::Tensor result = TTNN_BINARY_ALPHA(a_tile, b_tile, alpha_value);
+        return write_from_ttnn(out, a, result);
     }
 };
 
