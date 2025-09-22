@@ -43,6 +43,18 @@ def find_constexpr_name(lines, match_start_index):
     return None
 
 
+def find_unary_macro_registrations(text: str):
+    # Capture macro usages like: REGISTER_UNARY_OPERATION(acos, ACOS)
+    # and variations: REGISTER_UNARY_OPERATION_WITH_FLOAT_PARAMETER(name, TYPE)
+    # We only need the first argument (the variable/op name)
+    pattern = re.compile(
+        r'REGISTER_UNARY_OPERATION(?:_[A-Z_]+)?\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,',
+        re.MULTILINE | re.DOTALL,
+    )
+    for m in pattern.finditer(text):
+        yield m
+
+
 def main():
     results = []
 
@@ -59,6 +71,13 @@ def main():
             line_no = text.count("\n", 0, m.start()) + 1
             var_name = find_constexpr_name(lines, m.start())
             results.append((str(rel), line_no, op_name, var_name))
+
+        # Also detect macro-based unary registrations
+        for m in find_unary_macro_registrations(text):
+            macro_var = m.group(1)
+            op_name = f"ttnn::{macro_var}"
+            line_no = text.count("\n", 0, m.start()) + 1
+            results.append((str(rel), line_no, op_name, macro_var))
 
     # Sort by op name then file
     results.sort(key=lambda x: (x[2], x[0], x[1]))
