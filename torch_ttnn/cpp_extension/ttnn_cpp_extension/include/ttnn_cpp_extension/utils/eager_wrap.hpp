@@ -138,6 +138,8 @@ struct binary_logic {
 // Thin wrapper binding a compile-time TTNN op (function or stateless lambda) without storing a pointer
 // Example: binary_wrapper<ttnn::add>::invoke(a, b)
 
+// Wrappers are passed to PyTorch dispatcher for function pointer resolution
+// They must have at::Tensor parameters, not templated ones
 template <auto TTNN_BINARY>
     requires TTNNBinaryFn<TTNN_BINARY>
 struct binary_wrapper {
