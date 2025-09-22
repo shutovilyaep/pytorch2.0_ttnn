@@ -4,7 +4,7 @@
 METAL_TAG=$1
 
 pushd torch_ttnn/cpp_extension/third-party/tt-metal
-git checkout $METAL_TAG
+git checkout -f $METAL_TAG
 git pull
 git submodule sync --recursive
 git submodule update --init --recursive --progress
