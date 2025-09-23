@@ -19,7 +19,7 @@ import logging
     ),
 )
 def test_cpp_extension(device, input_shape, dtype):
-    ttnn_torch_device = ttnn_module.open_torch_device(0)
+    ttnn_torch_device = ttnn_module.as_torch_device(device)
 
     logging.info("Creating bfloat tensor from -1 to 1")
     if dtype == torch.bfloat16:
@@ -64,7 +64,7 @@ def test_cpp_extension(device, input_shape, dtype):
     (torch.bfloat16, torch.int, torch.long),
 )
 def test_add_cpp_extension(device, input_shape, dtype):
-    ttnn_torch_device = ttnn_module.open_torch_device(0)
+    ttnn_torch_device = ttnn_module.as_torch_device(device)
 
     logging.info("Creating bfloat tensor from -1 to 1")
     input_a = torch.randint(-1000, 1000, input_shape, dtype=dtype)
@@ -97,7 +97,7 @@ def test_empty(device):
     # Sometimes nnModule.to(device) will directly allocate an empty tensor on device
     # and with not performa a copy.
 
-    ttnn_torch_device = ttnn_module.open_torch_device(0)
+    ttnn_torch_device = ttnn_module.as_torch_device(device)
 
     logging.info("Creating bfloat tensor from -1 to 1")
     torch_tensor = torch.empty((32, 1, 3, 3), dtype=torch.bfloat16, device=ttnn_torch_device)
