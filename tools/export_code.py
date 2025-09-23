@@ -13,7 +13,6 @@ import types
 
 from collections import defaultdict
 from pathlib import Path
-from tests.conftest import get_dispatch_core_type, get_dispatch_core_axis, get_dispatch_core_config
 from tests.utils import assert_with_pcc, comp_pcc, construct_pcc_assert_message
 from torch.fx.node import Node, map_arg
 from torch_ttnn.utils import (
@@ -600,6 +599,13 @@ def _save_to_disk(model_name, forward_codes, call_forwards_in_main, all_inputs, 
         ]
         if option == "accuracy"
         else []
+    )
+
+    # Import device helper functions locally to avoid early import during test collection
+    from tests.conftest import (
+        get_dispatch_core_type,
+        get_dispatch_core_axis,
+        get_dispatch_core_config,
     )
 
     device_funcs = [
