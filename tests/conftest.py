@@ -90,8 +90,9 @@ def device(request):
     else:
         device_id = 0
 
-        device = ttnn.open_device(
-            device_id=device_id, dispatch_core_config=dispatch_core_config, l1_small_size=l1_small_size
+        # Use MeshDevice for single-device runs as a 1x1 mesh per migration guide
+        device = ttnn.open_mesh_device(
+            ttnn.MeshShape(1, 1), dispatch_core_config=dispatch_core_config, l1_small_size=l1_small_size
         )
 
         device.enable_program_cache()
@@ -101,7 +102,7 @@ def device(request):
         yield device
 
         ttnn.synchronize_device(device)
-        ttnn.close_device(device)
+        ttnn.close_mesh_device(device)
 
 
 def get_dispatch_core_type():
