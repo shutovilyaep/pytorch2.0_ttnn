@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Workspace directory
-WORKSPACE_DIR="/home/ilia_shutov/pytorch2.0_ttnn"
+WORKSPACE_DIR="/home/ilia_shutov/pytorch2.0_ttnn.dev"
 # Previous container path for reference:
 # WORKSPACE_DIR="/workspace/pytorch2.0_ttnn"
 
@@ -17,7 +17,7 @@ export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONFAULTHANDLER=1
 mkdir -p "${CARGO_HOME}" "${RUSTUP_HOME}"
 # Clean previous extension build artifacts to avoid stale CMake cache
-# rm -rf /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/build || true
+rm -rf "${WORKSPACE_DIR}/torch_ttnn/cpp_extension/build" || true
 
 pip install -e . --use-pep517 --no-cache-dir --no-build-isolation
 
@@ -35,13 +35,13 @@ fi
 # HOST_WORKSPACE="/home/kilka/Projects/ML/TT-NN/dev.docker/workspace"
 
 # # Export compile_commands.json to workspace root for editor tooling
-# if [ -f /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/build/temp.linux-x86_64-3.10/ttnn_device_extension/compile_commands.json ]; then
-#   cp /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/build/temp.linux-x86_64-3.10/ttnn_device_extension/compile_commands.json /workspace/pytorch2.0_ttnn/compile_commands.json
+# if [ -f "${WORKSPACE_DIR}/torch_ttnn/cpp_extension/build/temp.linux-x86_64-3.10/ttnn_device_extension/compile_commands.json" ]; then
+#   cp "${WORKSPACE_DIR}/torch_ttnn/cpp_extension/build/temp.linux-x86_64-3.10/ttnn_device_extension/compile_commands.json" "${WORKSPACE_DIR}/compile_commands.json"
 #   # Optionally emit host-adjusted compile_commands.json if HOST_WORKSPACE is provided
 #   if [ -n "${HOST_WORKSPACE:-}" ]; then
-#     python3 /workspace/pytorch2.0_ttnn/scripts/rewrite_compile_commands.py \
-#       /workspace/pytorch2.0_ttnn/compile_commands.json \
-#       /workspace/pytorch2.0_ttnn/compile_commands.host.json \
+#     python3 "${WORKSPACE_DIR}/scripts/rewrite_compile_commands.py" \
+#       "${WORKSPACE_DIR}/compile_commands.json" \
+#       "${WORKSPACE_DIR}/compile_commands.host.json" \
 #       /workspace \
 #       ${HOST_WORKSPACE}
 #   fi
@@ -51,6 +51,6 @@ popd >/dev/null
 
 python "${WORKSPACE_DIR}/scripts/test_script.py"
 
-# pushd /workspace/pytorch2.0_ttnn/torch_ttnn/cpp_extension/third-party/tt-metal/build/bin >/dev/null
+# pushd "${WORKSPACE_DIR}/torch_ttnn/cpp_extension/third-party/tt-metal/build/bin" >/dev/null
 # ./tt-metal-trace
 # popd >/dev/null
