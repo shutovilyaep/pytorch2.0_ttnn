@@ -13,6 +13,9 @@
 #include <c10/util/Exception.h>
 #include <ATen/core/Tensor.h>
 #include <ATen/core/Scalar.h>
+#include <ATen/core/Generator.h>
+#include <cstdint>
+#include <random>
 
 #include "ttnn_cpp_extension/core/TtnnTensorImpl.hpp"
 #include "ttnn_cpp_extension/ops/creation.hpp"
@@ -147,5 +150,45 @@ struct binary_alpha_wrapper {
     }
 };
 
+
+//===========================
+//   Random Wrapper (bernoulli, etc.)
+//===========================
+
+template <auto TTNN_RANDOM_WITH_SEED>
+concept TTNNRandomWithSeedFn = requires(const ttnn::Tensor& a, uint32_t seed) {
+    { TTNN_RANDOM_WITH_SEED(a, seed, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
+};
+
+template <auto TTNN_RANDOM_WITH_SEED>
+    requires TTNNRandomWithSeedFn<TTNN_RANDOM_WITH_SEED>
+struct random_wrapper {
+    static at::Tensor invoke(const at::Tensor& input, c10::optional<at::Generator> generator = c10::nullopt) {
+        at::Tensor out = make_empty_like_tt(input);
+        invoke_out(input, generator, out);
+        return out;
+    }
+
+    static at::Tensor& invoke_out(
+        const at::Tensor& input,
+        c10::optional<at::Generator> generator,
+        at::Tensor& out) {
+        ttnn::Tensor in_tile = tileify(input);
+
+        static thread_local std::mt19937 rng(std::random_device{}());
+        uint32_t seed = generator.has_value() ? static_cast<uint32_t>(generator.value().current_seed()) : rng();
+
+        ttnn::Tensor result = TTNN_RANDOM_WITH_SEED(
+            in_tile,
+            seed,
+            std::nullopt,              // output
+            std::nullopt,              // dtype
+            std::nullopt,              // memory_config
+            std::nullopt               // compute_kernel_config
+        );
+
+        return write_from_ttnn(out, input, result);
+    }
+};
 
 }  // namespace tt_eager::ext

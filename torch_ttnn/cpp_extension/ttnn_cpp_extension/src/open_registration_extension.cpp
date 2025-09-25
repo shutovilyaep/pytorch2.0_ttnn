@@ -8,7 +8,6 @@
 #include "ttnn_cpp_extension/core/copy.hpp"
 
 #include "ttnn_cpp_extension/ops/creation.hpp"
-#include "ttnn_cpp_extension/ops/random.hpp"
 
 #include "ttnn_cpp_extension/utils/eager_wrap.hpp"
 
@@ -476,8 +475,8 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     
 
     // Random
-    m.impl("bernoulli", TORCH_FN(tt_eager::ops::random::ttnn_bernoulli::invoke));
-    m.impl("bernoulli.out", TORCH_FN(tt_eager::ops::random::ttnn_bernoulli::invoke_out));
+    m.impl("bernoulli", TORCH_FN(tt_eager::ext::random_wrapper<ttnn::bernoulli>::invoke));
+    m.impl("bernoulli.out", TORCH_FN(tt_eager::ext::random_wrapper<ttnn::bernoulli>::invoke_out));
     // bernoulli_.Tensor
     // bernoulli_.float
     // cauchy_
