@@ -135,12 +135,14 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // acosh_
     // angle
     // angle.out
+    // ttnn::angle
     // arccosh
     // arccosh.out
     // arccosh_
     m.impl("asin", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke));
     m.impl("asin.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke_out));
     // asin_
+    // ttnn::asin_bw
     m.impl("asinh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke));
     m.impl("asinh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke_out));
     // asinh_
@@ -148,21 +150,29 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("atan.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_out));
     // atan2
     // atan2.out
+    // ttnn::atan2
     // atan2_
+    // ttnn::atan2_bw
     // atan_
+    // ttnn::atan_bw
     m.impl("atanh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke));
     m.impl("atanh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_out));
     // atanh_
     // conj
+    // ttnn::conj
+    // ttnn::conj_bw
     m.impl("deg2rad", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::deg2rad>::invoke));
     m.impl("deg2rad.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::deg2rad>::invoke_out));
     // deg2rad_
     // digamma
     // digamma.out
     // digamma_
+    // ttnn::digamma
+    // ttnn::digamma_bw
     m.impl("expm1", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke));
     m.impl("expm1.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke_out));
     // expm1_
+    // ttnn::expm1_bw
     // imag
     // isfinite
     // isinf
@@ -177,15 +187,18 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("rad2deg", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke));
     m.impl("rad2deg.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke_out));
     // rad2deg_
+    // ttnn::rad2deg_bw
     // relu
     // relu_
     // real
     m.impl("round", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::round>::invoke));
     m.impl("round.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::round>::invoke_out));
     // round_
+    // ttnn::round_bw
     m.impl("sigmoid", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke));
     m.impl("sigmoid.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke_out));
     // sigmoid_
+    // ttnn::sigmoid_bw
 
     // Pending TTNN unary ops to register (from ttnn_ops_grouped.txt)
     // ttnn::abs_bw
@@ -391,10 +404,12 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // floor_divide.out
     // floor_divide_.Scalar
     // floor_divide_.Tensor
+    // ttnn::floor_div
     // true_divide.Scalar
     // true_divide.out
     // true_divide_.Scalar
     // true_divide_.Tensor
+    // (handled via divide) no direct ttnn::true_divide
     // pow.Scalar
     // pow.Scalar_out
     // pow.Tensor_Scalar
@@ -403,14 +418,18 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // pow.Tensor_Tensor_out
     // pow_.Scalar
     // pow_.Tensor
+    // ttnn::pow
     // nextafter
     // nextafter.out
     // nextafter_
+    // ttnn::nextafter
     // dot
     // dot.out
     // hypot
     // hypot.out
     // hypot_
+    // ttnn::hypot
+    // ttnn::hypot_bw
     // matmul
     // matmul.out
     // mm
@@ -424,14 +443,17 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("logical_and.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_and>::invoke_out));
     m.impl("logical_and", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_and>::invoke));
     // logical_and_
+    // ttnn::logical_and_
 
     m.impl("logical_or.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_or>::invoke_out));
     m.impl("logical_or", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_or>::invoke));
     // logical_or_
+    // ttnn::logical_or_
 
     m.impl("logical_xor.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor>::invoke_out));
     m.impl("logical_xor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor>::invoke));
     // logical_xor_
+    // ttnn::logical_xor_
 
     // Relational ops (Tensor versions only)
     m.impl("eq.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke_out));
@@ -474,7 +496,6 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // ttnn::add_
     // ttnn::add_bw
     // ttnn::assign_bw
-    // ttnn::atan2
     // ttnn::atan2_bw
     // ttnn::bias_gelu
     // ttnn::bias_gelu_
@@ -545,6 +566,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // sum.IntList_out
     // sum.dim_DimnameList
     // sum.dim_IntList
+    // ttnn::sum
 
     // Mean
     // mean
@@ -552,6 +574,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // mean.names_dim
     // mean.names_out
     // mean.out
+    // ttnn::mean
 
     // Max / Min
     // max
@@ -559,11 +582,13 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // max.dim_max
     // max.names_dim
     // max.names_dim_max
+    // ttnn::max
     // min
     // min.dim
     // min.dim_min
     // min.names_dim
     // min.names_dim_min
+    // ttnn::min
 
     // Std / Var
     // std
@@ -575,11 +600,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // std.correction_out
     // std.correction_names
     // std.correction_names_out
-    // std_mean
-    // std_mean.dim
-    // std_mean.names_dim
-    // std_mean.correction
-    // std_mean.correction_names
+    // ttnn::std
     // var
     // var.dim
     // var.names_dim
@@ -589,11 +610,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // var.correction_out
     // var.correction_names
     // var.correction_names_out
-    // var_mean
-    // var_mean.dim
-    // var_mean.names_dim
-    // var_mean.correction
-    // var_mean.correction_names
+    // ttnn::var
     
     // Core tensor ops (shape/view/manipulation)
     // alias
@@ -603,6 +620,8 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // align_to.ellipsis_idx
     // as_strided
     // clone
+    // ttnn::clone
+    // ttnn::prim::clone
     // contiguous
     // diagonal
     // diagonal.Dimname
@@ -611,6 +630,8 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // rename
     // rename_
     // reshape
+    // ttnn::reshape
+    // ttnn::reshape_on_device
     // resize_
     // resize_as_
     // select.Dimname
@@ -618,7 +639,9 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // size.Dimname
     // size.int
     // slice.Tensor
+    // ttnn::slice
     // squeeze
+    // ttnn::squeeze
     // squeeze.dim
     // squeeze.dimname
     // stride.Dimname
@@ -626,12 +649,14 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // t
     // transpose.Dimname
     // transpose.int
+    // ttnn::transpose
     // unbind.Dimname
     // unbind.int
     // unflatten.Dimname
     // unflatten.int
     // unsafe_chunk
     // unsafe_split.Tensor
+    // ttnn::split
     // unsafe_split_with_sizes
 
     // Pending TTNN core tensor/data movement ops to register
@@ -688,7 +713,9 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 
     // Creation / like-ops
     // empty_like
+    // ttnn::moreh_full_like / ttnn::full_like
     // full_like
+    // ttnn::moreh_full / ttnn::full
     // ones_like
     // rand_like
     // randn_like
@@ -813,6 +840,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // max_pool1d_with_indices
     // max_pool2d
     // max_pool2d_with_indices
+    // ttnn::max_pool2d / ttnn::avg_pool2d / ttnn::global_avg_pool2d
     // max_pool3d
     // max_pool3d_with_indices
 
@@ -823,9 +851,11 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // native_dropout
     // softmax.Dimname
     // softmax.int
+    // ttnn::softmax / ttnn::softmax_in_place
     // threshold
     // threshold.out
     // threshold_
+    // ttnn::threshold / ttnn::threshold_bw
     // _sparse_log_softmax.Dimname
     // _sparse_log_softmax.int
     // _sparse_softmax.Dimname
@@ -849,10 +879,12 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 
     // Tensor lists / concat / split
     // cat
+    // ttnn::concat
     // cat.names
     // cat.names_out
     // cat.out
     // chunk
+    // ttnn::chunk
     // split.Tensor
     // split_with_sizes
     // tensor_split.indices
@@ -881,6 +913,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // to.device
     // to.dtype
     // to.dtype_layout
+    // ttnn::to_dtype / ttnn::to_layout / ttnn::to_memory_config
 }
 
 // This macro registers helper functions associated with the ttnn_device_mode module that can be used in Python
