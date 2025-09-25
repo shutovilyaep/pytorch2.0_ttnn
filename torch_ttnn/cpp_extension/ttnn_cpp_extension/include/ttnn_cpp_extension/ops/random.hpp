@@ -13,26 +13,26 @@
 namespace tt_eager::ops::random {
 
 struct ttnn_bernoulli {
-    static at::Tensor invoke(const at::Tensor& input, c10::optional<at::Generator> /*generator*/ = c10::nullopt) {
+    static at::Tensor invoke(const at::Tensor& input, c10::optional<at::Generator> generator = c10::nullopt) {
         at::Tensor out = tt_eager::ext::make_empty_like_tt(input);
-        invoke_out(input, /*generator*/ c10::nullopt, out);
+        invoke_out(input, generator, out);
         return out;
     }
 
     static at::Tensor& invoke_out(
         const at::Tensor& input,
-        c10::optional<at::Generator> /*generator*/,  // unused for now
+        c10::optional<at::Generator> generator,
         at::Tensor& out) {
         ttnn::Tensor in_tile = tt_eager::ext::tileify(input);
 
         // Produce a seed (placeholder: nondeterministic). Can be wired to torch generator later.
         static thread_local std::mt19937 rng(std::random_device{}());
-        uint32_t seed = rng();
+        uint32_t seed = generator.has_value() ? generator.value().current_seed() : rng();
 
         ttnn::Tensor result = ttnn::bernoulli(
             in_tile,
             seed,
-            std::nullopt /*output*/,
+            std::nullopt,
             std::nullopt /*dtype*/,
             std::nullopt /*memory_config*/,
             std::nullopt /*compute_kernel_config*/);
