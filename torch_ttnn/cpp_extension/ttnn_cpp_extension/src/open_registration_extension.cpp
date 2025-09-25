@@ -34,263 +34,262 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // =========================
     // Unary ops
     // =========================
-    // m.impl("abs", TORCH_FN(tt_eager::ops::unary::ttnn_abs::invoke));
     m.impl("abs", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke));
     m.impl("abs.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_out));
-    // m.impl("abs_", CppFunction::makeFallthrough());
-    // m.impl("absolute", CppFunction::makeFallthrough());
-    // m.impl("absolute.out", CppFunction::makeFallthrough());
-    // m.impl("absolute_", CppFunction::makeFallthrough());
+    // abs_
+    // absolute
+    // absolute.out
+    // absolute_
     m.impl("neg", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke));
     m.impl("neg.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke_out));
-    // m.impl("neg_", CppFunction::makeFallthrough());
+    // neg_
     m.impl("reciprocal", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::reciprocal>::invoke));
     m.impl("reciprocal.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::reciprocal>::invoke_out));
-    // m.impl("reciprocal_", CppFunction::makeFallthrough());
+    // reciprocal_
     m.impl("sqrt", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sqrt>::invoke));
     m.impl("sqrt.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sqrt>::invoke_out));
-    // m.impl("sqrt_", CppFunction::makeFallthrough());
+    // sqrt_
     m.impl("rsqrt", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rsqrt>::invoke));
     m.impl("rsqrt.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rsqrt>::invoke_out));
-    // m.impl("rsqrt_", CppFunction::makeFallthrough());
+    // rsqrt_
     m.impl("square", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::square>::invoke));
     m.impl("square.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::square>::invoke_out));
-    // m.impl("square_", CppFunction::makeFallthrough());
+    // square_
     m.impl("sin", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sin>::invoke));
     m.impl("sin.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sin>::invoke_out));
-    // m.impl("sin_", CppFunction::makeFallthrough());
+    // sin_
     m.impl("cos", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cos>::invoke));
     m.impl("cos.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cos>::invoke_out));
-    // m.impl("cos_", CppFunction::makeFallthrough());
+    // cos_
     m.impl("tan", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tan>::invoke));
     m.impl("tan.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tan>::invoke_out));
-    // m.impl("tan_", CppFunction::makeFallthrough());
+    // tan_
     m.impl("sinh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sinh>::invoke));
     m.impl("sinh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sinh>::invoke_out));
-    // m.impl("sinh_", CppFunction::makeFallthrough());
+    // sinh_
     m.impl("cosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cosh>::invoke));
     m.impl("cosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cosh>::invoke_out));
-    // m.impl("cosh_", CppFunction::makeFallthrough());
+    // cosh_
     m.impl("tanh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tanh>::invoke));
     m.impl("tanh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tanh>::invoke_out));
-    // m.impl("tanh_", CppFunction::makeFallthrough());
+    // tanh_
     m.impl("floor", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::floor>::invoke));
     m.impl("floor.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::floor>::invoke_out));
-    // m.impl("floor_", CppFunction::makeFallthrough());
+    // floor_
     m.impl("ceil", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::ceil>::invoke));
     m.impl("ceil.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::ceil>::invoke_out));
-    // m.impl("ceil_", CppFunction::makeFallthrough());
+    // ceil_
     m.impl("trunc", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::trunc>::invoke));
     m.impl("trunc.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::trunc>::invoke_out));
-    // m.impl("trunc_", CppFunction::makeFallthrough());
+    // trunc_
     m.impl("frac", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::frac>::invoke));
     m.impl("frac.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::frac>::invoke_out));
-    // m.impl("frac_", CppFunction::makeFallthrough());
+    // frac_
     m.impl("bitwise_not", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::bitwise_not>::invoke));
     m.impl("bitwise_not.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::bitwise_not>::invoke_out));
-    // m.impl("bitwise_not_", CppFunction::makeFallthrough());
+    // bitwise_not_
     m.impl("logical_not", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::logical_not>::invoke));
     m.impl("logical_not.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::logical_not>::invoke_out));
-    // m.impl("logical_not_", CppFunction::makeFallthrough());
+    // logical_not_
     m.impl("sign", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sign>::invoke));
     m.impl("sign.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sign>::invoke_out));
-    // m.impl("sign_", CppFunction::makeFallthrough());
+    // sign_
     m.impl("signbit", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::signbit>::invoke));
     m.impl("signbit.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::signbit>::invoke_out));
     m.impl("i0", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::i0>::invoke));
     m.impl("i0.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::i0>::invoke_out));
-    // m.impl("i0_", CppFunction::makeFallthrough());
+    // i0_
     m.impl("erf", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erf>::invoke));
     m.impl("erf.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erf>::invoke_out));
-    // m.impl("erf_", CppFunction::makeFallthrough());
+    // erf_
     m.impl("erfc", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfc>::invoke));
     m.impl("erfc.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfc>::invoke_out));
-    // m.impl("erfc_", CppFunction::makeFallthrough());
+    // erfc_
     m.impl("erfinv", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfinv>::invoke));
     m.impl("erfinv.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfinv>::invoke_out));
-    // m.impl("erfinv_", CppFunction::makeFallthrough());
+    // erfinv_
     m.impl("exp", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::exp>::invoke));
     m.impl("exp.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::exp>::invoke_out));
-    // m.impl("exp_", CppFunction::makeFallthrough());
+    // exp_
     m.impl("log", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log>::invoke));
     m.impl("log.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log>::invoke_out));
-    // m.impl("log_", CppFunction::makeFallthrough());
+    // log_
     m.impl("log10", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log10>::invoke));
     m.impl("log10.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log10>::invoke_out));
-    // m.impl("log10_", CppFunction::makeFallthrough());
+    // log10_
     m.impl("log2", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log2>::invoke));
     m.impl("log2.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log2>::invoke_out));
-    // m.impl("log2_", CppFunction::makeFallthrough());
+    // log2_
     m.impl("log1p", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log1p>::invoke));
     m.impl("log1p.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log1p>::invoke_out));
-    // m.impl("log1p_", CppFunction::makeFallthrough());
-    // m.impl("acos", CppFunction::makeFallthrough());
-    // m.impl("acos.out", CppFunction::makeFallthrough());
-    // m.impl("acos_", CppFunction::makeFallthrough());
-    // m.impl("acosh", CppFunction::makeFallthrough());
-    // m.impl("acosh.out", CppFunction::makeFallthrough());
-    // m.impl("acosh_", CppFunction::makeFallthrough());
-    // m.impl("angle", CppFunction::makeFallthrough());
-    // m.impl("angle.out", CppFunction::makeFallthrough());
-    // m.impl("arccosh", CppFunction::makeFallthrough());
-    // m.impl("arccosh.out", CppFunction::makeFallthrough());
-    // m.impl("arccosh_", CppFunction::makeFallthrough());
-    // m.impl("asin", CppFunction::makeFallthrough());
-    // m.impl("asin.out", CppFunction::makeFallthrough());
-    // m.impl("asin_", CppFunction::makeFallthrough());
-    // m.impl("asinh", CppFunction::makeFallthrough());
-    // m.impl("asinh.out", CppFunction::makeFallthrough());
-    // m.impl("asinh_", CppFunction::makeFallthrough());
-    // m.impl("atan", CppFunction::makeFallthrough());
-    // m.impl("atan.out", CppFunction::makeFallthrough());
-    // m.impl("atan2", CppFunction::makeFallthrough());
-    // m.impl("atan2.out", CppFunction::makeFallthrough());
-    // m.impl("atan2_", CppFunction::makeFallthrough());
-    // m.impl("atan_", CppFunction::makeFallthrough());
-    // m.impl("atanh", CppFunction::makeFallthrough());
-    // m.impl("atanh.out", CppFunction::makeFallthrough());
-    // m.impl("atanh_", CppFunction::makeFallthrough());
-    // m.impl("conj", CppFunction::makeFallthrough());
-    // m.impl("deg2rad", CppFunction::makeFallthrough());
-    // m.impl("deg2rad.out", CppFunction::makeFallthrough());
-    // m.impl("deg2rad_", CppFunction::makeFallthrough());
-    // m.impl("digamma", CppFunction::makeFallthrough());
-    // m.impl("digamma.out", CppFunction::makeFallthrough());
-    // m.impl("digamma_", CppFunction::makeFallthrough());
-    // m.impl("expm1", CppFunction::makeFallthrough());
-    // m.impl("expm1.out", CppFunction::makeFallthrough());
-    // m.impl("expm1_", CppFunction::makeFallthrough());
-    // m.impl("imag", CppFunction::makeFallthrough());
-    // m.impl("isfinite", CppFunction::makeFallthrough());
-    // m.impl("isinf", CppFunction::makeFallthrough());
-    // m.impl("isnan", CppFunction::makeFallthrough());
-    // m.impl("lgamma", CppFunction::makeFallthrough());
-    // m.impl("lgamma.out", CppFunction::makeFallthrough());
-    // m.impl("lgamma_", CppFunction::makeFallthrough());
-    // m.impl("log_", CppFunction::makeFallthrough());
-    // m.impl("log10_", CppFunction::makeFallthrough());
-    // m.impl("log1p_", CppFunction::makeFallthrough());
-    // m.impl("log2_", CppFunction::makeFallthrough());
-    // m.impl("rad2deg", CppFunction::makeFallthrough());
-    // m.impl("rad2deg.out", CppFunction::makeFallthrough());
-    // m.impl("rad2deg_", CppFunction::makeFallthrough());
-    // m.impl("relu", CppFunction::makeFallthrough());
-    // m.impl("relu_", CppFunction::makeFallthrough());
-    // m.impl("real", CppFunction::makeFallthrough());
-    // m.impl("round", CppFunction::makeFallthrough());
-    // m.impl("round.out", CppFunction::makeFallthrough());
-    // m.impl("round_", CppFunction::makeFallthrough());
-    // m.impl("sigmoid", CppFunction::makeFallthrough());
-    // m.impl("sigmoid.out", CppFunction::makeFallthrough());
-    // m.impl("sigmoid_", CppFunction::makeFallthrough());
+    // log1p_
+    // acos
+    // acos.out
+    // acos_
+    // acosh
+    // acosh.out
+    // acosh_
+    // angle
+    // angle.out
+    // arccosh
+    // arccosh.out
+    // arccosh_
+    // asin
+    // asin.out
+    // asin_
+    // asinh
+    // asinh.out
+    // asinh_
+    // atan
+    // atan.out
+    // atan2
+    // atan2.out
+    // atan2_
+    // atan_
+    // atanh
+    // atanh.out
+    // atanh_
+    // conj
+    // deg2rad
+    // deg2rad.out
+    // deg2rad_
+    // digamma
+    // digamma.out
+    // digamma_
+    // expm1
+    // expm1.out
+    // expm1_
+    // imag
+    // isfinite
+    // isinf
+    // isnan
+    // lgamma
+    // lgamma.out
+    // lgamma_
+    // log_
+    // log10_
+    // log1p_
+    // log2_
+    // rad2deg
+    // rad2deg.out
+    // rad2deg_
+    // relu
+    // relu_
+    // real
+    // round
+    // round.out
+    // round_
+    // sigmoid
+    // sigmoid.out
+    // sigmoid_
 
     // =========================
     // Binary ops
     // =========================
     m.impl("add.out", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke_out));
     m.impl("add.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke));
-    // m.impl("add.Scalar", CppFunction::makeFallthrough());
-    // m.impl("add_.Scalar", CppFunction::makeFallthrough());
-    // m.impl("add_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("_add_relu.Tensor", CppFunction::makeFallthrough());
-    // m.impl("_add_relu.out", CppFunction::makeFallthrough());
-    // m.impl("_add_relu_.Tensor", CppFunction::makeFallthrough());
+    // add.Scalar
+    // add_.Scalar
+    // add_.Tensor
+    // _add_relu.Tensor
+    // _add_relu.out
+    // _add_relu_.Tensor
 
     m.impl("sub.out", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke_out));
     m.impl("sub.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke));
-    // m.impl("sub.Scalar", CppFunction::makeFallthrough());
-    // m.impl("sub_.Scalar", CppFunction::makeFallthrough());
-    // m.impl("sub_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("rsub.Scalar", CppFunction::makeFallthrough());
-    // m.impl("rsub.Tensor", CppFunction::makeFallthrough());
+    // sub.Scalar
+    // sub_.Scalar
+    // sub_.Tensor
+    // rsub.Scalar
+    // rsub.Tensor
 
     // Arithmetic ops
     m.impl("mul.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::multiply>::invoke_out));
     m.impl("mul.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::multiply>::invoke));
-    // m.impl("mul_.Tensor", CppFunction::makeFallthrough());
+    // mul_.Tensor
 
     m.impl("div.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::divide>::invoke_out));
     m.impl("div.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::divide>::invoke));
-    // m.impl("div.Scalar", CppFunction::makeFallthrough());
-    // m.impl("div_.Scalar", CppFunction::makeFallthrough());
-    // m.impl("div_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("floor_divide", CppFunction::makeFallthrough());
-    // m.impl("floor_divide.Scalar", CppFunction::makeFallthrough());
-    // m.impl("floor_divide.out", CppFunction::makeFallthrough());
-    // m.impl("floor_divide_.Scalar", CppFunction::makeFallthrough());
-    // m.impl("floor_divide_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("true_divide.Scalar", CppFunction::makeFallthrough());
-    // m.impl("true_divide.out", CppFunction::makeFallthrough());
-    // m.impl("true_divide_.Scalar", CppFunction::makeFallthrough());
-    // m.impl("true_divide_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("pow.Scalar", CppFunction::makeFallthrough());
-    // m.impl("pow.Scalar_out", CppFunction::makeFallthrough());
-    // m.impl("pow.Tensor_Scalar", CppFunction::makeFallthrough());
-    // m.impl("pow.Tensor_Scalar_out", CppFunction::makeFallthrough());
-    // m.impl("pow.Tensor_Tensor", CppFunction::makeFallthrough());
-    // m.impl("pow.Tensor_Tensor_out", CppFunction::makeFallthrough());
-    // m.impl("pow_.Scalar", CppFunction::makeFallthrough());
-    // m.impl("pow_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("nextafter", CppFunction::makeFallthrough());
-    // m.impl("nextafter.out", CppFunction::makeFallthrough());
-    // m.impl("nextafter_", CppFunction::makeFallthrough());
-    // m.impl("dot", CppFunction::makeFallthrough());
-    // m.impl("dot.out", CppFunction::makeFallthrough());
-    // m.impl("hypot", CppFunction::makeFallthrough());
-    // m.impl("hypot.out", CppFunction::makeFallthrough());
-    // m.impl("hypot_", CppFunction::makeFallthrough());
-    // m.impl("matmul", CppFunction::makeFallthrough());
-    // m.impl("matmul.out", CppFunction::makeFallthrough());
-    // m.impl("mm", CppFunction::makeFallthrough());
-    // m.impl("mm.out", CppFunction::makeFallthrough());
-    // m.impl("mv", CppFunction::makeFallthrough());
-    // m.impl("mv.out", CppFunction::makeFallthrough());
-    // m.impl("bmm", CppFunction::makeFallthrough());
-    // m.impl("bmm.out", CppFunction::makeFallthrough());
+    // div.Scalar
+    // div_.Scalar
+    // div_.Tensor
+    // floor_divide
+    // floor_divide.Scalar
+    // floor_divide.out
+    // floor_divide_.Scalar
+    // floor_divide_.Tensor
+    // true_divide.Scalar
+    // true_divide.out
+    // true_divide_.Scalar
+    // true_divide_.Tensor
+    // pow.Scalar
+    // pow.Scalar_out
+    // pow.Tensor_Scalar
+    // pow.Tensor_Scalar_out
+    // pow.Tensor_Tensor
+    // pow.Tensor_Tensor_out
+    // pow_.Scalar
+    // pow_.Tensor
+    // nextafter
+    // nextafter.out
+    // nextafter_
+    // dot
+    // dot.out
+    // hypot
+    // hypot.out
+    // hypot_
+    // matmul
+    // matmul.out
+    // mm
+    // mm.out
+    // mv
+    // mv.out
+    // bmm
+    // bmm.out
 
     // Logical ops
     m.impl("logical_and.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_and>::invoke_out));
     m.impl("logical_and", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_and>::invoke));
-    // m.impl("logical_and_", CppFunction::makeFallthrough());
+    // logical_and_
 
     m.impl("logical_or.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_or>::invoke_out));
     m.impl("logical_or", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_or>::invoke));
-    // m.impl("logical_or_", CppFunction::makeFallthrough());
+    // logical_or_
 
     m.impl("logical_xor.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor>::invoke_out));
     m.impl("logical_xor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor>::invoke));
-    // m.impl("logical_xor_", CppFunction::makeFallthrough());
+    // logical_xor_
 
     // Relational ops (Tensor versions only)
     m.impl("eq.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke_out));
     m.impl("eq.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke));
-    // m.impl("eq.Scalar", CppFunction::makeFallthrough());
-    // m.impl("eq.Scalar_out", CppFunction::makeFallthrough());
+    // eq.Scalar
+    // eq.Scalar_out
 
     m.impl("ne.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ne>::invoke_out));
     m.impl("ne.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ne>::invoke));
-    // m.impl("ne.Scalar", CppFunction::makeFallthrough());
-    // m.impl("ne.Scalar_out", CppFunction::makeFallthrough());
+    // ne.Scalar
+    // ne.Scalar_out
 
     m.impl("ge.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ge>::invoke_out));
     m.impl("ge.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ge>::invoke));
-    // m.impl("ge.Scalar", CppFunction::makeFallthrough());
-    // m.impl("ge.Scalar_out", CppFunction::makeFallthrough());
+    // ge.Scalar
+    // ge.Scalar_out
 
     m.impl("gt.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::gt>::invoke_out));
     m.impl("gt.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::gt>::invoke));
-    // m.impl("gt.Scalar", CppFunction::makeFallthrough());
-    // m.impl("gt.Scalar_out", CppFunction::makeFallthrough());
+    // gt.Scalar
+    // gt.Scalar_out
 
     m.impl("le.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::le>::invoke_out));
     m.impl("le.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::le>::invoke));
-    // m.impl("le.Scalar", CppFunction::makeFallthrough());
-    // m.impl("le.Scalar_out", CppFunction::makeFallthrough());
+    // le.Scalar
+    // le.Scalar_out
 
     m.impl("lt.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::lt>::invoke_out));
     m.impl("lt.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::lt>::invoke));
-    // m.impl("lt.Scalar", CppFunction::makeFallthrough());
-    // m.impl("lt.Scalar_out", CppFunction::makeFallthrough());
+    // lt.Scalar
+    // lt.Scalar_out
 
     // Special ops
     m.impl("logaddexp.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logaddexp>::invoke_out));
@@ -302,273 +301,273 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // Reductions
     // =========================
     // Sum
-    // m.impl("sum", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::sum>::invoke_dtype));
-    // m.impl("sum.DimnameList_out", CppFunction::makeFallthrough());
-    // m.impl("sum.IntList_out", CppFunction::makeFallthrough());
-    // m.impl("sum.dim_DimnameList", CppFunction::makeFallthrough());
-    // m.impl("sum.dim_IntList", CppFunction::makeFallthrough());
+    // sum
+    // sum.DimnameList_out
+    // sum.IntList_out
+    // sum.dim_DimnameList
+    // sum.dim_IntList
 
     // Mean
-    // m.impl("mean", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::mean>::invoke_dtype));
-    // m.impl("mean.dim", CppFunction::makeFallthrough());
-    // m.impl("mean.names_dim", CppFunction::makeFallthrough());
-    // m.impl("mean.names_out", CppFunction::makeFallthrough());
-    // m.impl("mean.out", CppFunction::makeFallthrough());
+    // mean
+    // mean.dim
+    // mean.names_dim
+    // mean.names_out
+    // mean.out
 
     // Max / Min
-    // m.impl("max", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::max>::invoke));
-    // m.impl("max.dim", CppFunction::makeFallthrough());
-    // m.impl("max.dim_max", CppFunction::makeFallthrough());
-    // m.impl("max.names_dim", CppFunction::makeFallthrough());
-    // m.impl("max.names_dim_max", CppFunction::makeFallthrough());
-    // m.impl("min", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::min>::invoke));
-    // m.impl("min.dim", CppFunction::makeFallthrough());
-    // m.impl("min.dim_min", CppFunction::makeFallthrough());
-    // m.impl("min.names_dim", CppFunction::makeFallthrough());
-    // m.impl("min.names_dim_min", CppFunction::makeFallthrough());
+    // max
+    // max.dim
+    // max.dim_max
+    // max.names_dim
+    // max.names_dim_max
+    // min
+    // min.dim
+    // min.dim_min
+    // min.names_dim
+    // min.names_dim_min
 
     // Std / Var
-    // m.impl("std", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::std>::invoke_unbiased));
-    // m.impl("std.dim", CppFunction::makeFallthrough());
-    // m.impl("std.names_dim", CppFunction::makeFallthrough());
-    // m.impl("std.names_out", CppFunction::makeFallthrough());
-    // m.impl("std.out", CppFunction::makeFallthrough());
-    // m.impl("std.correction", CppFunction::makeFallthrough());
-    // m.impl("std.correction_out", CppFunction::makeFallthrough());
-    // m.impl("std.correction_names", CppFunction::makeFallthrough());
-    // m.impl("std.correction_names_out", CppFunction::makeFallthrough());
-    // m.impl("std_mean", CppFunction::makeFallthrough());
-    // m.impl("std_mean.dim", CppFunction::makeFallthrough());
-    // m.impl("std_mean.names_dim", CppFunction::makeFallthrough());
-    // m.impl("std_mean.correction", CppFunction::makeFallthrough());
-    // m.impl("std_mean.correction_names", CppFunction::makeFallthrough());
-    // m.impl("var", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::var>::invoke_unbiased));
-    // m.impl("var.dim", CppFunction::makeFallthrough());
-    // m.impl("var.names_dim", CppFunction::makeFallthrough());
-    // m.impl("var.names_out", CppFunction::makeFallthrough());
-    // m.impl("var.out", CppFunction::makeFallthrough());
-    // m.impl("var.correction", CppFunction::makeFallthrough());
-    // m.impl("var.correction_out", CppFunction::makeFallthrough());
-    // m.impl("var.correction_names", CppFunction::makeFallthrough());
-    // m.impl("var.correction_names_out", CppFunction::makeFallthrough());
-    // m.impl("var_mean", CppFunction::makeFallthrough());
-    // m.impl("var_mean.dim", CppFunction::makeFallthrough());
-    // m.impl("var_mean.names_dim", CppFunction::makeFallthrough());
-    // m.impl("var_mean.correction", CppFunction::makeFallthrough());
-    // m.impl("var_mean.correction_names", CppFunction::makeFallthrough());
+    // std
+    // std.dim
+    // std.names_dim
+    // std.names_out
+    // std.out
+    // std.correction
+    // std.correction_out
+    // std.correction_names
+    // std.correction_names_out
+    // std_mean
+    // std_mean.dim
+    // std_mean.names_dim
+    // std_mean.correction
+    // std_mean.correction_names
+    // var
+    // var.dim
+    // var.names_dim
+    // var.names_out
+    // var.out
+    // var.correction
+    // var.correction_out
+    // var.correction_names
+    // var.correction_names_out
+    // var_mean
+    // var_mean.dim
+    // var_mean.names_dim
+    // var_mean.correction
+    // var_mean.correction_names
     
     // Core tensor ops (shape/view/manipulation)
-    // m.impl("alias", CppFunction::makeFallthrough());
-    // m.impl("align_as", CppFunction::makeFallthrough());
-    // m.impl("align_tensors", CppFunction::makeFallthrough());
-    // m.impl("align_to", CppFunction::makeFallthrough());
-    // m.impl("align_to.ellipsis_idx", CppFunction::makeFallthrough());
-    // m.impl("as_strided", CppFunction::makeFallthrough());
-    // m.impl("clone", CppFunction::makeFallthrough());
-    // m.impl("contiguous", CppFunction::makeFallthrough());
-    // m.impl("diagonal", CppFunction::makeFallthrough());
-    // m.impl("diagonal.Dimname", CppFunction::makeFallthrough());
-    // m.impl("narrow", CppFunction::makeFallthrough());
-    // m.impl("narrow.Tensor", CppFunction::makeFallthrough());
-    // m.impl("rename", CppFunction::makeFallthrough());
-    // m.impl("rename_", CppFunction::makeFallthrough());
-    // m.impl("reshape", CppFunction::makeFallthrough());
-    // m.impl("resize_", CppFunction::makeFallthrough());
-    // m.impl("resize_as_", CppFunction::makeFallthrough());
-    // m.impl("select.Dimname", CppFunction::makeFallthrough());
-    // m.impl("select.int", CppFunction::makeFallthrough());
-    // m.impl("size.Dimname", CppFunction::makeFallthrough());
-    // m.impl("size.int", CppFunction::makeFallthrough());
-    // m.impl("slice.Tensor", CppFunction::makeFallthrough());
-    // m.impl("squeeze", CppFunction::makeFallthrough());
-    // m.impl("squeeze.dim", CppFunction::makeFallthrough());
-    // m.impl("squeeze.dimname", CppFunction::makeFallthrough());
-    // m.impl("stride.Dimname", CppFunction::makeFallthrough());
-    // m.impl("stride.int", CppFunction::makeFallthrough());
-    // m.impl("t", CppFunction::makeFallthrough());
-    // m.impl("transpose.Dimname", CppFunction::makeFallthrough());
-    // m.impl("transpose.int", CppFunction::makeFallthrough());
-    // m.impl("unbind.Dimname", CppFunction::makeFallthrough());
-    // m.impl("unbind.int", CppFunction::makeFallthrough());
-    // m.impl("unflatten.Dimname", CppFunction::makeFallthrough());
-    // m.impl("unflatten.int", CppFunction::makeFallthrough());
-    // m.impl("unsafe_chunk", CppFunction::makeFallthrough());
-    // m.impl("unsafe_split.Tensor", CppFunction::makeFallthrough());
-    // m.impl("unsafe_split_with_sizes", CppFunction::makeFallthrough());
+    // alias
+    // align_as
+    // align_tensors
+    // align_to
+    // align_to.ellipsis_idx
+    // as_strided
+    // clone
+    // contiguous
+    // diagonal
+    // diagonal.Dimname
+    // narrow
+    // narrow.Tensor
+    // rename
+    // rename_
+    // reshape
+    // resize_
+    // resize_as_
+    // select.Dimname
+    // select.int
+    // size.Dimname
+    // size.int
+    // slice.Tensor
+    // squeeze
+    // squeeze.dim
+    // squeeze.dimname
+    // stride.Dimname
+    // stride.int
+    // t
+    // transpose.Dimname
+    // transpose.int
+    // unbind.Dimname
+    // unbind.int
+    // unflatten.Dimname
+    // unflatten.int
+    // unsafe_chunk
+    // unsafe_split.Tensor
+    // unsafe_split_with_sizes
 
     // Creation / like-ops
-    // m.impl("empty_like", CppFunction::makeFallthrough());
-    // m.impl("full_like", CppFunction::makeFallthrough());
-    // m.impl("ones_like", CppFunction::makeFallthrough());
-    // m.impl("rand_like", CppFunction::makeFallthrough());
-    // m.impl("randn_like", CppFunction::makeFallthrough());
-    // m.impl("vander", CppFunction::makeFallthrough());
-    // m.impl("zeros_like", CppFunction::makeFallthrough());
+    // empty_like
+    // full_like
+    // ones_like
+    // rand_like
+    // randn_like
+    // vander
+    // zeros_like
 
     // Indexing / filling
-    // m.impl("copy_", CppFunction::makeFallthrough());
-    // m.impl("fill_.Scalar", CppFunction::makeFallthrough());
-    // m.impl("fill_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("index_fill.Dimname_Scalar", CppFunction::makeFallthrough());
-    // m.impl("index_fill.Dimname_Tensor", CppFunction::makeFallthrough());
-    // m.impl("index_fill.int_Scalar", CppFunction::makeFallthrough());
-    // m.impl("index_fill.int_Tensor", CppFunction::makeFallthrough());
-    // m.impl("index_fill_.Dimname_Scalar", CppFunction::makeFallthrough());
-    // m.impl("index_fill_.Dimname_Tensor", CppFunction::makeFallthrough());
-    // m.impl("index_fill_.int_Scalar", CppFunction::makeFallthrough());
-    // m.impl("index_fill_.int_Tensor", CppFunction::makeFallthrough());
-    // m.impl("masked_fill.Scalar", CppFunction::makeFallthrough());
-    // m.impl("masked_fill.Tensor", CppFunction::makeFallthrough());
-    // m.impl("masked_fill_.Scalar", CppFunction::makeFallthrough());
-    // m.impl("masked_fill_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("masked_select", CppFunction::makeFallthrough());
-    // m.impl("masked_select.out", CppFunction::makeFallthrough());
+    // copy_
+    // fill_.Scalar
+    // fill_.Tensor
+    // index_fill.Dimname_Scalar
+    // index_fill.Dimname_Tensor
+    // index_fill.int_Scalar
+    // index_fill.int_Tensor
+    // index_fill_.Dimname_Scalar
+    // index_fill_.Dimname_Tensor
+    // index_fill_.int_Scalar
+    // index_fill_.int_Tensor
+    // masked_fill.Scalar
+    // masked_fill.Tensor
+    // masked_fill_.Scalar
+    // masked_fill_.Tensor
+    // masked_select
+    // masked_select.out
 
     // Reductions / scans
-    // m.impl("all", CppFunction::makeFallthrough());
-    // m.impl("any", CppFunction::makeFallthrough());
-    // m.impl("cummax", CppFunction::makeFallthrough());
-    // m.impl("cummax.dimname", CppFunction::makeFallthrough());
-    // m.impl("cummax.dimname_out", CppFunction::makeFallthrough());
-    // m.impl("cummax.out", CppFunction::makeFallthrough());
-    // m.impl("cummin", CppFunction::makeFallthrough());
-    // m.impl("cummin.dimname", CppFunction::makeFallthrough());
-    // m.impl("cummin.dimname_out", CppFunction::makeFallthrough());
-    // m.impl("cummin.out", CppFunction::makeFallthrough());
-    // m.impl("cumprod", CppFunction::makeFallthrough());
-    // m.impl("cumprod.dimname", CppFunction::makeFallthrough());
-    // m.impl("cumprod.dimname_out", CppFunction::makeFallthrough());
-    // m.impl("cumprod.out", CppFunction::makeFallthrough());
-    // m.impl("cumsum", CppFunction::makeFallthrough());
-    // m.impl("cumsum.dimname", CppFunction::makeFallthrough());
-    // m.impl("cumsum.dimname_out", CppFunction::makeFallthrough());
-    // m.impl("cumsum.out", CppFunction::makeFallthrough());
-    // m.impl("kthvalue", CppFunction::makeFallthrough());
-    // m.impl("kthvalue.dimname", CppFunction::makeFallthrough());
-    // m.impl("kthvalue.dimname_out", CppFunction::makeFallthrough());
-    // m.impl("kthvalue.values", CppFunction::makeFallthrough());
-    // m.impl("logcumsumexp", CppFunction::makeFallthrough());
-    // m.impl("logcumsumexp.dimname", CppFunction::makeFallthrough());
-    // m.impl("logcumsumexp.dimname_out", CppFunction::makeFallthrough());
-    // m.impl("logcumsumexp.out", CppFunction::makeFallthrough());
-    // m.impl("logsumexp", CppFunction::makeFallthrough());
-    // m.impl("logsumexp.names", CppFunction::makeFallthrough());
-    // m.impl("logsumexp.names_out", CppFunction::makeFallthrough());
-    // m.impl("logsumexp.out", CppFunction::makeFallthrough());
+    // all
+    // any
+    // cummax
+    // cummax.dimname
+    // cummax.dimname_out
+    // cummax.out
+    // cummin
+    // cummin.dimname
+    // cummin.dimname_out
+    // cummin.out
+    // cumprod
+    // cumprod.dimname
+    // cumprod.dimname_out
+    // cumprod.out
+    // cumsum
+    // cumsum.dimname
+    // cumsum.dimname_out
+    // cumsum.out
+    // kthvalue
+    // kthvalue.dimname
+    // kthvalue.dimname_out
+    // kthvalue.values
+    // logcumsumexp
+    // logcumsumexp.dimname
+    // logcumsumexp.dimname_out
+    // logcumsumexp.out
+    // logsumexp
+    // logsumexp.names
+    // logsumexp.names_out
+    // logsumexp.out
     
     
-    // m.impl("median", CppFunction::makeFallthrough());
-    // m.impl("median.dim", CppFunction::makeFallthrough());
-    // m.impl("median.dim_values", CppFunction::makeFallthrough());
-    // m.impl("median.names_dim", CppFunction::makeFallthrough());
-    // m.impl("median.names_dim_values", CppFunction::makeFallthrough());
+    // median
+    // median.dim
+    // median.dim_values
+    // median.names_dim
+    // median.names_dim_values
     
-    // m.impl("prod", CppFunction::makeFallthrough());
-    // m.impl("prod.Dimname_out", CppFunction::makeFallthrough());
-    // m.impl("prod.dim_Dimname", CppFunction::makeFallthrough());
-    // m.impl("prod.dim_int", CppFunction::makeFallthrough());
-    // m.impl("prod.int_out", CppFunction::makeFallthrough());
+    // prod
+    // prod.Dimname_out
+    // prod.dim_Dimname
+    // prod.dim_int
+    // prod.int_out
     
 
     // Probability / statistics
-    // m.impl("polygamma", CppFunction::makeFallthrough());
-    // m.impl("polygamma.out", CppFunction::makeFallthrough());
-    // m.impl("polygamma_", CppFunction::makeFallthrough());
+    // polygamma
+    // polygamma.out
+    // polygamma_
     
 
     // Random
     m.impl("bernoulli", TORCH_FN(tt_eager::ops::random::ttnn_bernoulli::invoke));
     m.impl("bernoulli.out", TORCH_FN(tt_eager::ops::random::ttnn_bernoulli::invoke_out));
-    // m.impl("bernoulli_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("bernoulli_.float", CppFunction::makeFallthrough());
-    // m.impl("cauchy_", CppFunction::makeFallthrough());
-    // m.impl("exponential_", CppFunction::makeFallthrough());
-    // m.impl("geometric_", CppFunction::makeFallthrough());
-    // m.impl("normal_", CppFunction::makeFallthrough());
-    // m.impl("random_", CppFunction::makeFallthrough());
-    // m.impl("random_.from", CppFunction::makeFallthrough());
-    // m.impl("random_.to", CppFunction::makeFallthrough());
-    // m.impl("uniform_", CppFunction::makeFallthrough());
+    // bernoulli_.Tensor
+    // bernoulli_.float
+    // cauchy_
+    // exponential_
+    // geometric_
+    // normal_
+    // random_
+    // random_.from
+    // random_.to
+    // uniform_
 
     // Math helpers (clamp and friends)
-    // m.impl("clamp", CppFunction::makeFallthrough());
-    // m.impl("clamp.Tensor", CppFunction::makeFallthrough());
-    // m.impl("clamp.Tensor_out", CppFunction::makeFallthrough());
-    // m.impl("clamp.out", CppFunction::makeFallthrough());
-    // m.impl("clamp_", CppFunction::makeFallthrough());
-    // m.impl("clamp_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("clamp_max", CppFunction::makeFallthrough());
-    // m.impl("clamp_max.Tensor", CppFunction::makeFallthrough());
-    // m.impl("clamp_max.Tensor_out", CppFunction::makeFallthrough());
-    // m.impl("clamp_max.out", CppFunction::makeFallthrough());
-    // m.impl("clamp_max_", CppFunction::makeFallthrough());
-    // m.impl("clamp_max_.Tensor", CppFunction::makeFallthrough());
-    // m.impl("clamp_min", CppFunction::makeFallthrough());
-    // m.impl("clamp_min.Tensor", CppFunction::makeFallthrough());
-    // m.impl("clamp_min.Tensor_out", CppFunction::makeFallthrough());
-    // m.impl("clamp_min.out", CppFunction::makeFallthrough());
-    // m.impl("clamp_min_", CppFunction::makeFallthrough());
-    // m.impl("clamp_min_.Tensor", CppFunction::makeFallthrough());
+    // clamp
+    // clamp.Tensor
+    // clamp.Tensor_out
+    // clamp.out
+    // clamp_
+    // clamp_.Tensor
+    // clamp_max
+    // clamp_max.Tensor
+    // clamp_max.Tensor_out
+    // clamp_max.out
+    // clamp_max_
+    // clamp_max_.Tensor
+    // clamp_min
+    // clamp_min.Tensor
+    // clamp_min.Tensor_out
+    // clamp_min.out
+    // clamp_min_
+    // clamp_min_.Tensor
 
     // Pooling / distance
-    // m.impl("_cdist_forward", CppFunction::makeFallthrough());
-    // m.impl("cdist", CppFunction::makeFallthrough());
-    // m.impl("max_pool1d", CppFunction::makeFallthrough());
-    // m.impl("max_pool1d_with_indices", CppFunction::makeFallthrough());
-    // m.impl("max_pool2d", CppFunction::makeFallthrough());
-    // m.impl("max_pool2d_with_indices", CppFunction::makeFallthrough());
-    // m.impl("max_pool3d", CppFunction::makeFallthrough());
-    // m.impl("max_pool3d_with_indices", CppFunction::makeFallthrough());
+    // _cdist_forward
+    // cdist
+    // max_pool1d
+    // max_pool1d_with_indices
+    // max_pool2d
+    // max_pool2d_with_indices
+    // max_pool3d
+    // max_pool3d_with_indices
 
     // Softmax / dropout / threshold
-    // m.impl("_fused_dropout", CppFunction::makeFallthrough());
-    // m.impl("dropout", CppFunction::makeFallthrough());
-    // m.impl("dropout_", CppFunction::makeFallthrough());
-    // m.impl("native_dropout", CppFunction::makeFallthrough());
-    // m.impl("softmax.Dimname", CppFunction::makeFallthrough());
-    // m.impl("softmax.int", CppFunction::makeFallthrough());
-    // m.impl("threshold", CppFunction::makeFallthrough());
-    // m.impl("threshold.out", CppFunction::makeFallthrough());
-    // m.impl("threshold_", CppFunction::makeFallthrough());
-    // m.impl("_sparse_log_softmax.Dimname", CppFunction::makeFallthrough());
-    // m.impl("_sparse_log_softmax.int", CppFunction::makeFallthrough());
-    // m.impl("_sparse_softmax.Dimname", CppFunction::makeFallthrough());
-    // m.impl("_sparse_softmax.int", CppFunction::makeFallthrough());
+    // _fused_dropout
+    // dropout
+    // dropout_
+    // native_dropout
+    // softmax.Dimname
+    // softmax.int
+    // threshold
+    // threshold.out
+    // threshold_
+    // _sparse_log_softmax.Dimname
+    // _sparse_log_softmax.int
+    // _sparse_softmax.Dimname
+    // _sparse_softmax.int
 
     // Tensor lists / concat / split
-    // m.impl("cat", CppFunction::makeFallthrough());
-    // m.impl("cat.names", CppFunction::makeFallthrough());
-    // m.impl("cat.names_out", CppFunction::makeFallthrough());
-    // m.impl("cat.out", CppFunction::makeFallthrough());
-    // m.impl("chunk", CppFunction::makeFallthrough());
-    // m.impl("split.Tensor", CppFunction::makeFallthrough());
-    // m.impl("split_with_sizes", CppFunction::makeFallthrough());
-    // m.impl("tensor_split.indices", CppFunction::makeFallthrough());
-    // m.impl("tensor_split.sections", CppFunction::makeFallthrough());
-    // m.impl("tensor_split.tensor_indices_or_sections", CppFunction::makeFallthrough());
+    // cat
+    // cat.names
+    // cat.names_out
+    // cat.out
+    // chunk
+    // split.Tensor
+    // split_with_sizes
+    // tensor_split.indices
+    // tensor_split.sections
+    // tensor_split.tensor_indices_or_sections
 
     // Type / device / names
-    // m.impl("_local_scalar_dense", CppFunction::makeFallthrough());
-    // m.impl("_to_copy", CppFunction::makeFallthrough());
-    // m.impl("equal", CppFunction::makeFallthrough());
-    // m.impl("is_coalesced", CppFunction::makeFallthrough());
-    // m.impl("is_complex", CppFunction::makeFallthrough());
-    // m.impl("is_floating_point", CppFunction::makeFallthrough());
-    // m.impl("is_inference", CppFunction::makeFallthrough());
-    // m.impl("is_nonzero", CppFunction::makeFallthrough());
-    // m.impl("is_pinned", CppFunction::makeFallthrough());
-    // m.impl("is_same_size", CppFunction::makeFallthrough());
-    // m.impl("is_signed", CppFunction::makeFallthrough());
-    // m.impl("item", CppFunction::makeFallthrough());
-    // m.impl("output_nr", CppFunction::makeFallthrough());
-    // m.impl("real", CppFunction::makeFallthrough());
-    // m.impl("refine_names", CppFunction::makeFallthrough());
-    // m.impl("result_type.Scalar", CppFunction::makeFallthrough());
-    // m.impl("result_type.Scalar_Tensor", CppFunction::makeFallthrough());
-    // m.impl("result_type.Tensor", CppFunction::makeFallthrough());
-    // m.impl("to.device", CppFunction::makeFallthrough());
-    // m.impl("to.dtype", CppFunction::makeFallthrough());
-    // m.impl("to.dtype_layout", CppFunction::makeFallthrough());
+    // _local_scalar_dense
+    // _to_copy
+    // equal
+    // is_coalesced
+    // is_complex
+    // is_floating_point
+    // is_inference
+    // is_nonzero
+    // is_pinned
+    // is_same_size
+    // is_signed
+    // item
+    // output_nr
+    // real
+    // refine_names
+    // result_type.Scalar
+    // result_type.Scalar_Tensor
+    // result_type.Tensor
+    // to.device
+    // to.dtype
+    // to.dtype_layout
 
     // TODO: to add other ops here.
     // FUTURETODO: to generate this part via CMake
