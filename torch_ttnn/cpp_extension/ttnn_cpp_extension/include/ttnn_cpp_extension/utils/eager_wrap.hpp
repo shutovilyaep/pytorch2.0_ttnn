@@ -38,14 +38,14 @@ concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
     { Op(a, b) } -> std::same_as<ttnn::Tensor>;
 };
 
-template <auto TTNN_BINARY_ALPHA>
+template <auto Op>
 concept TTNNBinaryAlphaFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b, float alpha) {
-    { TTNN_BINARY_ALPHA(a, b, alpha) } -> std::same_as<ttnn::Tensor>;
+    { Op(a, b, alpha) } -> std::same_as<ttnn::Tensor>;
 };
 
-template <auto TTNN_RANDOM_WITH_SEED>
-concept TTNNRandomWithSeedFn = requires(const ttnn::Tensor& a, uint32_t seed) {
-    { TTNN_RANDOM_WITH_SEED(a, seed, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
+template <auto Op>
+concept TTNNRandomFn = requires(const ttnn::Tensor& a, uint32_t seed) {
+    { Op(a, seed, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
 };
 
 // Helper functions
@@ -139,10 +139,10 @@ private:
 
 
 // Alternative binary wrapper that directly uses TTNN ops with explicit alpha parameter (e.g., ttnn::addalpha/subalpha)
-template <auto TTNN_BINARY_ALPHA>
-    requires TTNNBinaryAlphaFn<TTNN_BINARY_ALPHA>
+template <auto Op>
+    requires TTNNBinaryAlphaFn<Op>
 struct binary_alpha_wrapper {
-    static_assert(TTNNBinaryAlphaFn<TTNN_BINARY_ALPHA>, "TTNN_BINARY_ALPHA must be (const ttnn::Tensor&, const ttnn::Tensor&, float) -> ttnn::Tensor");
+    static_assert(TTNNBinaryAlphaFn<Op>, "Op must be (const ttnn::Tensor&, const ttnn::Tensor&, float) -> ttnn::Tensor");
 
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
         at::Tensor out = make_empty_like_tt(a);
@@ -166,17 +166,17 @@ private:
         ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
         const float alpha_value = static_cast<float>(alpha.toDouble());
-        ttnn::Tensor result = TTNN_BINARY_ALPHA(a_tile, b_tile, alpha_value);
+        ttnn::Tensor result = Op(a_tile, b_tile, alpha_value);
         return write_from_ttnn(out, a, result);
     }
 };
 
 
 // Random Wrapper
-template <auto TTNN_RANDOM_WITH_SEED>
-    requires TTNNRandomWithSeedFn<TTNN_RANDOM_WITH_SEED>
+template <auto Op>
+    requires TTNNRandomFn<Op>
 struct random_wrapper {
-    static_assert(TTNNRandomWithSeedFn<TTNN_RANDOM_WITH_SEED>, "TTNN_RANDOM_WITH_SEED must be (const ttnn::Tensor&, uint32_t, ...) -> ttnn::Tensor");
+    static_assert(TTNNRandomFn<Op>, "Op must be (const ttnn::Tensor&, uint32_t, ...) -> ttnn::Tensor");
 
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& input, c10::optional<at::Generator> generator = c10::nullopt) {
         at::Tensor out = make_empty_like_tt(input);
@@ -204,7 +204,7 @@ private:
         static thread_local std::mt19937 rng(std::random_device{}());
         uint32_t seed = generator.has_value() ? static_cast<uint32_t>(generator.value().current_seed()) : rng();
 
-        ttnn::Tensor result = TTNN_RANDOM_WITH_SEED(
+        ttnn::Tensor result = Op(
             in_tile,
             seed,
             std::nullopt,              // output
