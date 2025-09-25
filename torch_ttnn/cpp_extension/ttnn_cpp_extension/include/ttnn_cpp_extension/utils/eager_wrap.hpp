@@ -27,17 +27,12 @@
 namespace tt_eager::ext {
 
 
-//===========================
-//   Concepts (C++20)
-//===========================
-
-// Unary op concept (first)
+// Concepts
 template <auto Op>
 concept TTNNUnaryFn = requires(const ttnn::Tensor& a) {
     { Op(a) } -> std::same_as<ttnn::Tensor>;
 };
 
-// Binary op concept
 template <auto Op>
 concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
     { Op(a, b) } -> std::same_as<ttnn::Tensor>;
@@ -46,6 +41,11 @@ concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
 template <auto TTNN_BINARY_ALPHA>
 concept TTNNBinaryAlphaFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b, float alpha) {
     { TTNN_BINARY_ALPHA(a, b, alpha) } -> std::same_as<ttnn::Tensor>;
+};
+
+template <auto TTNN_RANDOM_WITH_SEED>
+concept TTNNRandomWithSeedFn = requires(const ttnn::Tensor& a, uint32_t seed) {
+    { TTNN_RANDOM_WITH_SEED(a, seed, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
 };
 
 // Helper functions
@@ -76,7 +76,6 @@ inline at::Tensor make_empty_like_tt(
         c10::nullopt);
 }
 
-// TODO: parameter order might be confusing, to think about
 inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, const ttnn::Tensor& result) {
     auto* out_impl = static_cast<at::TtnnTensorImpl*>(out.unsafeGetTensorImpl());
     out_impl->set_sizes_and_strides_as(like);
@@ -120,7 +119,7 @@ struct binary_wrapper {
 };  // struct binary_wrapper
 
 
-// Alternative wrapper that directly uses TTNN ops with explicit alpha parameter (e.g., ttnn::addalpha/subalpha)
+// Alternative binary wrapper that directly uses TTNN ops with explicit alpha parameter (e.g., ttnn::addalpha/subalpha)
 template <auto TTNN_BINARY_ALPHA>
     requires TTNNBinaryAlphaFn<TTNN_BINARY_ALPHA>
 struct binary_alpha_wrapper {
@@ -140,15 +139,7 @@ struct binary_alpha_wrapper {
 };
 
 
-//===========================
-//   Random Wrapper (bernoulli, etc.)
-//===========================
-
-template <auto TTNN_RANDOM_WITH_SEED>
-concept TTNNRandomWithSeedFn = requires(const ttnn::Tensor& a, uint32_t seed) {
-    { TTNN_RANDOM_WITH_SEED(a, seed, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
-};
-
+// Random Wrapper
 template <auto TTNN_RANDOM_WITH_SEED>
     requires TTNNRandomWithSeedFn<TTNN_RANDOM_WITH_SEED>
 struct random_wrapper {
