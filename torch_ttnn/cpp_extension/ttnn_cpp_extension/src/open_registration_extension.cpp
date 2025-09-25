@@ -149,14 +149,14 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("asin", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke));
     m.impl("asin.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke_out));
     m.impl("asin_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke_inplace));
-    // ttnn::asin_bw
+    
     m.impl("asinh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke));
     m.impl("asinh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke_out));
     m.impl("asinh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke_inplace));
     m.impl("atan", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke));
     m.impl("atan.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_out));
     m.impl("atan_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_inplace));
-    // ttnn::atan_bw
+    
     m.impl("atanh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke));
     m.impl("atanh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_out));
     m.impl("atanh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_inplace));
@@ -171,11 +171,11 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("digamma", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::digamma>::invoke));
     m.impl("digamma.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::digamma>::invoke_out));
     m.impl("digamma_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::digamma>::invoke_inplace));
-    // ttnn::digamma_bw
+    
     m.impl("expm1", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke));
     m.impl("expm1.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke_out));
     m.impl("expm1_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke_inplace));
-    // ttnn::expm1_bw
+    
     // imag
     m.impl("isfinite", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::isfinite>::invoke));
     m.impl("isfinite.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::isfinite>::invoke_out));
@@ -191,7 +191,7 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("rad2deg", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke));
     m.impl("rad2deg.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke_out));
     m.impl("rad2deg_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke_inplace));
-    // ttnn::rad2deg_bw
+    
     
     m.impl("relu", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::relu>::invoke));
     m.impl("relu_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::relu>::invoke_inplace));
@@ -204,7 +204,7 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("sigmoid", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke));
     m.impl("sigmoid.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke_out));
     m.impl("sigmoid_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke_inplace));
-    // ttnn::sigmoid_bw
+    
 }
 
 static inline void register_binary_ops(torch::Library& m) {
@@ -264,7 +264,7 @@ static inline void register_binary_ops(torch::Library& m) {
     // dot.out
     m.impl("hypot.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::hypot>::invoke_out));
     m.impl("hypot", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::hypot>::invoke));
-    // ttnn::hypot_bw
+    
     // matmul
     // matmul.out
     // mm
@@ -294,7 +294,7 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("atan2.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::atan2>::invoke_out));
     m.impl("atan2", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::atan2>::invoke));
     m.impl("atan2_", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::atan2>::invoke_inplace));
-    // ttnn::atan2_bw
+    
 
     // Relational ops (Tensor versions only)
     m.impl("eq.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke_out));
@@ -428,12 +428,25 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     register_random_ops(m);
 }
 
-// Register Autograd kernels: functional-only overloads
-// Type alias to avoid commas in macro arguments
 TORCH_LIBRARY_IMPL(aten, AutogradPrivateUse1, m) {
     // Unary
     using Rad2DegAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::rad2deg, ttnn::rad2deg_bw>;
     m.impl("rad2deg", TORCH_FN(Rad2DegAutograd::invoke));
+
+    using AsinAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::asin, ttnn::asin_bw>;
+    m.impl("asin", TORCH_FN(AsinAutograd::invoke));
+
+    using AtanAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::atan, ttnn::atan_bw>;
+    m.impl("atan", TORCH_FN(AtanAutograd::invoke));
+
+    using DigammaAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::digamma, ttnn::digamma_bw>;
+    m.impl("digamma", TORCH_FN(DigammaAutograd::invoke));
+
+    using Expm1Autograd = tt_eager::ext::autograd_unary_wrapper<ttnn::expm1, ttnn::expm1_bw>;
+    m.impl("expm1", TORCH_FN(Expm1Autograd::invoke));
+
+    using SigmoidAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::sigmoid, ttnn::sigmoid_bw>;
+    m.impl("sigmoid", TORCH_FN(SigmoidAutograd::invoke));
 
     // Binary
     using MulAutograd = tt_eager::ext::autograd_binary_wrapper<ttnn::multiply, ttnn::mul_bw>;
@@ -441,6 +454,12 @@ TORCH_LIBRARY_IMPL(aten, AutogradPrivateUse1, m) {
 
     using DivAutograd = tt_eager::ext::autograd_binary_wrapper<ttnn::divide, ttnn::div_bw>;
     m.impl("div.Tensor", TORCH_FN(DivAutograd::invoke));
+
+    using HypotAutograd = tt_eager::ext::autograd_binary_wrapper<ttnn::hypot, ttnn::hypot_bw>;
+    m.impl("hypot", TORCH_FN(HypotAutograd::invoke));
+
+    using Atan2Autograd = tt_eager::ext::autograd_binary_wrapper<ttnn::atan2, ttnn::atan2_bw>;
+    m.impl("atan2", TORCH_FN(Atan2Autograd::invoke));
 
     // Binary + alpha (add/sub with alpha)
     using AddAlphaAutograd = tt_eager::ext::autograd_binary_alpha_wrapper<ttnn::addalpha, ttnn::addalpha_bw>;
