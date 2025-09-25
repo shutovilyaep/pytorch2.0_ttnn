@@ -155,10 +155,6 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("atan.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_out));
     m.impl("atan_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_inplace));
     // ttnn::atan_bw
-    // m.impl("atan2", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan2>::invoke)); // TODO: to move to binary?
-    // m.impl("atan2.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan2>::invoke_out)); // TODO: to move to binary?
-    // m.impl("atan2_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan2>::invoke_inplace)); // TODO: to move to binary?
-    // ttnn::atan2_bw
     m.impl("atanh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke));
     m.impl("atanh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_out));
     m.impl("atanh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_inplace));
@@ -291,6 +287,12 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("logical_xor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor>::invoke));
     m.impl("logical_xor_", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor>::invoke_inplace));
     // ttnn::logical_xor_
+
+    // Trigonometric binary ops
+    m.impl("atan2.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::atan2>::invoke_out));
+    m.impl("atan2", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::atan2>::invoke));
+    m.impl("atan2_", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::atan2>::invoke_inplace));
+    // ttnn::atan2_bw
 
     // Relational ops (Tensor versions only)
     m.impl("eq.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke_out));
