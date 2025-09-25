@@ -9,7 +9,7 @@
 #include "ttnn_cpp_extension/utils/extension_utils.hpp"
 
 // This function can be used when the TTNN device is initialized separately,
-// for example, `device = ttnn.open_device(device_index = 0)`. Pass that
+// for example, `device = ttnn.open_mesh_device(MeshShape(1,1))`. Pass that
 // device object to this function so that the cpp extension can use it.
 c10::Device as_torch_device(ttnn::MeshDevice* ttnn_device) {
     LOGGING("");
@@ -23,13 +23,13 @@ c10::Device as_torch_device(ttnn::MeshDevice* ttnn_device) {
     return device;
 }
 
-// Manually closes the torch and ttnn device
+// Manually closes the torch and ttnn device (Mesh variant)
 void close_torch_device(c10::Device device) {
     LOGGING("");
     TtnnGuard device_guard(device);
     ttnn::MeshDevice* ttnn_device = device_guard.get_open_ttnn_device();
     TORCH_INTERNAL_ASSERT(ttnn_device != nullptr);
-    ttnn::close_device(*ttnn_device);
+    ttnn::close_mesh_device(*ttnn_device);
     ttnn_device = nullptr;
 }
 
