@@ -16,6 +16,7 @@
 #include <ttnn/operations/eltwise/unary/unary_composite.hpp>
 #include <ttnn/operations/eltwise/complex_unary/complex_unary.hpp>
 #include <ttnn/operations/eltwise/binary/binary.hpp>
+#include <ttnn/operations/eltwise/binary_backward/binary_backward.hpp>
 #include <ttnn/operations/eltwise/binary/binary_composite.hpp>
 #include <ttnn/operations/reduction/generic/generic_reductions.hpp>
 #include <ttnn/operations/bernoulli/bernoulli.hpp>
@@ -429,9 +430,24 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 
 // Register Autograd kernels: functional-only overloads
 // Type alias to avoid commas in macro arguments
-using Rad2DegAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::rad2deg, ttnn::rad2deg_bw>;
 TORCH_LIBRARY_IMPL(aten, AutogradPrivateUse1, m) {
+    // Unary
+    using Rad2DegAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::rad2deg, ttnn::rad2deg_bw>;
     m.impl("rad2deg", TORCH_FN(Rad2DegAutograd::invoke));
+
+    // Binary
+    using MulAutograd = tt_eager::ext::autograd_binary_wrapper<ttnn::multiply, ttnn::mul_bw>;
+    m.impl("mul.Tensor", TORCH_FN(MulAutograd::invoke));
+
+    using DivAutograd = tt_eager::ext::autograd_binary_wrapper<ttnn::divide, ttnn::div_bw>;
+    m.impl("div.Tensor", TORCH_FN(DivAutograd::invoke));
+
+    // Binary + alpha (add/sub with alpha)
+    using AddAlphaAutograd = tt_eager::ext::autograd_binary_alpha_wrapper<ttnn::addalpha, ttnn::addalpha_bw>;
+    m.impl("add.Tensor", TORCH_FN(AddAlphaAutograd::invoke));
+
+    using SubAlphaAutograd = tt_eager::ext::autograd_binary_alpha_wrapper<ttnn::subalpha, ttnn::subalpha_bw>;
+    m.impl("sub.Tensor", TORCH_FN(SubAlphaAutograd::invoke));
 }
 
 // This macro registers helper functions associated with the ttnn_device_mode module that can be used in Python
