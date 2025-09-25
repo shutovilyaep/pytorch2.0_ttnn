@@ -42,100 +42,99 @@ static inline void register_unary_ops(torch::Library& m) {
     // =========================
     m.impl("abs", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke));
     m.impl("abs.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_out));
-    // abs_
+    m.impl("abs_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_inplace));
     // absolute
     // absolute.out
     // absolute_
     m.impl("neg", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke));
     m.impl("neg.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke_out));
-    // neg_
+    m.impl("neg_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke_inplace));
     m.impl("reciprocal", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::reciprocal>::invoke));
     m.impl("reciprocal.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::reciprocal>::invoke_out));
-    // reciprocal_
+    m.impl("reciprocal_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::reciprocal>::invoke_inplace));
     m.impl("sqrt", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sqrt>::invoke));
     m.impl("sqrt.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sqrt>::invoke_out));
-    // sqrt_
+    m.impl("sqrt_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sqrt>::invoke_inplace));
     m.impl("rsqrt", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rsqrt>::invoke));
     m.impl("rsqrt.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rsqrt>::invoke_out));
-    // rsqrt_
+    m.impl("rsqrt_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rsqrt>::invoke_inplace));
     m.impl("square", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::square>::invoke));
     m.impl("square.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::square>::invoke_out));
-    // square_
+    m.impl("square_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::square>::invoke_inplace));
     m.impl("sin", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sin>::invoke));
     m.impl("sin.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sin>::invoke_out));
     m.impl("sin_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sin>::invoke_inplace));
-    // sin_
     m.impl("cos", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cos>::invoke));
     m.impl("cos.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cos>::invoke_out));
-    // cos_
+    m.impl("cos_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cos>::invoke_inplace));
     m.impl("tan", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tan>::invoke));
     m.impl("tan.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tan>::invoke_out));
-    // tan_
+    m.impl("tan_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tan>::invoke_inplace));
     m.impl("sinh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sinh>::invoke));
     m.impl("sinh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sinh>::invoke_out));
-    // sinh_
+    m.impl("sinh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sinh>::invoke_inplace));
     m.impl("cosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cosh>::invoke));
     m.impl("cosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cosh>::invoke_out));
-    // cosh_
+    m.impl("cosh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cosh>::invoke_inplace));
     m.impl("tanh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tanh>::invoke));
     m.impl("tanh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tanh>::invoke_out));
-    // tanh_
+    m.impl("tanh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tanh>::invoke_inplace));
     m.impl("floor", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::floor>::invoke));
     m.impl("floor.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::floor>::invoke_out));
-    // floor_
+    m.impl("floor_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::floor>::invoke_inplace));
     m.impl("ceil", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::ceil>::invoke));
     m.impl("ceil.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::ceil>::invoke_out));
-    // ceil_
+    m.impl("ceil_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::ceil>::invoke_inplace));
     m.impl("trunc", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::trunc>::invoke));
     m.impl("trunc.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::trunc>::invoke_out));
-    // trunc_
+    m.impl("trunc_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::trunc>::invoke_inplace));
     m.impl("frac", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::frac>::invoke));
     m.impl("frac.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::frac>::invoke_out));
-    // frac_
+    m.impl("frac_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::frac>::invoke_inplace));
     m.impl("bitwise_not", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::bitwise_not>::invoke));
     m.impl("bitwise_not.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::bitwise_not>::invoke_out));
-    // bitwise_not_
+    m.impl("bitwise_not_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::bitwise_not>::invoke_inplace));
     m.impl("logical_not", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::logical_not>::invoke));
     m.impl("logical_not.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::logical_not>::invoke_out));
-    // logical_not_
+    m.impl("logical_not_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::logical_not>::invoke_inplace));
     m.impl("sign", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sign>::invoke));
     m.impl("sign.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sign>::invoke_out));
-    // sign_
+    m.impl("sign_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sign>::invoke_inplace));
     m.impl("signbit", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::signbit>::invoke));
     m.impl("signbit.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::signbit>::invoke_out));
     m.impl("i0", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::i0>::invoke));
     m.impl("i0.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::i0>::invoke_out));
-    // i0_
+    m.impl("i0_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::i0>::invoke_inplace));
     m.impl("erf", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erf>::invoke));
     m.impl("erf.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erf>::invoke_out));
-    // erf_
+    m.impl("erf_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erf>::invoke_inplace));
     m.impl("erfc", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfc>::invoke));
     m.impl("erfc.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfc>::invoke_out));
-    // erfc_
+    m.impl("erfc_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfc>::invoke_inplace));
     m.impl("erfinv", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfinv>::invoke));
     m.impl("erfinv.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfinv>::invoke_out));
-    // erfinv_
+    m.impl("erfinv_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfinv>::invoke_inplace));
     m.impl("exp", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::exp>::invoke));
     m.impl("exp.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::exp>::invoke_out));
-    // exp_
+    m.impl("exp_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::exp>::invoke_inplace));
     m.impl("log", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log>::invoke));
     m.impl("log.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log>::invoke_out));
-    // log_
+    m.impl("log_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log>::invoke_inplace));
     m.impl("log10", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log10>::invoke));
     m.impl("log10.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log10>::invoke_out));
-    // log10_
+    m.impl("log10_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log10>::invoke_inplace));
     m.impl("log2", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log2>::invoke));
     m.impl("log2.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log2>::invoke_out));
-    // log2_
+    m.impl("log2_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log2>::invoke_inplace));
     m.impl("log1p", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log1p>::invoke));
     m.impl("log1p.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log1p>::invoke_out));
-    // log1p_
+    m.impl("log1p_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log1p>::invoke_inplace));
     m.impl("acos", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acos>::invoke));
     m.impl("acos.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acos>::invoke_out));
-    // acos_
+    m.impl("acos_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acos>::invoke_inplace));
     m.impl("acosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke));
     m.impl("acosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_out));
-    // acosh_
+    m.impl("acosh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_inplace));
     // angle
     // angle.out
     // ttnn::angle
@@ -144,13 +143,14 @@ static inline void register_unary_ops(torch::Library& m) {
     // arccosh_
     m.impl("asin", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke));
     m.impl("asin.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke_out));
-    // asin_
+    m.impl("asin_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke_inplace));
     // ttnn::asin_bw
     m.impl("asinh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke));
     m.impl("asinh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke_out));
-    // asinh_
+    m.impl("asinh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke_inplace));
     m.impl("atan", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke));
     m.impl("atan.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_out));
+    m.impl("atan_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_inplace));
     // atan2
     // atan2.out
     // ttnn::atan2
@@ -160,13 +160,13 @@ static inline void register_unary_ops(torch::Library& m) {
     // ttnn::atan_bw
     m.impl("atanh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke));
     m.impl("atanh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_out));
-    // atanh_
+    m.impl("atanh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_inplace));
     // conj
     // ttnn::conj
     // ttnn::conj_bw
     m.impl("deg2rad", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::deg2rad>::invoke));
     m.impl("deg2rad.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::deg2rad>::invoke_out));
-    // deg2rad_
+    m.impl("deg2rad_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::deg2rad>::invoke_inplace));
     // digamma
     // digamma.out
     // digamma_
@@ -174,7 +174,7 @@ static inline void register_unary_ops(torch::Library& m) {
     // ttnn::digamma_bw
     m.impl("expm1", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke));
     m.impl("expm1.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke_out));
-    // expm1_
+    m.impl("expm1_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke_inplace));
     // ttnn::expm1_bw
     // imag
     // isfinite
@@ -189,7 +189,7 @@ static inline void register_unary_ops(torch::Library& m) {
     // log2_
     m.impl("rad2deg", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke));
     m.impl("rad2deg.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke_out));
-    // rad2deg_
+    m.impl("rad2deg_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke_inplace));
     // ttnn::rad2deg_bw
     // relu
     // relu_
@@ -201,7 +201,7 @@ static inline void register_unary_ops(torch::Library& m) {
     // ttnn::round_bw
     m.impl("sigmoid", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke));
     m.impl("sigmoid.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke_out));
-    // sigmoid_
+    m.impl("sigmoid_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke_inplace));
     // ttnn::sigmoid_bw
 }
 
