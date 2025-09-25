@@ -302,7 +302,6 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // Reductions
     // =========================
     // Sum
-    //  m.impl("sum", CppFunction::makeFallthrough());
     m.impl("sum", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::sum>::invoke_dtype));
     //  m.impl("sum.DimnameList_out", CppFunction::makeFallthrough());
     //  m.impl("sum.IntList_out", CppFunction::makeFallthrough());
@@ -310,7 +309,6 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     //  m.impl("sum.dim_IntList", CppFunction::makeFallthrough());
 
     // Mean
-    //  m.impl("mean", CppFunction::makeFallthrough());
     m.impl("mean", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::mean>::invoke_dtype));
     //  m.impl("mean.dim", CppFunction::makeFallthrough());
     //  m.impl("mean.names_dim", CppFunction::makeFallthrough());
@@ -318,13 +316,11 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     //  m.impl("mean.out", CppFunction::makeFallthrough());
 
     // Max / Min
-    //  m.impl("max", CppFunction::makeFallthrough());
     m.impl("max", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::max>::invoke));
     //  m.impl("max.dim", CppFunction::makeFallthrough());
     //  m.impl("max.dim_max", CppFunction::makeFallthrough());
     //  m.impl("max.names_dim", CppFunction::makeFallthrough());
     //  m.impl("max.names_dim_max", CppFunction::makeFallthrough());
-    //  m.impl("min", CppFunction::makeFallthrough());
     m.impl("min", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::min>::invoke));
     //  m.impl("min.dim", CppFunction::makeFallthrough());
     //  m.impl("min.dim_min", CppFunction::makeFallthrough());
@@ -332,7 +328,6 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     //  m.impl("min.names_dim_min", CppFunction::makeFallthrough());
 
     // Std / Var
-    //  m.impl("std", CppFunction::makeFallthrough());
     m.impl("std", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::std>::invoke_unbiased));
     //  m.impl("std.dim", CppFunction::makeFallthrough());
     //  m.impl("std.names_dim", CppFunction::makeFallthrough());
@@ -347,7 +342,6 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     //  m.impl("std_mean.names_dim", CppFunction::makeFallthrough());
     //  m.impl("std_mean.correction", CppFunction::makeFallthrough());
     //  m.impl("std_mean.correction_names", CppFunction::makeFallthrough());
-    //  m.impl("var", CppFunction::makeFallthrough());
     m.impl("var", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::var>::invoke_unbiased));
     //  m.impl("var.dim", CppFunction::makeFallthrough());
     //  m.impl("var.names_dim", CppFunction::makeFallthrough());
@@ -483,7 +477,6 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     
 
     // Random
-    //  m.impl("bernoulli", CppFunction::makeFallthrough());
     m.impl("bernoulli", TORCH_FN(tt_eager::ops::random::ttnn_bernoulli::invoke));
     m.impl("bernoulli.out", TORCH_FN(tt_eager::ops::random::ttnn_bernoulli::invoke_out));
     //  m.impl("bernoulli_.Tensor", CppFunction::makeFallthrough());
