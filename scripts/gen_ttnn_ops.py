@@ -7,6 +7,8 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SEARCH_DIR = REPO_ROOT / "torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations"
 OUT_FILE = REPO_ROOT / "ttnn_ops_implemented.txt"
+OUT_GROUPED_FILE = REPO_ROOT / "ttnn_ops_grouped.txt"
+OPEN_REGISTRATION_CPP = REPO_ROOT / "torch_ttnn/cpp_extension/ttnn_cpp_extension/src/open_registration_extension.cpp"
 
 
 def iter_source_files(root: Path):
@@ -82,6 +84,8 @@ def main():
     # Sort by op name then file
     results.sort(key=lambda x: (x[2], x[0], x[1]))
 
+    # Write original flat list for backward compatibility
+
     with OUT_FILE.open("w", encoding="utf-8") as f:
         f.write("TTNN operations registered ({} matches)\n\n".format(len(results)))
         for rel, line_no, op_name, var_name in results:
@@ -92,6 +96,124 @@ def main():
             f.write("\n")
 
     print(f"Wrote {OUT_FILE}")
+
+    # Build a set of op base names implemented in open_registration_extension.cpp
+    implemented_ops = set()
+    try:
+        cpp_text = OPEN_REGISTRATION_CPP.read_text(encoding="utf-8", errors="ignore")
+        # Capture m.impl("name" ...)
+        for m in re.finditer(r'm\.impl\(\s*"([^"]+)"', cpp_text):
+            name = m.group(1)
+            # Ignore fully-qualified names like aten::*
+            if "::" in name:
+                continue
+            base = name.split(".", 1)[0]
+            if base:
+                implemented_ops.add(base)
+    except Exception:
+        # If not found, leave the set empty
+        implemented_ops = set()
+
+    # Group TTNN ops similar to groups in open_registration_extension.cpp
+    def group_for(rel_path: str, op_name: str) -> str:
+        p = rel_path.replace("\\", "/")
+        if "/operations/" in p:
+            after = p.split("/operations/", 1)[1]
+        else:
+            after = p
+        parts = after.split("/")
+        # Heuristic grouping
+        if len(parts) >= 2 and parts[0] == "eltwise":
+            if parts[1].startswith("unary") or parts[1] in {"complex_unary", "unary_backward"}:
+                return "Unary ops"
+            if parts[1].startswith("binary") or parts[1] in {"binary_composite", "binary_backward"}:
+                return "Binary ops"
+            if parts[1].startswith("ternary") or parts[1] in {"ternary_backward"}:
+                return "Binary/Ternary ops"
+        if parts[0] == "reduction":
+            return "Reductions"
+        if parts[0] in {"bernoulli", "rand", "uniform", "random"}:
+            return "Random ops"
+        if parts[0] in {"data_movement", "copy", "typecast"}:
+            return "Core tensor ops"
+        if parts[0] == "core":
+            return "Core ops"
+        if parts[0] == "normalization":
+            return "Normalization ops"
+        if parts[0] in {"matmul", "conv", "pool"}:
+            return "Linear/Conv/Pool ops"
+        if parts[0] in {"transformer"}:
+            return "Transformer ops"
+        if parts[0] in {"kv_cache"}:
+            return "KV cache ops"
+        if parts[0] in {"experimental"}:
+            return "Experimental ops"
+        return "Other ops"
+
+    def ttnn_base_name(op_name: str) -> str:
+        # Strip namespaces like ttnn::, ttnn::experimental::, ttnn::prim::
+        if "::" in op_name:
+            return op_name.split("::")[-1]
+        return op_name
+
+    groups = {}
+    implemented_count = 0
+    for rel, line_no, op_name, var_name in results:
+        g = group_for(rel, op_name)
+        base = ttnn_base_name(op_name)
+        is_impl = base in implemented_ops
+        if is_impl:
+            implemented_count += 1
+        groups.setdefault(g, []).append({
+            "rel": rel,
+            "line": line_no,
+            "op": op_name,
+            "var": var_name,
+            "base": base,
+            "implemented": is_impl,
+        })
+
+    # Sort groups and entries
+    for g, entries in groups.items():
+        entries.sort(key=lambda e: (e["op"], e["rel"], e["line"]))
+
+    ordered_group_names = [
+        "Core ops",
+        "Unary ops",
+        "Binary ops",
+        "Binary/Ternary ops",
+        "Reductions",
+        "Random ops",
+        "Core tensor ops",
+        "Normalization ops",
+        "Linear/Conv/Pool ops",
+        "Transformer ops",
+        "KV cache ops",
+        "Experimental ops",
+        "Other ops",
+    ]
+
+    with OUT_GROUPED_FILE.open("w", encoding="utf-8") as f:
+        total = len(results)
+        f.write(f"TTNN operations grouped report\n")
+        f.write(f"Total ops discovered: {total}\n")
+        f.write(f"Implemented via open_registration_extension.cpp: {implemented_count}\n")
+        f.write("\n")
+
+        for group_name in ordered_group_names:
+            entries = groups.get(group_name, [])
+            if not entries:
+                continue
+            impl_in_group = sum(1 for e in entries if e["implemented"]) 
+            f.write(f"### {group_name} ({impl_in_group}/{len(entries)})\n")
+            for e in entries:
+                prefix = "" if e["implemented"] else "# "
+                status = "OK" if e["implemented"] else "TODO"
+                var_part = f" var:{e['var']}" if e["var"] else ""
+                f.write(f"{prefix}{e['op']}  -- {status}  [{e['rel']}:{e['line']}{var_part}]\n")
+            f.write("\n")
+
+    print(f"Wrote {OUT_GROUPED_FILE}")
 
 
 if __name__ == "__main__":
