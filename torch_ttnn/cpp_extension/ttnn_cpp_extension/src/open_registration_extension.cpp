@@ -430,9 +430,6 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 
 TORCH_LIBRARY_IMPL(aten, AutogradPrivateUse1, m) {
     // Unary
-    using Rad2DegAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::rad2deg, ttnn::rad2deg_bw>;
-    m.impl("rad2deg", TORCH_FN(Rad2DegAutograd::invoke));
-
     using AsinAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::asin, ttnn::asin_bw>;
     m.impl("asin", TORCH_FN(AsinAutograd::invoke));
 
@@ -444,6 +441,9 @@ TORCH_LIBRARY_IMPL(aten, AutogradPrivateUse1, m) {
 
     using Expm1Autograd = tt_eager::ext::autograd_unary_wrapper<ttnn::expm1, ttnn::expm1_bw>;
     m.impl("expm1", TORCH_FN(Expm1Autograd::invoke));
+
+    using Rad2DegAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::rad2deg, ttnn::rad2deg_bw>;
+    m.impl("rad2deg", TORCH_FN(Rad2DegAutograd::invoke));
 
     using SigmoidAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::sigmoid, ttnn::sigmoid_bw>;
     m.impl("sigmoid", TORCH_FN(SigmoidAutograd::invoke));
