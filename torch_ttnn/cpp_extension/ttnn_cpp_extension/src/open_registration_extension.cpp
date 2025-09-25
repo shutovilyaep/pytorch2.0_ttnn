@@ -14,6 +14,7 @@
 #include <ttnn/operations/eltwise/unary/unary.hpp>
 #include <ttnn/operations/eltwise/binary/binary.hpp>
 #include <ttnn/operations/reduction/generic/generic_reductions.hpp>
+#include <ttnn/operations/bernoulli/bernoulli.hpp>
 
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
