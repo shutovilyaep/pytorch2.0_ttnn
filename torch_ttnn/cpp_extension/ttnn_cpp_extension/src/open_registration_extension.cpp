@@ -417,11 +417,11 @@ static inline void register_random_ops(torch::Library& m) {
 // More details on the dispatcher can be found at
 // http://blog.ezyang.com/2020/09/lets-talk-about-the-pytorch-dispatcher/.
 TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
-    // register_core_creation_and_copy(m);
-    // register_unary_ops(m);
-    // register_binary_ops(m);
-    // register_reductions(m);
-    // register_random_ops(m);
+    register_core_creation_and_copy(m);
+    register_unary_ops(m);
+    register_binary_ops(m);
+    register_reductions(m);
+    register_random_ops(m);
 }
 
 // This macro registers helper functions associated with the ttnn_device_mode module that can be used in Python
