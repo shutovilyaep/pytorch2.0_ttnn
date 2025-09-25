@@ -10,6 +10,7 @@
 #include "ttnn_cpp_extension/ops/creation.hpp"
 
 #include "ttnn_cpp_extension/utils/eager_wrap.hpp"
+#include "ttnn_cpp_extension/utils/autograd_wrap.hpp"
 
 #include <ttnn/operations/eltwise/unary/unary.hpp>
 #include <ttnn/operations/eltwise/unary/unary_composite.hpp>
@@ -424,6 +425,13 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     register_binary_ops(m);
     register_reductions(m);
     register_random_ops(m);
+}
+
+// Register Autograd kernels: functional-only overloads
+// Type alias to avoid commas in macro arguments
+using Rad2DegAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::rad2deg, ttnn::rad2deg_bw>;
+TORCH_LIBRARY_IMPL(aten, AutogradPrivateUse1, m) {
+    m.impl("rad2deg", TORCH_FN(Rad2DegAutograd::invoke));
 }
 
 // This macro registers helper functions associated with the ttnn_device_mode module that can be used in Python
