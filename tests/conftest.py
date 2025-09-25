@@ -276,7 +276,7 @@ def compile_and_run(device, reset_torch_dynamo, request):
             if option.native_integration:
                 from torch_ttnn.cpp_extension import ttnn_module
 
-                torch_device = ttnn_module.open_torch_device(0)
+                torch_device = ttnn_module.as_torch_device(device)
                 start = time.perf_counter() * 1000
                 model_tester.model = model_tester.model.to(torch_device)
                 model_tester.inputs = model_tester.inputs.to(torch_device)
