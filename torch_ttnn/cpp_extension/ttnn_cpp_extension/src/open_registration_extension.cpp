@@ -138,9 +138,9 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("acosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke));
     m.impl("acosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_out));
     m.impl("acosh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_inplace));
-    m.impl("angle", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke));
-    m.impl("angle.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_out));
-    m.impl("angle_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_inplace));
+    // m.impl("angle", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke)); // TODO: to move to binary?
+    // m.impl("angle.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_out)); // TODO: to move to binary?
+    // m.impl("angle_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_inplace)); // TODO: to move to binary?
     // m.impl("arccosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::arccosh>::invoke));
     // m.impl("arccosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::arccosh>::invoke_out));
     // m.impl("arccosh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::arccosh>::invoke_inplace));
@@ -155,16 +155,16 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("atan.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_out));
     m.impl("atan_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_inplace));
     // ttnn::atan_bw
-    m.impl("atan2", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan2>::invoke));
-    m.impl("atan2.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan2>::invoke_out));
-    m.impl("atan2_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan2>::invoke_inplace));
+    // m.impl("atan2", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan2>::invoke)); // TODO: to move to binary?
+    // m.impl("atan2.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan2>::invoke_out)); // TODO: to move to binary?
+    // m.impl("atan2_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan2>::invoke_inplace)); // TODO: to move to binary?
     // ttnn::atan2_bw
     m.impl("atanh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke));
     m.impl("atanh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_out));
     m.impl("atanh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_inplace));
-    m.impl("conj", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke));
-    m.impl("conj.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke_out));
-    m.impl("conj_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke_inplace));
+    // m.impl("conj", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke)); // TODO: to move to binary?
+    // m.impl("conj.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke_out)); // TODO: to move to binary?
+    // m.impl("conj_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke_inplace)); // TODO: to move to binary?
     // ttnn::conj_bw
     m.impl("deg2rad", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::deg2rad>::invoke));
     m.impl("deg2rad.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::deg2rad>::invoke_out));
