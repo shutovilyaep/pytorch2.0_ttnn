@@ -83,45 +83,57 @@ inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, cons
     return out;
 }
 
-// Unry Wrapper
+// Unary Wrapper
 template <auto Op>
     requires TTNNUnaryFn<Op>
 struct unary_wrapper {
+    static_assert(TTNNUnaryFn<Op>, "Op must be ttnn::Tensor (const&) -> ttnn::Tensor");
+
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& a) {
         at::Tensor out = make_empty_like_tt(a);
-        invoke_out(a, out);
-        return out;
+        return invoke_into(a, out);
     }
 
-    static at::Tensor& invoke_out(const at::Tensor& a, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(a);
-        ttnn::Tensor result = Op(a_tile);
-        return write_from_ttnn(out, a, result);
+    [[nodiscard]] static at::Tensor& invoke_out(const at::Tensor& a, at::Tensor& out) {
+        return invoke_into(a, out);
     }
     
-    static at::Tensor& invoke_inplace(at::Tensor& self) {
-        return invoke_out(self, self);
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
+        return invoke_into(self, self);
+    }
+
+private:
+    [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor result = Op(a_tile);
+        return write_from_ttnn(out, in, result);
     }
 };  // struct unary_wrapper
 
 template <auto Op>
     requires TTNNBinaryFn<Op>
 struct binary_wrapper {
+    static_assert(TTNNBinaryFn<Op>, "Op must be (const ttnn::Tensor&, const ttnn::Tensor&) -> ttnn::Tensor");
+
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
         at::Tensor out = make_empty_like_tt(a);
-        invoke_out(a, b, out);
-        return out;
+        return invoke_into(a, b, out);
     }
 
-    static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
+    [[nodiscard]] static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
+        return invoke_into(a, b, out);
+    }
+    
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other) {
+        return invoke_into(self, other, self);
+    }
+
+private:
+    [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
         ttnn::Tensor result = Op(a_tile, b_tile);
         return write_from_ttnn(out, a, result);
-    }
-    
-    static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other) {
-        return invoke_out(self, other, self);
     }
 };  // struct binary_wrapper
 
@@ -130,22 +142,32 @@ struct binary_wrapper {
 template <auto TTNN_BINARY_ALPHA>
     requires TTNNBinaryAlphaFn<TTNN_BINARY_ALPHA>
 struct binary_alpha_wrapper {
-    static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
+    static_assert(TTNNBinaryAlphaFn<TTNN_BINARY_ALPHA>, "TTNN_BINARY_ALPHA must be (const ttnn::Tensor&, const ttnn::Tensor&, float) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
         at::Tensor out = make_empty_like_tt(a);
-        invoke_out(a, b, alpha, out);
-        return out;
+        return invoke_into(a, b, alpha, out);
     }
 
-    static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
+    [[nodiscard]] static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
+        return invoke_into(a, b, alpha, out);
+    }
+    
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
+        return invoke_into(self, other, alpha, self);
+    }
+
+private:
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const at::Tensor& b,
+        const c10::Scalar& alpha,
+        at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
         const float alpha_value = static_cast<float>(alpha.toDouble());
         ttnn::Tensor result = TTNN_BINARY_ALPHA(a_tile, b_tile, alpha_value);
         return write_from_ttnn(out, a, result);
-    }
-    
-    static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
-        return invoke_out(self, other, alpha, self);
     }
 };
 
@@ -154,13 +176,26 @@ struct binary_alpha_wrapper {
 template <auto TTNN_RANDOM_WITH_SEED>
     requires TTNNRandomWithSeedFn<TTNN_RANDOM_WITH_SEED>
 struct random_wrapper {
-    static at::Tensor invoke(const at::Tensor& input, c10::optional<at::Generator> generator = c10::nullopt) {
+    static_assert(TTNNRandomWithSeedFn<TTNN_RANDOM_WITH_SEED>, "TTNN_RANDOM_WITH_SEED must be (const ttnn::Tensor&, uint32_t, ...) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& input, c10::optional<at::Generator> generator = c10::nullopt) {
         at::Tensor out = make_empty_like_tt(input);
-        invoke_out(input, generator, out);
-        return out;
+        return invoke_into(input, generator, out);
     }
 
-    static at::Tensor& invoke_out(
+    [[nodiscard]] static at::Tensor& invoke_out(
+        const at::Tensor& input,
+        c10::optional<at::Generator> generator,
+        at::Tensor& out) {
+        return invoke_into(input, generator, out);
+    }
+    
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, c10::optional<at::Generator> generator = c10::nullopt) {
+        return invoke_into(self, generator, self);
+    }
+
+private:
+    [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& input,
         c10::optional<at::Generator> generator,
         at::Tensor& out) {
@@ -179,10 +214,6 @@ struct random_wrapper {
         );
 
         return write_from_ttnn(out, input, result);
-    }
-    
-    static at::Tensor& invoke_inplace(at::Tensor& self, c10::optional<at::Generator> generator = c10::nullopt) {
-        return invoke_out(self, generator, self);
     }
 };
 
