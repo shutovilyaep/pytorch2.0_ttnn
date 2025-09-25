@@ -11,14 +11,17 @@
 // This function can be used when the TTNN device is initialized separately,
 // for example, `device = ttnn.open_mesh_device(MeshShape(1,1))`. Pass that
 // device object to this function so that the cpp extension can use it.
-c10::Device as_torch_device(ttnn::MeshDevice* ttnn_device) {
+c10::Device as_torch_device(std::shared_ptr<ttnn::MeshDevice> ttnn_device) {
     LOGGING("");
     // TODO: Lacks a proper mesh support. We need to have mapping (shape, offset) -> index.
     // It's quiet difficult to do since c10::DeviceIndex is int8
     auto index = ttnn_device->get_device(0, 0)->id();
     auto device = c10::Device(c10::DeviceType::PrivateUse1, static_cast<c10::DeviceIndex>(index));
     if (TtnnGuard::ttnn_device == nullptr) {
-        TtnnGuard::ttnn_device = ttnn_device;
+        // Keep a raw pointer view inside the guard while preserving ownership via shared_ptr
+        static std::shared_ptr<ttnn::MeshDevice> keeper;
+        keeper = std::move(ttnn_device);
+        TtnnGuard::ttnn_device = keeper.get();
     }
     return device;
 }
