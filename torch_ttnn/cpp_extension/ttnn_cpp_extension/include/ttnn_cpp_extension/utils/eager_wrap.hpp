@@ -84,10 +84,10 @@ inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, cons
     return out;
 }
 
-// Uniry logic Invoker
+// Unry Wrapper
 template <auto Op>
     requires TTNNUnaryFn<Op>
-struct unary_logic {
+struct unary_wrapper {
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& a) {
         at::Tensor out = make_empty_like_tt(a);
         invoke_out(a, out);
@@ -99,16 +99,11 @@ struct unary_logic {
         ttnn::Tensor result = Op(a_tile);
         return write_from_ttnn(out, a, result);
     }
-};  // struct unary_logic
-
-// Unary wrapper with fixed signatures for dispatcher; forwards to logic
-template <auto TTNN_UNARY>
-    requires TTNNUnaryFn<TTNN_UNARY>
-using unary_wrapper = unary_logic<TTNN_UNARY>;
+};  // struct unary_wrapper
 
 template <auto Op>
     requires TTNNBinaryFn<Op>
-struct binary_logic {
+struct binary_wrapper {
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
         at::Tensor out = make_empty_like_tt(a);
         invoke_out(a, b, out);
@@ -122,16 +117,10 @@ struct binary_logic {
         return write_from_ttnn(out, a, result);
     }
 
-};  // struct binary_logic
-
-// Thin wrapper with fixed at::Tensor signatures for dispatcher; forwards to logic
-template <auto TTNN_BINARY>
-    requires TTNNBinaryFn<TTNN_BINARY>
-using binary_wrapper = binary_logic<TTNN_BINARY>;
+};  // struct binary_wrapper
 
 
 // Alternative wrapper that directly uses TTNN ops with explicit alpha parameter (e.g., ttnn::addalpha/subalpha)
-
 template <auto TTNN_BINARY_ALPHA>
     requires TTNNBinaryAlphaFn<TTNN_BINARY_ALPHA>
 struct binary_alpha_wrapper {
