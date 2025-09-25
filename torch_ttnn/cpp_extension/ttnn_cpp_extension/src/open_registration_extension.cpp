@@ -20,10 +20,9 @@
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
 
 
-// This macro registers the kernels to the PyTorch Dispatcher.
-// More details on the dispatcher can be found at
-// http://blog.ezyang.com/2020/09/lets-talk-about-the-pytorch-dispatcher/.
-TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
+namespace {
+
+static inline void register_core_creation_and_copy(torch::Library& m) {
     // =========================
     // Core ops: creation and copy
     // =========================
@@ -35,6 +34,9 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // ttnn::to_dtype
     // ttnn::to_layout
     // ttnn::to_memory_config
+}
+
+static inline void register_unary_ops(torch::Library& m) {
     // =========================
     // Unary ops
     // =========================
@@ -61,6 +63,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // square_
     m.impl("sin", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sin>::invoke));
     m.impl("sin.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sin>::invoke_out));
+    m.impl("sin_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sin>::invoke_inplace));
     // sin_
     m.impl("cos", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cos>::invoke));
     m.impl("cos.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cos>::invoke_out));
@@ -199,176 +202,9 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("sigmoid.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke_out));
     // sigmoid_
     // ttnn::sigmoid_bw
+}
 
-    // Pending TTNN unary ops to register (from ttnn_ops_grouped.txt)
-    // ttnn::abs_bw
-    // ttnn::add_sfpu
-    // ttnn::alt_complex_rotate90
-    // ttnn::angle
-    // ttnn::asin_bw
-    // ttnn::asinh_bw
-    // ttnn::atan_bw
-    // ttnn::atanh_bw
-    // ttnn::cbrt
-    // ttnn::ceil_bw
-    // ttnn::celu
-    // ttnn::celu_bw
-    // ttnn::clamp
-    // ttnn::clamp_bw
-    // ttnn::clamp_tss
-    // ttnn::clip
-    // ttnn::clip_bw
-    // ttnn::conj
-    // ttnn::cos_bw
-    // ttnn::cosh_bw
-    // ttnn::deg2rad_bw
-    // ttnn::digamma
-    // ttnn::digamma_bw
-    // ttnn::div_no_nan_bw
-    // ttnn::div_sfpu
-    // ttnn::elu
-    // ttnn::elu_bw
-    // ttnn::eq_unary
-    // ttnn::eqz
-    // ttnn::erf_bw
-    // ttnn::erfc_bw
-    // ttnn::erfinv_bw
-    // ttnn::exp2
-    // ttnn::exp2_bw
-    // ttnn::exp_bw
-    // ttnn::expm1_bw
-    // ttnn::fill
-    // ttnn::fill_bw
-    // ttnn::fill_zero_bw
-    // ttnn::floor_bw
-    // ttnn::frac_bw
-    // ttnn::ge_unary
-    // ttnn::geglu
-    // ttnn::gelu
-    // ttnn::gelu_bw
-    // ttnn::gez
-    // ttnn::glu
-    // ttnn::gt_unary
-    // ttnn::gtz
-    // ttnn::hardshrink
-    // ttnn::hardshrink_bw
-    // ttnn::hardsigmoid
-    // ttnn::hardsigmoid_bw
-    // ttnn::hardswish
-    // ttnn::hardswish_bw
-    // ttnn::hardtanh
-    // ttnn::hardtanh_bw
-    // ttnn::heaviside
-    // ttnn::i0_bw
-    // ttnn::i1
-    // ttnn::identity
-    // ttnn::imag
-    // ttnn::is_imag
-    // ttnn::is_real
-    // ttnn::isfinite
-    // ttnn::isinf
-    // ttnn::isnan
-    // ttnn::isneginf
-    // ttnn::isposinf
-    // ttnn::le_unary
-    // ttnn::leaky_relu
-    // ttnn::leaky_relu_bw
-    // ttnn::lez
-    // ttnn::lgamma
-    // ttnn::lgamma_bw
-    // ttnn::log10_bw
-    // ttnn::log1p_bw
-    // ttnn::log2_bw
-    // ttnn::log_bw
-    // ttnn::log_sigmoid
-    // ttnn::log_sigmoid_bw
-    // ttnn::logical_not_
-    // ttnn::logit
-    // ttnn::logit_bw
-    // ttnn::logiteps_bw
-    // ttnn::lt_unary
-    // ttnn::ltz
-    // ttnn::mish
-    // ttnn::mul_sfpu
-    // ttnn::multigammaln
-    // ttnn::multigammaln_bw
-    // ttnn::ne_unary
-    // ttnn::neg_bw
-    // ttnn::nez
-    // ttnn::normalize_global
-    // ttnn::normalize_hw
-    // ttnn::operation_name
-    // ttnn::operation_name
-    // ttnn::operation_name
-    // ttnn::operation_name
-    // ttnn::operation_name
-    // ttnn::operation_name
-    // ttnn::operation_name
-    // ttnn::operation_name
-    // ttnn::polar
-    // ttnn::polygamma
-    // ttnn::polygamma_bw
-    // ttnn::pow_bw
-    // ttnn::power
-    // ttnn::prelu_sfpu
-    // ttnn::prim::tanh_accurate
-    // ttnn::prim::unary
-    // ttnn::prod_bw
-    // ttnn::rad2deg_bw
-    // ttnn::rdiv
-    // ttnn::rdiv_bw
-    // ttnn::real
-    // ttnn::reciprocal_bw
-    // ttnn::reglu
-    // ttnn::relu
-    // ttnn::relu6
-    // ttnn::relu6_bw
-    // ttnn::relu_bw
-    // ttnn::relu_max
-    // ttnn::relu_min
-    // ttnn::repeat_bw
-    // ttnn::round_bw
-    // ttnn::rpow
-    // ttnn::rpow_bw
-    // ttnn::rsqrt_bw
-    // ttnn::selu
-    // ttnn::selu_bw
-    // ttnn::sigmoid_accurate
-    // ttnn::sigmoid_bw
-    // ttnn::sign_bw
-    // ttnn::silu
-    // ttnn::silu_bw
-    // ttnn::sin_bw
-    // ttnn::sinh_bw
-    // ttnn::softplus
-    // ttnn::softplus_bw
-    // ttnn::softshrink
-    // ttnn::softshrink_bw
-    // ttnn::softsign
-    // ttnn::softsign_bw
-    // ttnn::sqrt_bw
-    // ttnn::square_bw
-    // ttnn::std_hw
-    // ttnn::sub_sfpu
-    // ttnn::swiglu
-    // ttnn::swish
-    // ttnn::tan_bw
-    // ttnn::tanh_accurate
-    // ttnn::tanh_bw
-    // ttnn::tanhshrink
-    // ttnn::tanhshrink_accurate
-    // ttnn::tanhshrink_bw
-    // ttnn::threshold
-    // ttnn::threshold_bw
-    // ttnn::tiled_prod
-    // ttnn::tril
-    // ttnn::triu
-    // ttnn::trunc_bw
-    // ttnn::unary_chain
-    // ttnn::unary_remainder
-    // ttnn::var_hw
-
-
+static inline void register_binary_ops(torch::Library& m) {
     // =========================
     // Binary ops
     // =========================
@@ -491,72 +327,9 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     m.impl("logaddexp", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logaddexp>::invoke));
     m.impl("logaddexp2.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logaddexp2>::invoke_out));
     m.impl("logaddexp2", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logaddexp2>::invoke));
+}
 
-    // Pending TTNN binary ops to register (from ttnn_ops_grouped.txt)
-    // ttnn::add_
-    // ttnn::add_bw
-    // ttnn::assign_bw
-    // ttnn::atan2_bw
-    // ttnn::bias_gelu
-    // ttnn::bias_gelu_
-    // ttnn::bias_gelu_bw
-    // ttnn::bitwise_and
-    // ttnn::bitwise_left_shift
-    // ttnn::bitwise_or
-    // ttnn::bitwise_right_shift
-    // ttnn::bitwise_xor
-    // ttnn::concat_bw
-    // ttnn::div_bw
-    // ttnn::div_no_nan
-    // ttnn::divide_
-    // ttnn::eq_
-    // ttnn::floor_div
-    // ttnn::fmod
-    // ttnn::fmod_bw
-    // ttnn::gcd
-    // ttnn::ge_
-    // ttnn::gt_
-    // ttnn::hypot
-    // ttnn::hypot_bw
-    // ttnn::isclose
-    // ttnn::lcm
-    // ttnn::ldexp_
-    // ttnn::ldexp_bw
-    // ttnn::le_
-    // ttnn::logaddexp2_
-    // ttnn::logaddexp2_bw
-    // ttnn::logaddexp_
-    // ttnn::logaddexp_bw
-    // ttnn::logical_and_
-    // ttnn::logical_left_shift
-    // ttnn::logical_or_
-    // ttnn::logical_right_shift
-    // ttnn::logical_xor_
-    // ttnn::lt_
-    // ttnn::max_bw
-    // ttnn::maximum
-    // ttnn::min_bw
-    // ttnn::minimum
-    // ttnn::mul_bw
-    // ttnn::multiply_
-    // ttnn::ne_
-    // ttnn::nextafter
-    // ttnn::outer
-    // ttnn::polyval
-    // ttnn::pow
-    // ttnn::prelu
-    // ttnn::prim::binary
-    // ttnn::prim::binary_ng
-    // ttnn::remainder
-    // ttnn::remainder_bw
-    // ttnn::rsub
-    // ttnn::rsub_
-    // ttnn::rsub_bw
-    // ttnn::squared_difference
-    // ttnn::squared_difference_
-    // ttnn::sub_bw
-    // ttnn::xlogy_bw
-
+static inline void register_reductions(torch::Library& m) {
     // =========================
     // Reductions
     // =========================
@@ -611,189 +384,12 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // var.correction_names
     // var.correction_names_out
     // ttnn::var
-    
-    // Core tensor ops (shape/view/manipulation)
-    // alias
-    // align_as
-    // align_tensors
-    // align_to
-    // align_to.ellipsis_idx
-    // as_strided
-    // clone
-    // ttnn::clone
-    // ttnn::prim::clone
-    // contiguous
-    // diagonal
-    // diagonal.Dimname
-    // narrow
-    // narrow.Tensor
-    // rename
-    // rename_
-    // reshape
-    // ttnn::reshape
-    // ttnn::reshape_on_device
-    // resize_
-    // resize_as_
-    // select.Dimname
-    // select.int
-    // size.Dimname
-    // size.int
-    // slice.Tensor
-    // ttnn::slice
-    // squeeze
-    // ttnn::squeeze
-    // squeeze.dim
-    // squeeze.dimname
-    // stride.Dimname
-    // stride.int
-    // t
-    // transpose.Dimname
-    // transpose.int
-    // ttnn::transpose
-    // unbind.Dimname
-    // unbind.int
-    // unflatten.Dimname
-    // unflatten.int
-    // unsafe_chunk
-    // unsafe_split.Tensor
-    // ttnn::split
-    // unsafe_split_with_sizes
+}
 
-    // Pending TTNN core tensor/data movement ops to register
-    // ttnn::assign
-    // ttnn::bcast
-    // ttnn::chunk
-    // ttnn::clone
-    // ttnn::concat
-    // ttnn::copy
-    // ttnn::expand
-    // ttnn::fill_implicit_tile_padding
-    // ttnn::fill_ones_rm
-    // ttnn::fill_rm
-    // ttnn::gather
-    // ttnn::indexed_fill
-    // ttnn::interleaved_to_sharded
-    // ttnn::interleaved_to_sharded_partial
-    // ttnn::move
-    // ttnn::nonzero
-    // ttnn::pad
-    // ttnn::permute
-    // ttnn::prim::clone
-    // ttnn::prim::fold
-    // ttnn::prim::gather
-    // ttnn::prim::moe_expert_token_remap
-    // ttnn::prim::permute
-    // ttnn::prim::scatter
-    // ttnn::prim::sort
-    // ttnn::prim::typecast
-    // ttnn::repeat
-    // ttnn::repeat_interleave
-    // ttnn::reshape
-    // ttnn::reshape_on_device
-    // ttnn::reshard
-    // ttnn::roll
-    // ttnn::scatter
-    // ttnn::sharded_to_interleaved
-    // ttnn::sharded_to_interleaved_partial
-    // ttnn::slice
-    // ttnn::sort
-    // ttnn::split
-    // ttnn::squeeze
-    // ttnn::stack
-    // ttnn::tilize
-    // ttnn::tilize_with_zero_padding
-    // ttnn::tosa_gather
-    // ttnn::tosa_scatter
-    // ttnn::transpose
-    // ttnn::typecast
-    // ttnn::unsqueeze
-    // ttnn::untilize
-    // ttnn::untilize_with_unpadding
-    // ttnn::view
-
-    // Creation / like-ops
-    // empty_like
-    // ttnn::moreh_full_like / ttnn::full_like
-    // full_like
-    // ttnn::moreh_full / ttnn::full
-    // ones_like
-    // rand_like
-    // randn_like
-    // vander
-    // zeros_like
-
-    // Indexing / filling
-    // copy_
-    // fill_.Scalar
-    // fill_.Tensor
-    // index_fill.Dimname_Scalar
-    // index_fill.Dimname_Tensor
-    // index_fill.int_Scalar
-    // index_fill.int_Tensor
-    // index_fill_.Dimname_Scalar
-    // index_fill_.Dimname_Tensor
-    // index_fill_.int_Scalar
-    // index_fill_.int_Tensor
-    // masked_fill.Scalar
-    // masked_fill.Tensor
-    // masked_fill_.Scalar
-    // masked_fill_.Tensor
-    // masked_select
-    // masked_select.out
-
-    // Reductions / scans
-    // all
-    // any
-    // cummax
-    // cummax.dimname
-    // cummax.dimname_out
-    // cummax.out
-    // cummin
-    // cummin.dimname
-    // cummin.dimname_out
-    // cummin.out
-    // cumprod
-    // cumprod.dimname
-    // cumprod.dimname_out
-    // cumprod.out
-    // cumsum
-    // cumsum.dimname
-    // cumsum.dimname_out
-    // cumsum.out
-    // kthvalue
-    // kthvalue.dimname
-    // kthvalue.dimname_out
-    // kthvalue.values
-    // logcumsumexp
-    // logcumsumexp.dimname
-    // logcumsumexp.dimname_out
-    // logcumsumexp.out
-    // logsumexp
-    // logsumexp.names
-    // logsumexp.names_out
-    // logsumexp.out
-    
-    
-    // median
-    // median.dim
-    // median.dim_values
-    // median.names_dim
-    // median.names_dim_values
-    
-    // prod
-    // prod.Dimname_out
-    // prod.dim_Dimname
-    // prod.dim_int
-    // prod.int_out
-    
-
-    // Probability / statistics
-    // polygamma
-    // polygamma.out
-    // polygamma_
-    
-
+static inline void register_random_ops(torch::Library& m) {
+    // =========================
     // Random
+    // =========================
     m.impl("bernoulli", TORCH_FN(tt_eager::ext::random_wrapper<ttnn::bernoulli>::invoke));
     m.impl("bernoulli.out", TORCH_FN(tt_eager::ext::random_wrapper<ttnn::bernoulli>::invoke_out));
     // bernoulli_.Tensor
@@ -812,108 +408,19 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // ttnn::prim::uniform
     // ttnn::rand
     // ttnn::uniform
+}
 
-    // Math helpers (clamp and friends)
-    // clamp
-    // clamp.Tensor
-    // clamp.Tensor_out
-    // clamp.out
-    // clamp_
-    // clamp_.Tensor
-    // clamp_max
-    // clamp_max.Tensor
-    // clamp_max.Tensor_out
-    // clamp_max.out
-    // clamp_max_
-    // clamp_max_.Tensor
-    // clamp_min
-    // clamp_min.Tensor
-    // clamp_min.Tensor_out
-    // clamp_min.out
-    // clamp_min_
-    // clamp_min_.Tensor
+} // namespace
 
-    // Pooling / distance
-    // _cdist_forward
-    // cdist
-    // max_pool1d
-    // max_pool1d_with_indices
-    // max_pool2d
-    // max_pool2d_with_indices
-    // ttnn::max_pool2d / ttnn::avg_pool2d / ttnn::global_avg_pool2d
-    // max_pool3d
-    // max_pool3d_with_indices
-
-    // Softmax / dropout / threshold
-    // _fused_dropout
-    // dropout
-    // dropout_
-    // native_dropout
-    // softmax.Dimname
-    // softmax.int
-    // ttnn::softmax / ttnn::softmax_in_place
-    // threshold
-    // threshold.out
-    // threshold_
-    // ttnn::threshold / ttnn::threshold_bw
-    // _sparse_log_softmax.Dimname
-    // _sparse_log_softmax.int
-    // _sparse_softmax.Dimname
-    // _sparse_softmax.int
-
-    // Pending TTNN normalization ops to register
-    // ttnn::batch_norm
-    // ttnn::group_norm
-    // ttnn::layer_norm
-    // ttnn::layer_norm_post_all_gather
-    // ttnn::layer_norm_pre_all_gather
-    // ttnn::prim::batch_norm
-    // ttnn::prim::running_statistics
-    // ttnn::prim::softmax
-    // ttnn::rms_norm
-    // ttnn::scale_causal_mask_hw_dims_softmax_in_place
-    // ttnn::scale_mask_softmax
-    // ttnn::scale_mask_softmax_in_place
-    // ttnn::softmax
-    // ttnn::softmax_in_place
-
-    // Tensor lists / concat / split
-    // cat
-    // ttnn::concat
-    // cat.names
-    // cat.names_out
-    // cat.out
-    // chunk
-    // ttnn::chunk
-    // split.Tensor
-    // split_with_sizes
-    // tensor_split.indices
-    // tensor_split.sections
-    // tensor_split.tensor_indices_or_sections
-
-    // Type / device / names
-    // _local_scalar_dense
-    // _to_copy
-    // equal
-    // is_coalesced
-    // is_complex
-    // is_floating_point
-    // is_inference
-    // is_nonzero
-    // is_pinned
-    // is_same_size
-    // is_signed
-    // item
-    // output_nr
-    // real
-    // refine_names
-    // result_type.Scalar
-    // result_type.Scalar_Tensor
-    // result_type.Tensor
-    // to.device
-    // to.dtype
-    // to.dtype_layout
-    // ttnn::to_dtype / ttnn::to_layout / ttnn::to_memory_config
+// This macro registers the kernels to the PyTorch Dispatcher.
+// More details on the dispatcher can be found at
+// http://blog.ezyang.com/2020/09/lets-talk-about-the-pytorch-dispatcher/.
+TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
+    register_core_creation_and_copy(m);
+    register_unary_ops(m);
+    register_binary_ops(m);
+    register_reductions(m);
+    register_random_ops(m);
 }
 
 // This macro registers helper functions associated with the ttnn_device_mode module that can be used in Python
