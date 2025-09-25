@@ -231,29 +231,29 @@ struct reduction_wrapper {
         return out;
     }
 
-    static at::Tensor invoke_dim_IntList(const at::Tensor& a, at::IntArrayRef dims, bool keepdim = false) {
-        at::Tensor out = make_empty_like_tt(a);
-        invoke_out_dim_IntList(a, dims, keepdim, out);
-        return out;
-    }
+    // static at::Tensor invoke_dim_IntList(const at::Tensor& a, at::IntArrayRef dims, bool keepdim = false) {
+    //     at::Tensor out = make_empty_like_tt(a);
+    //     invoke_out_dim_IntList(a, dims, keepdim, out);
+    //     return out;
+    // }
 
-    static at::Tensor& invoke_out_dim_IntList(
-        const at::Tensor& a, at::IntArrayRef dims, bool keepdim, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(a);
+    // static at::Tensor& invoke_out_dim_IntList(
+    //     const at::Tensor& a, at::IntArrayRef dims, bool keepdim, at::Tensor& out) {
+    //     ttnn::Tensor a_tile = tileify(a);
 
-        ttnn::SmallVector<int> reduce_dims;
-        reduce_dims.reserve(dims.size());
-        for (auto d : dims) {
-            reduce_dims.push_back(static_cast<int>(d));
-        }
+    //     ttnn::SmallVector<int> reduce_dims;
+    //     reduce_dims.reserve(dims.size());
+    //     for (auto d : dims) {
+    //         reduce_dims.push_back(static_cast<int>(d));
+    //     }
 
-        std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_arg(
-            std::in_place, std::in_place_index<1>, reduce_dims);
+    //     std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_arg(
+    //         std::in_place, std::in_place_index<1>, reduce_dims);
 
-        ttnn::Tensor result = TTNN_REDUCTION(
-            a_tile, dim_arg, keepdim, std::nullopt /*mem cfg*/, std::nullopt /*kernel cfg*/);
-        return write_from_ttnn(out, a, result);
-    }
+    //     ttnn::Tensor result = TTNN_REDUCTION(
+    //         a_tile, dim_arg, keepdim, std::nullopt /*mem cfg*/, std::nullopt /*kernel cfg*/);
+    //     return write_from_ttnn(out, a, result);
+    // }
 };
 
 }  // namespace tt_eager::ext

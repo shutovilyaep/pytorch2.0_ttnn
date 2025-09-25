@@ -7,11 +7,14 @@
 #include "ttnn_cpp_extension/core/TtnnCustomAllocator.hpp"
 #include "ttnn_cpp_extension/core/copy.hpp"
 
-#include "ttnn_cpp_extension/ops/unary.hpp"
 #include "ttnn_cpp_extension/ops/creation.hpp"
-#include "ttnn_cpp_extension/ops/binary.hpp"
-#include "ttnn_cpp_extension/ops/reduction.hpp"
 #include "ttnn_cpp_extension/ops/random.hpp"
+
+#include "ttnn_cpp_extension/utils/eager_wrap.hpp"
+
+#include <ttnn/operations/eltwise/unary/unary.hpp>
+#include <ttnn/operations/eltwise/binary/binary.hpp>
+#include <ttnn/operations/reduction/generic/generic_reductions.hpp>
 
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
@@ -31,94 +34,95 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // =========================
     // Unary ops
     // =========================
-    m.impl("abs", TORCH_FN(tt_eager::ops::unary::ttnn_abs::invoke));
-    m.impl("abs.out", TORCH_FN(tt_eager::ops::unary::ttnn_abs::invoke_out));
+    // m.impl("abs", TORCH_FN(tt_eager::ops::unary::ttnn_abs::invoke));
+    m.impl("abs", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke));
+    m.impl("abs.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_out));
     //  m.impl("abs_", CppFunction::makeFallthrough());
     //  m.impl("absolute", CppFunction::makeFallthrough());
     //  m.impl("absolute.out", CppFunction::makeFallthrough());
     //  m.impl("absolute_", CppFunction::makeFallthrough());
-    m.impl("neg", TORCH_FN(tt_eager::ops::unary::ttnn_neg::invoke));
-    m.impl("neg.out", TORCH_FN(tt_eager::ops::unary::ttnn_neg::invoke_out));
+    m.impl("neg", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke));
+    m.impl("neg.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke_out));
     //  m.impl("neg_", CppFunction::makeFallthrough());
-    m.impl("reciprocal", TORCH_FN(tt_eager::ops::unary::ttnn_reciprocal::invoke));
-    m.impl("reciprocal.out", TORCH_FN(tt_eager::ops::unary::ttnn_reciprocal::invoke_out));
+    m.impl("reciprocal", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::reciprocal>::invoke));
+    m.impl("reciprocal.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::reciprocal>::invoke_out));
     //  m.impl("reciprocal_", CppFunction::makeFallthrough());
-    m.impl("sqrt", TORCH_FN(tt_eager::ops::unary::ttnn_sqrt::invoke));
-    m.impl("sqrt.out", TORCH_FN(tt_eager::ops::unary::ttnn_sqrt::invoke_out));
+    m.impl("sqrt", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sqrt>::invoke));
+    m.impl("sqrt.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sqrt>::invoke_out));
     //  m.impl("sqrt_", CppFunction::makeFallthrough());
-    m.impl("rsqrt", TORCH_FN(tt_eager::ops::unary::ttnn_rsqrt::invoke));
-    m.impl("rsqrt.out", TORCH_FN(tt_eager::ops::unary::ttnn_rsqrt::invoke_out));
+    m.impl("rsqrt", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rsqrt>::invoke));
+    m.impl("rsqrt.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rsqrt>::invoke_out));
     //  m.impl("rsqrt_", CppFunction::makeFallthrough());
-    m.impl("square", TORCH_FN(tt_eager::ops::unary::ttnn_square::invoke));
-    m.impl("square.out", TORCH_FN(tt_eager::ops::unary::ttnn_square::invoke_out));
+    m.impl("square", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::square>::invoke));
+    m.impl("square.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::square>::invoke_out));
     //  m.impl("square_", CppFunction::makeFallthrough());
-    m.impl("sin", TORCH_FN(tt_eager::ops::unary::ttnn_sin::invoke));
-    m.impl("sin.out", TORCH_FN(tt_eager::ops::unary::ttnn_sin::invoke_out));
+    m.impl("sin", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sin>::invoke));
+    m.impl("sin.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sin>::invoke_out));
     //  m.impl("sin_", CppFunction::makeFallthrough());
-    m.impl("cos", TORCH_FN(tt_eager::ops::unary::ttnn_cos::invoke));
-    m.impl("cos.out", TORCH_FN(tt_eager::ops::unary::ttnn_cos::invoke_out));
+    m.impl("cos", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cos>::invoke));
+    m.impl("cos.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cos>::invoke_out));
     //  m.impl("cos_", CppFunction::makeFallthrough());
-    m.impl("tan", TORCH_FN(tt_eager::ops::unary::ttnn_tan::invoke));
-    m.impl("tan.out", TORCH_FN(tt_eager::ops::unary::ttnn_tan::invoke_out));
+    m.impl("tan", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tan>::invoke));
+    m.impl("tan.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tan>::invoke_out));
     //  m.impl("tan_", CppFunction::makeFallthrough());
-    m.impl("sinh", TORCH_FN(tt_eager::ops::unary::ttnn_sinh::invoke));
-    m.impl("sinh.out", TORCH_FN(tt_eager::ops::unary::ttnn_sinh::invoke_out));
+    m.impl("sinh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sinh>::invoke));
+    m.impl("sinh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sinh>::invoke_out));
     //  m.impl("sinh_", CppFunction::makeFallthrough());
-    m.impl("cosh", TORCH_FN(tt_eager::ops::unary::ttnn_cosh::invoke));
-    m.impl("cosh.out", TORCH_FN(tt_eager::ops::unary::ttnn_cosh::invoke_out));
+    m.impl("cosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cosh>::invoke));
+    m.impl("cosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::cosh>::invoke_out));
     //  m.impl("cosh_", CppFunction::makeFallthrough());
-    m.impl("tanh", TORCH_FN(tt_eager::ops::unary::ttnn_tanh::invoke));
-    m.impl("tanh.out", TORCH_FN(tt_eager::ops::unary::ttnn_tanh::invoke_out));
+    m.impl("tanh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tanh>::invoke));
+    m.impl("tanh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::tanh>::invoke_out));
     //  m.impl("tanh_", CppFunction::makeFallthrough());
-    m.impl("floor", TORCH_FN(tt_eager::ops::unary::ttnn_floor::invoke));
-    m.impl("floor.out", TORCH_FN(tt_eager::ops::unary::ttnn_floor::invoke_out));
+    m.impl("floor", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::floor>::invoke));
+    m.impl("floor.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::floor>::invoke_out));
     //  m.impl("floor_", CppFunction::makeFallthrough());
-    m.impl("ceil", TORCH_FN(tt_eager::ops::unary::ttnn_ceil::invoke));
-    m.impl("ceil.out", TORCH_FN(tt_eager::ops::unary::ttnn_ceil::invoke_out));
+    m.impl("ceil", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::ceil>::invoke));
+    m.impl("ceil.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::ceil>::invoke_out));
     //  m.impl("ceil_", CppFunction::makeFallthrough());
-    m.impl("trunc", TORCH_FN(tt_eager::ops::unary::ttnn_trunc::invoke));
-    m.impl("trunc.out", TORCH_FN(tt_eager::ops::unary::ttnn_trunc::invoke_out));
+    m.impl("trunc", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::trunc>::invoke));
+    m.impl("trunc.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::trunc>::invoke_out));
     //  m.impl("trunc_", CppFunction::makeFallthrough());
-    m.impl("frac", TORCH_FN(tt_eager::ops::unary::ttnn_frac::invoke));
-    m.impl("frac.out", TORCH_FN(tt_eager::ops::unary::ttnn_frac::invoke_out));
+    m.impl("frac", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::frac>::invoke));
+    m.impl("frac.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::frac>::invoke_out));
     //  m.impl("frac_", CppFunction::makeFallthrough());
-    m.impl("bitwise_not", TORCH_FN(tt_eager::ops::unary::ttnn_bitwise_not::invoke));
-    m.impl("bitwise_not.out", TORCH_FN(tt_eager::ops::unary::ttnn_bitwise_not::invoke_out));
+    m.impl("bitwise_not", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::bitwise_not>::invoke));
+    m.impl("bitwise_not.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::bitwise_not>::invoke_out));
     //  m.impl("bitwise_not_", CppFunction::makeFallthrough());
-    m.impl("logical_not", TORCH_FN(tt_eager::ops::unary::ttnn_logical_not::invoke));
-    m.impl("logical_not.out", TORCH_FN(tt_eager::ops::unary::ttnn_logical_not::invoke_out));
+    m.impl("logical_not", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::logical_not>::invoke));
+    m.impl("logical_not.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::logical_not>::invoke_out));
     //  m.impl("logical_not_", CppFunction::makeFallthrough());
-    m.impl("sign", TORCH_FN(tt_eager::ops::unary::ttnn_sign::invoke));
-    m.impl("sign.out", TORCH_FN(tt_eager::ops::unary::ttnn_sign::invoke_out));
+    m.impl("sign", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sign>::invoke));
+    m.impl("sign.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sign>::invoke_out));
     //  m.impl("sign_", CppFunction::makeFallthrough());
-    m.impl("signbit", TORCH_FN(tt_eager::ops::unary::ttnn_signbit::invoke));
-    m.impl("signbit.out", TORCH_FN(tt_eager::ops::unary::ttnn_signbit::invoke_out));
-    m.impl("i0", TORCH_FN(tt_eager::ops::unary::ttnn_i0::invoke));
-    m.impl("i0.out", TORCH_FN(tt_eager::ops::unary::ttnn_i0::invoke_out));
+    m.impl("signbit", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::signbit>::invoke));
+    m.impl("signbit.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::signbit>::invoke_out));
+    m.impl("i0", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::i0>::invoke));
+    m.impl("i0.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::i0>::invoke_out));
     //  m.impl("i0_", CppFunction::makeFallthrough());
-    m.impl("erf", TORCH_FN(tt_eager::ops::unary::ttnn_erf::invoke));
-    m.impl("erf.out", TORCH_FN(tt_eager::ops::unary::ttnn_erf::invoke_out));
+    m.impl("erf", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erf>::invoke));
+    m.impl("erf.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erf>::invoke_out));
     //  m.impl("erf_", CppFunction::makeFallthrough());
-    m.impl("erfc", TORCH_FN(tt_eager::ops::unary::ttnn_erfc::invoke));
-    m.impl("erfc.out", TORCH_FN(tt_eager::ops::unary::ttnn_erfc::invoke_out));
+    m.impl("erfc", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfc>::invoke));
+    m.impl("erfc.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfc>::invoke_out));
     //  m.impl("erfc_", CppFunction::makeFallthrough());
-    m.impl("erfinv", TORCH_FN(tt_eager::ops::unary::ttnn_erfinv::invoke));
-    m.impl("erfinv.out", TORCH_FN(tt_eager::ops::unary::ttnn_erfinv::invoke_out));
+    m.impl("erfinv", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfinv>::invoke));
+    m.impl("erfinv.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::erfinv>::invoke_out));
     //  m.impl("erfinv_", CppFunction::makeFallthrough());
-    m.impl("exp", TORCH_FN(tt_eager::ops::unary::ttnn_exp::invoke));
-    m.impl("exp.out", TORCH_FN(tt_eager::ops::unary::ttnn_exp::invoke_out));
+    m.impl("exp", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::exp>::invoke));
+    m.impl("exp.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::exp>::invoke_out));
     //  m.impl("exp_", CppFunction::makeFallthrough());
-    m.impl("log", TORCH_FN(tt_eager::ops::unary::ttnn_log::invoke));
-    m.impl("log.out", TORCH_FN(tt_eager::ops::unary::ttnn_log::invoke_out));
+    m.impl("log", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log>::invoke));
+    m.impl("log.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log>::invoke_out));
     //  m.impl("log_", CppFunction::makeFallthrough());
-    m.impl("log10", TORCH_FN(tt_eager::ops::unary::ttnn_log10::invoke));
-    m.impl("log10.out", TORCH_FN(tt_eager::ops::unary::ttnn_log10::invoke_out));
+    m.impl("log10", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log10>::invoke));
+    m.impl("log10.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log10>::invoke_out));
     //  m.impl("log10_", CppFunction::makeFallthrough());
-    m.impl("log2", TORCH_FN(tt_eager::ops::unary::ttnn_log2::invoke));
-    m.impl("log2.out", TORCH_FN(tt_eager::ops::unary::ttnn_log2::invoke_out));
+    m.impl("log2", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log2>::invoke));
+    m.impl("log2.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log2>::invoke_out));
     //  m.impl("log2_", CppFunction::makeFallthrough());
-    m.impl("log1p", TORCH_FN(tt_eager::ops::unary::ttnn_log1p::invoke));
-    m.impl("log1p.out", TORCH_FN(tt_eager::ops::unary::ttnn_log1p::invoke_out));
+    m.impl("log1p", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log1p>::invoke));
+    m.impl("log1p.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::log1p>::invoke_out));
     //  m.impl("log1p_", CppFunction::makeFallthrough());
     //  m.impl("acos", CppFunction::makeFallthrough());
     //  m.impl("acos.out", CppFunction::makeFallthrough());
@@ -183,8 +187,8 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     // =========================
     // Binary ops
     // =========================
-    m.impl("add.out", TORCH_FN(tt_eager::ops::binary::ttnn_add::invoke_out));
-    m.impl("add.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_add::invoke));
+    m.impl("add.out", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke_out));
+    m.impl("add.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke));
     //  m.impl("add.Scalar", CppFunction::makeFallthrough());
     //  m.impl("add_.Scalar", CppFunction::makeFallthrough());
     //  m.impl("add_.Tensor", CppFunction::makeFallthrough());
@@ -192,8 +196,8 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     //  m.impl("_add_relu.out", CppFunction::makeFallthrough());
     //  m.impl("_add_relu_.Tensor", CppFunction::makeFallthrough());
 
-    m.impl("sub.out", TORCH_FN(tt_eager::ops::binary::ttnn_sub::invoke_out));
-    m.impl("sub.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_sub::invoke));
+    m.impl("sub.out", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke_out));
+    m.impl("sub.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke));
     //  m.impl("sub.Scalar", CppFunction::makeFallthrough());
     //  m.impl("sub_.Scalar", CppFunction::makeFallthrough());
     //  m.impl("sub_.Tensor", CppFunction::makeFallthrough());
@@ -201,12 +205,12 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     //  m.impl("rsub.Tensor", CppFunction::makeFallthrough());
 
     // Arithmetic ops
-    m.impl("mul.out", TORCH_FN(tt_eager::ops::binary::ttnn_multiply::invoke_out));
-    m.impl("mul.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_multiply::invoke));
+    m.impl("mul.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::multiply>::invoke_out));
+    m.impl("mul.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::multiply>::invoke));
     //  m.impl("mul_.Tensor", CppFunction::makeFallthrough());
 
-    m.impl("div.out", TORCH_FN(tt_eager::ops::binary::ttnn_divide::invoke_out));
-    m.impl("div.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_divide::invoke));
+    m.impl("div.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::divide>::invoke_out));
+    m.impl("div.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::divide>::invoke));
     //  m.impl("div.Scalar", CppFunction::makeFallthrough());
     //  m.impl("div_.Scalar", CppFunction::makeFallthrough());
     //  m.impl("div_.Tensor", CppFunction::makeFallthrough());
@@ -245,61 +249,61 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     //  m.impl("bmm.out", CppFunction::makeFallthrough());
 
     // Logical ops
-    m.impl("logical_and.out", TORCH_FN(tt_eager::ops::binary::ttnn_logical_and::invoke_out));
-    m.impl("logical_and", TORCH_FN(tt_eager::ops::binary::ttnn_logical_and::invoke));
+    m.impl("logical_and.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_and>::invoke_out));
+    m.impl("logical_and", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_and>::invoke));
     //  m.impl("logical_and_", CppFunction::makeFallthrough());
 
-    m.impl("logical_or.out", TORCH_FN(tt_eager::ops::binary::ttnn_logical_or::invoke_out));
-    m.impl("logical_or", TORCH_FN(tt_eager::ops::binary::ttnn_logical_or::invoke));
+    m.impl("logical_or.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_or>::invoke_out));
+    m.impl("logical_or", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_or>::invoke));
     //  m.impl("logical_or_", CppFunction::makeFallthrough());
 
-    m.impl("logical_xor.out", TORCH_FN(tt_eager::ops::binary::ttnn_logical_xor::invoke_out));
-    m.impl("logical_xor", TORCH_FN(tt_eager::ops::binary::ttnn_logical_xor::invoke));
+    m.impl("logical_xor.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor>::invoke_out));
+    m.impl("logical_xor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor>::invoke));
     //  m.impl("logical_xor_", CppFunction::makeFallthrough());
 
     // Relational ops (Tensor versions only)
-    m.impl("eq.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_eq::invoke_out));
-    m.impl("eq.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_eq::invoke));
+    m.impl("eq.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke_out));
+    m.impl("eq.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke));
     //  m.impl("eq.Scalar", CppFunction::makeFallthrough());
     //  m.impl("eq.Scalar_out", CppFunction::makeFallthrough());
 
-    m.impl("ne.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_ne::invoke_out));
-    m.impl("ne.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_ne::invoke));
+    m.impl("ne.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ne>::invoke_out));
+    m.impl("ne.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ne>::invoke));
     //  m.impl("ne.Scalar", CppFunction::makeFallthrough());
     //  m.impl("ne.Scalar_out", CppFunction::makeFallthrough());
 
-    m.impl("ge.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_ge::invoke_out));
-    m.impl("ge.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_ge::invoke));
+    m.impl("ge.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ge>::invoke_out));
+    m.impl("ge.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ge>::invoke));
     //  m.impl("ge.Scalar", CppFunction::makeFallthrough());
     //  m.impl("ge.Scalar_out", CppFunction::makeFallthrough());
 
-    m.impl("gt.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_gt::invoke_out));
-    m.impl("gt.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_gt::invoke));
+    m.impl("gt.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::gt>::invoke_out));
+    m.impl("gt.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::gt>::invoke));
     //  m.impl("gt.Scalar", CppFunction::makeFallthrough());
     //  m.impl("gt.Scalar_out", CppFunction::makeFallthrough());
 
-    m.impl("le.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_le::invoke_out));
-    m.impl("le.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_le::invoke));
+    m.impl("le.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::le>::invoke_out));
+    m.impl("le.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::le>::invoke));
     //  m.impl("le.Scalar", CppFunction::makeFallthrough());
     //  m.impl("le.Scalar_out", CppFunction::makeFallthrough());
 
-    m.impl("lt.Tensor_out", TORCH_FN(tt_eager::ops::binary::ttnn_lt::invoke_out));
-    m.impl("lt.Tensor", TORCH_FN(tt_eager::ops::binary::ttnn_lt::invoke));
+    m.impl("lt.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::lt>::invoke_out));
+    m.impl("lt.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::lt>::invoke));
     //  m.impl("lt.Scalar", CppFunction::makeFallthrough());
     //  m.impl("lt.Scalar_out", CppFunction::makeFallthrough());
 
     // Special ops
-    m.impl("logaddexp.out", TORCH_FN(tt_eager::ops::binary::ttnn_logaddexp::invoke_out));
-    m.impl("logaddexp", TORCH_FN(tt_eager::ops::binary::ttnn_logaddexp::invoke));
-    m.impl("logaddexp2.out", TORCH_FN(tt_eager::ops::binary::ttnn_logaddexp2::invoke_out));
-    m.impl("logaddexp2", TORCH_FN(tt_eager::ops::binary::ttnn_logaddexp2::invoke));
+    m.impl("logaddexp.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logaddexp>::invoke_out));
+    m.impl("logaddexp", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logaddexp>::invoke));
+    m.impl("logaddexp2.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logaddexp2>::invoke_out));
+    m.impl("logaddexp2", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logaddexp2>::invoke));
 
     // =========================
     // Reductions
     // =========================
     // Sum
     //  m.impl("sum", CppFunction::makeFallthrough());
-    m.impl("sum", TORCH_FN(tt_eager::ops::reduction::ttnn_sum::invoke_dtype));
+    m.impl("sum", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::sum>::invoke_dtype));
     //  m.impl("sum.DimnameList_out", CppFunction::makeFallthrough());
     //  m.impl("sum.IntList_out", CppFunction::makeFallthrough());
     //  m.impl("sum.dim_DimnameList", CppFunction::makeFallthrough());
@@ -307,7 +311,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 
     // Mean
     //  m.impl("mean", CppFunction::makeFallthrough());
-    m.impl("mean", TORCH_FN(tt_eager::ops::reduction::ttnn_mean::invoke_dtype));
+    m.impl("mean", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::mean>::invoke_dtype));
     //  m.impl("mean.dim", CppFunction::makeFallthrough());
     //  m.impl("mean.names_dim", CppFunction::makeFallthrough());
     //  m.impl("mean.names_out", CppFunction::makeFallthrough());
@@ -315,13 +319,13 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 
     // Max / Min
     //  m.impl("max", CppFunction::makeFallthrough());
-    m.impl("max", TORCH_FN(tt_eager::ops::reduction::ttnn_max_reduce::invoke));
+    m.impl("max", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::max>::invoke));
     //  m.impl("max.dim", CppFunction::makeFallthrough());
     //  m.impl("max.dim_max", CppFunction::makeFallthrough());
     //  m.impl("max.names_dim", CppFunction::makeFallthrough());
     //  m.impl("max.names_dim_max", CppFunction::makeFallthrough());
     //  m.impl("min", CppFunction::makeFallthrough());
-    m.impl("min", TORCH_FN(tt_eager::ops::reduction::ttnn_min_reduce::invoke));
+    m.impl("min", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::min>::invoke));
     //  m.impl("min.dim", CppFunction::makeFallthrough());
     //  m.impl("min.dim_min", CppFunction::makeFallthrough());
     //  m.impl("min.names_dim", CppFunction::makeFallthrough());
@@ -329,7 +333,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
 
     // Std / Var
     //  m.impl("std", CppFunction::makeFallthrough());
-    m.impl("std", TORCH_FN(tt_eager::ops::reduction::ttnn_std_reduce::invoke_unbiased));
+    m.impl("std", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::std>::invoke_unbiased));
     //  m.impl("std.dim", CppFunction::makeFallthrough());
     //  m.impl("std.names_dim", CppFunction::makeFallthrough());
     //  m.impl("std.names_out", CppFunction::makeFallthrough());
@@ -344,7 +348,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     //  m.impl("std_mean.correction", CppFunction::makeFallthrough());
     //  m.impl("std_mean.correction_names", CppFunction::makeFallthrough());
     //  m.impl("var", CppFunction::makeFallthrough());
-    m.impl("var", TORCH_FN(tt_eager::ops::reduction::ttnn_var_reduce::invoke_unbiased));
+    m.impl("var", TORCH_FN(tt_eager::ext::reduction_wrapper<ttnn::var>::invoke_unbiased));
     //  m.impl("var.dim", CppFunction::makeFallthrough());
     //  m.impl("var.names_dim", CppFunction::makeFallthrough());
     //  m.impl("var.names_out", CppFunction::makeFallthrough());
