@@ -5,8 +5,7 @@
 // - Avoids passing raw function pointers for TTNN ops; binds ops as NTTPs
 // - Provides out/inplace-style invokers compatible with aten schema
 
-#include <concepts>                // std::same_as, std::convertible_to
-#include <type_traits>             // std::remove_cvref_t
+#include <concepts>
 #include <optional>
 #include <variant>
 #include <c10/util/Optional.h>
@@ -32,18 +31,18 @@ namespace tt_eager::ext {
 // Unary op concept (first)
 template <auto Op>
 concept TTNNUnaryFn = requires(const ttnn::Tensor& a) {
-    { Op(a) } -> std::convertible_to<ttnn::Tensor>;
+    { Op(a) } -> std::same_as<ttnn::Tensor>;
 };
 
 // Binary op concept
 template <auto Op>
 concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
-    { Op(a, b) } -> std::convertible_to<ttnn::Tensor>;
+    { Op(a, b) } -> std::same_as<ttnn::Tensor>;
 };
 
 template <auto TTNN_BINARY_ALPHA>
 concept TTNNBinaryAlphaFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b, float alpha) {
-    { TTNN_BINARY_ALPHA(a, b, alpha) } -> std::convertible_to<ttnn::Tensor>;
+    { TTNN_BINARY_ALPHA(a, b, alpha) } -> std::same_as<ttnn::Tensor>;
 };
 
 // Helper functions
@@ -120,9 +119,6 @@ struct binary_logic {
         return write_from_ttnn(out, a, result);
     }
 
-    // No helpers for precomputed tiles here to keep core minimal; wrappers can adapt inputs.
-
-    // scaling logic intentionally left out; handled in wrappers to compose with other wrappers
 };  // struct binary_logic
 
 // Thin wrapper with fixed at::Tensor signatures for dispatcher; forwards to logic
@@ -151,46 +147,5 @@ struct binary_alpha_wrapper {
     }
 };
 
-
-//===========================
-//   Reduction Wrapper
-//===========================
-
-template <auto TTNN_REDUCTION>
-struct reduction_wrapper {
-    static at::Tensor invoke(const at::Tensor& a) {
-        at::Tensor out = make_empty_like_tt(a);
-        invoke_out(a, out);
-        return out;
-    }
-
-    static at::Tensor& invoke_out(const at::Tensor& a, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(a);
-        ttnn::Tensor result = TTNN_REDUCTION(
-            a_tile,
-            std::nullopt /*dim_arg*/,
-            false /*keepdim*/, std::nullopt /*mem cfg*/, std::nullopt /*kernel cfg*/);
-        return write_from_ttnn(out, a, result);
-    }
-
-    // Matches schemas like: aten::std(Tensor self, bool unbiased=True) and aten::var(Tensor self, bool unbiased=True)
-    static at::Tensor invoke_unbiased(const at::Tensor& a, bool unbiased) {
-        at::Tensor out = make_empty_like_tt(a);
-        ttnn::Tensor a_tile = tileify(a);
-        ttnn::Tensor result = TTNN_REDUCTION(
-            a_tile,
-            std::nullopt /*dim_arg*/,
-            false /*keepdim*/, std::nullopt /*mem cfg*/, std::nullopt /*kernel cfg*/,
-            1.0f /*scalar*/, static_cast<bool>(unbiased) /*correction*/);
-        return write_from_ttnn(out, a, result);
-    }
-
-    // Matches schemas like: aten::sum(Tensor self, *, ScalarType? dtype=None)
-    static at::Tensor invoke_dtype(const at::Tensor& a, c10::optional<at::ScalarType> dtype) {
-        at::Tensor out = make_empty_like_tt(a, dtype);
-        invoke_out(a, out);
-        return out;
-    }
-};
 
 }  // namespace tt_eager::ext
