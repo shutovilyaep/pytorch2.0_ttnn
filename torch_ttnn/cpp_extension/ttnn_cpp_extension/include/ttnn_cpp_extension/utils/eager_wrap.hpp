@@ -98,6 +98,10 @@ struct unary_wrapper {
         ttnn::Tensor result = Op(a_tile);
         return write_from_ttnn(out, a, result);
     }
+    
+    static at::Tensor& invoke_inplace(at::Tensor& self) {
+        return invoke_out(self, self);
+    }
 };  // struct unary_wrapper
 
 template <auto Op>
@@ -115,7 +119,10 @@ struct binary_wrapper {
         ttnn::Tensor result = Op(a_tile, b_tile);
         return write_from_ttnn(out, a, result);
     }
-
+    
+    static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other) {
+        return invoke_out(self, other, self);
+    }
 };  // struct binary_wrapper
 
 
@@ -135,6 +142,10 @@ struct binary_alpha_wrapper {
         const float alpha_value = static_cast<float>(alpha.toDouble());
         ttnn::Tensor result = TTNN_BINARY_ALPHA(a_tile, b_tile, alpha_value);
         return write_from_ttnn(out, a, result);
+    }
+    
+    static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
+        return invoke_out(self, other, alpha, self);
     }
 };
 
@@ -168,6 +179,10 @@ struct random_wrapper {
         );
 
         return write_from_ttnn(out, input, result);
+    }
+    
+    static at::Tensor& invoke_inplace(at::Tensor& self, c10::optional<at::Generator> generator = c10::nullopt) {
+        return invoke_out(self, generator, self);
     }
 };
 
