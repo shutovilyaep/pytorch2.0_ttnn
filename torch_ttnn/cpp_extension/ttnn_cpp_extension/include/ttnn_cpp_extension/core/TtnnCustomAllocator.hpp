@@ -6,7 +6,8 @@
 // This should not use any actual space (data is stored in DRAM, not CPU RAM)
 struct TtnnCustomAllocator final : at::Allocator {
     TtnnCustomAllocator() = default;
-    at::DataPtr allocate(size_t nbytes) const override;
+    at::DataPtr allocate(size_t nbytes) override;
+    void copy_data(void* dest, const void* src, std::size_t count) const override;
 
     static void ReportAndDelete(void* ptr);
 

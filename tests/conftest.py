@@ -90,8 +90,9 @@ def device(request):
     else:
         device_id = 0
 
-        device = ttnn.open_device(
-            device_id=device_id, dispatch_core_config=dispatch_core_config, l1_small_size=l1_small_size
+        # Use unit-mesh (1x1) per TT-Mesh migration
+        device = ttnn.open_mesh_device(
+            ttnn.MeshShape(1, 1), dispatch_core_config=dispatch_core_config, l1_small_size=l1_small_size
         )
 
         device.enable_program_cache()
@@ -101,7 +102,7 @@ def device(request):
         yield device
 
         ttnn.synchronize_device(device)
-        ttnn.close_device(device)
+        ttnn.close_mesh_device(device)
 
 
 def get_dispatch_core_type():
@@ -275,7 +276,7 @@ def compile_and_run(device, reset_torch_dynamo, request):
             if option.native_integration:
                 from torch_ttnn.cpp_extension import ttnn_module
 
-                torch_device = ttnn_module.as_torch_device(option.device)
+                torch_device = ttnn_module.as_torch_device(device)
                 start = time.perf_counter() * 1000
                 model_tester.model = model_tester.model.to(torch_device)
                 model_tester.inputs = model_tester.inputs.to(torch_device)

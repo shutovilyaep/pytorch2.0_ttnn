@@ -50,6 +50,7 @@ inline ttnn::Tensor tileify(const at::Tensor& t) {
     auto tt = impl->get_ttnn_tensor();
     if (tt.layout() == ttnn::ROW_MAJOR_LAYOUT) {
         tt = ttnn::to_layout(tt, ttnn::TILE_LAYOUT);
+        // tt = ttnn::to_layout(tt, ttnn::TILE_LAYOUT, std::nullopt, std::nullopt, tt.device());
     }
 
     return tt;
