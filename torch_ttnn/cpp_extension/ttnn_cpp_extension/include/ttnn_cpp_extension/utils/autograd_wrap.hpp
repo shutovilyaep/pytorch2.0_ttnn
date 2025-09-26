@@ -1,14 +1,9 @@
 #pragma once
 
-// PR-ready: generic Autograd wrappers for TTNN ops
-// - Templated, concept-checked wrappers to register functional autograd kernels
-// - Keeps forward math in PrivateUse1 wrappers, exposes only functional overloads to AutogradPrivateUse1
-
 #include <torch/autograd.h>
 #include <torch/library.h>
 #include <ATen/core/dispatch/Dispatcher.h>
 
-// #include <concepts> // not directly needed; keep minimal includes
 #include <vector>
 #include <optional>
 
@@ -16,6 +11,8 @@
 
 #include <ttnn/operations/eltwise/unary/unary.hpp>
 #include <ttnn/operations/eltwise/unary_backward/unary_backward.hpp>
+
+// TODO: this is a draft of autograd-related functions
 
 namespace tt_eager::ext {
 
