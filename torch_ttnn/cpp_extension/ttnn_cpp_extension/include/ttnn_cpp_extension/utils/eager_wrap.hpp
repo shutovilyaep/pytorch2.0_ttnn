@@ -94,15 +94,10 @@ struct unary_wrapper {
         return invoke_into(a, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_out(const at::Tensor& a, at::Tensor& out) {
-        return invoke_into(a, out);
-    }
-    
     [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
         return invoke_into(self, self);
     }
 
-private:
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(in);
         ttnn::Tensor result = Op(a_tile);
@@ -120,15 +115,10 @@ struct binary_wrapper {
         return invoke_into(a, b, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
-        return invoke_into(a, b, out);
-    }
-    
     [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other) {
         return invoke_into(self, other, self);
     }
 
-private:
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
@@ -149,15 +139,10 @@ struct binary_alpha_wrapper {
         return invoke_into(a, b, alpha, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
-        return invoke_into(a, b, alpha, out);
-    }
-    
     [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
         return invoke_into(self, other, alpha, self);
     }
 
-private:
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& a,
         const at::Tensor& b,
@@ -183,18 +168,10 @@ struct random_wrapper {
         return invoke_into(input, generator, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_out(
-        const at::Tensor& input,
-        c10::optional<at::Generator> generator,
-        at::Tensor& out) {
-        return invoke_into(input, generator, out);
-    }
-    
     [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, c10::optional<at::Generator> generator = c10::nullopt) {
         return invoke_into(self, generator, self);
     }
 
-private:
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& input,
         c10::optional<at::Generator> generator,
