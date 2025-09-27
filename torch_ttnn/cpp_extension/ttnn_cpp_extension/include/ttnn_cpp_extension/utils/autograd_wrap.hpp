@@ -59,6 +59,12 @@ inline at::Tensor call_unary_bw(
 template <auto ForwardTTNN, auto BackwardTTNN>
     requires TTNNUnaryFn<ForwardTTNN> && TTNNUnaryBackwardFn<BackwardTTNN>
 struct autograd_unary_wrapper {
+    struct SavedVariables {
+        at::Tensor in;
+        at::Tensor out;
+    };
+
+    // Function object
     struct Fn : public torch::autograd::Function<Fn> {
         static at::Tensor forward(
             torch::autograd::AutogradContext* ctx,
@@ -70,7 +76,7 @@ struct autograd_unary_wrapper {
             at::Tensor out = tt_eager::ext::unary_wrapper<ForwardTTNN>::invoke(a);
 
             // Save minimal state required by backward (input and output)
-            ctx->save_for_backward({a, out});
+            ctx->save_for_backward(SavedVariables{a, out});
             return out;
         }
 
@@ -78,12 +84,11 @@ struct autograd_unary_wrapper {
             torch::autograd::AutogradContext* ctx,
             torch::autograd::variable_list grads) {
             auto saved = ctx->get_saved_variables();
-            const at::Tensor& a   = saved.at(0);
-            const at::Tensor& out = saved.at(1);
+            SavedVariables saved_vars = saved.at(0);
 
             const at::Tensor& g = grads.at(0);
 
-            at::Tensor g_in = tt_eager::ext::call_unary_bw<BackwardTTNN>(g, a, out);
+            at::Tensor g_in = tt_eager::ext::call_unary_bw<BackwardTTNN>(g, saved_vars.in, saved_vars.out);
             return {g_in};
         }
     };
@@ -140,6 +145,11 @@ inline std::pair<at::Tensor, at::Tensor> call_binary_bw(
 
 template <auto ForwardTTNN, auto BackwardTTNN>
 struct autograd_binary_wrapper {
+    struct SavedVariables {
+        at::Tensor in_a;
+        at::Tensor in_b;
+    };
+
     struct Fn : public torch::autograd::Function<Fn> {
         static at::Tensor forward(
             torch::autograd::AutogradContext* ctx,
@@ -147,7 +157,7 @@ struct autograd_binary_wrapper {
             const at::Tensor& b) {
             at::AutoDispatchBelowADInplaceOrView guard;
             at::Tensor out = tt_eager::ext::binary_wrapper<ForwardTTNN>::invoke(a, b);
-            ctx->save_for_backward({a, b, out});
+            ctx->save_for_backward(SavedVariables{a, b});
             return out;
         }
 
@@ -155,11 +165,10 @@ struct autograd_binary_wrapper {
             torch::autograd::AutogradContext* ctx,
             torch::autograd::variable_list grads) {
             auto saved = ctx->get_saved_variables();
-            const at::Tensor& a = saved.at(0);
-            const at::Tensor& b = saved.at(1);
+            SavedVariables saved_vars = saved.at(0);
             const at::Tensor& g = grads.at(0);
 
-            auto [ga, gb] = tt_eager::ext::call_binary_bw<BackwardTTNN>(g, a, b);
+            auto [ga, gb] = tt_eager::ext::call_binary_bw<BackwardTTNN>(g, saved_vars.in_a, saved_vars.in_b);
             return {ga, gb};
         }
     };
@@ -217,6 +226,12 @@ inline std::pair<at::Tensor, at::Tensor> call_binary_alpha_bw(
 
 template <auto ForwardTTNN, auto BackwardTTNN>
 struct autograd_binary_alpha_wrapper {
+    struct SavedVariables {
+        at::Tensor in_a;
+        at::Tensor in_b;
+        c10::Scalar alpha;
+    };
+
     struct Fn : public torch::autograd::Function<Fn> {
         static at::Tensor forward(
             torch::autograd::AutogradContext* ctx,
@@ -225,7 +240,7 @@ struct autograd_binary_alpha_wrapper {
             const c10::Scalar& alpha) {
             at::AutoDispatchBelowADInplaceOrView guard;
             at::Tensor out = tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>::invoke(a, b, alpha);
-            ctx->save_for_backward({a, b, out});
+            ctx->save_for_backward(SavedVariables{a, b, alpha});
             ctx->saved_data["alpha"] = alpha;
             return out;
         }
@@ -234,12 +249,11 @@ struct autograd_binary_alpha_wrapper {
             torch::autograd::AutogradContext* ctx,
             torch::autograd::variable_list grads) {
             auto saved = ctx->get_saved_variables();
-            const at::Tensor& a = saved.at(0);
-            const at::Tensor& b = saved.at(1);
+            SavedVariables saved_vars = saved.at(0);
             const at::Tensor& g = grads.at(0);
-            c10::Scalar alpha = ctx->saved_data.at("alpha").toScalar();
+            // c10::Scalar alpha = ctx->saved_data.at("alpha").toScalar();
 
-            auto [ga, gb] = tt_eager::ext::call_binary_alpha_bw<BackwardTTNN>(g, a, b, alpha);
+            auto [ga, gb] = tt_eager::ext::call_binary_alpha_bw<BackwardTTNN>(g, saved_vars.in_a, saved_vars.in_b, saved_vars.alpha);
             return {ga, gb};
         }
     };
