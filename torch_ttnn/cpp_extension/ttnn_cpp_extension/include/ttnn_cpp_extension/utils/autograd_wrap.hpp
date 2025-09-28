@@ -356,26 +356,48 @@ struct BinaryAlphaCategory {
         return tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>::invoke(args...);
     }
 
+    template <typename... Args>
     static std::tuple<at::Tensor, at::Tensor> backward(
         const at::Tensor& grad_out,
-        const at::Tensor& a,
-        const at::Tensor& b,
-        const c10::Scalar& alpha) {
+        const Args&... args) {
+        // Compile-time preparation of arguments
+        struct PrepareArg {
+            static ttnn::Tensor apply(const at::Tensor& t) { return tileify(t); }
+            static float apply(const c10::Scalar& s) { return static_cast<float>(s.toDouble()); }
+        };
+
+        auto prepared = std::make_tuple(PrepareArg::apply(args)...);
         ttnn::Tensor g_tile = tileify(grad_out);
-        ttnn::Tensor a_tile = tileify(a);
-        ttnn::Tensor b_tile = tileify(b);
-        float alpha_value = static_cast<float>(alpha.toDouble());
 
-        auto result = invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g_tile, a_tile, b_tile, alpha_value);
-        const ttnn::Tensor& grad_a_tt = pick_result(result, 0);
-        const ttnn::Tensor& grad_b_tt = pick_result(result, 1);
+        // Invoke TTNN backward with prepared args (order follows Args...)
+        auto result = apply_with_prefix(
+            [&](const ttnn::Tensor& g, const auto&... prepared_args) {
+                return invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g, prepared_args...);
+            },
+            prepared,
+            g_tile);
 
-        at::Tensor grad_a = make_empty_like_tt(a);
-        at::Tensor grad_b = make_empty_like_tt(b);
-        return std::make_tuple(
-            write_from_ttnn(grad_a, a, grad_a_tt),
-            write_from_ttnn(grad_b, b, grad_b_tt)
-        );
+        // Write back grads for tensor arguments in order
+        size_t result_index = 0;
+        at::Tensor grad_first;
+        at::Tensor grad_second;
+        size_t tensor_seen = 0;
+
+        (void)std::initializer_list<int>{ (
+            [&](){
+                using T = std::decay_t<Args>;
+                if constexpr (std::is_same_v<T, at::Tensor>) {
+                    const ttnn::Tensor& grad_tt = pick_result(result, result_index++);
+                    at::Tensor grad_like = make_empty_like_tt(args);
+                    at::Tensor written = write_from_ttnn(grad_like, args, grad_tt);
+                    if (tensor_seen == 0) grad_first = std::move(written);
+                    else grad_second = std::move(written);
+                    ++tensor_seen;
+                }
+            }(), 0)... };
+
+        TORCH_CHECK(tensor_seen == 2, "BinaryAlphaCategory::backward expects exactly two Tensor inputs");
+        return std::make_tuple(grad_first, grad_second);
     }
 };
 
