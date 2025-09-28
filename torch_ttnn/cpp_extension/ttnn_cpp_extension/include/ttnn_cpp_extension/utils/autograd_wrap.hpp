@@ -380,23 +380,11 @@ template <typename... Ts>
 struct is_tuple_of_at_tensors<std::tuple<Ts...>>
     : std::conjunction<std::is_same<Ts, at::Tensor>...> {};
 
-// Category adapter to present non-templated static API for a given Args... set
+// Concept for category API
 template <typename Category, typename... Args>
-struct CategoryAdapter {
-    static at::Tensor forward(const Args&... args) {
-        return Category::template forward<Args...>(args...);
-    }
-
-    static auto backward(const at::Tensor& g, const Args&... args) {
-        return Category::template backward<Args...>(g, args...);
-    }
-};
-
-// Concept for adapted category
-template <typename Cat, typename... Args>
 concept AutogradCategory = requires(const at::Tensor& g, const Args&... a) {
-    { Cat::forward(a...) } -> std::same_as<at::Tensor>;
-    requires is_tuple_of_at_tensors<decltype(Cat::backward(g, a...))>::value;
+    { Category::forward(a...) } -> std::same_as<at::Tensor>;
+    requires is_tuple_of_at_tensors<decltype(Category::backward(g, a...))>::value;
 };
 
 // Category for Binary+alpha using existing wrappers/callers
@@ -423,9 +411,8 @@ struct AutogradWrapperFn {
     struct Fn : public torch::autograd::Function<Fn> {
         static at::Tensor forward(torch::autograd::AutogradContext* ctx, const Args&... args) {
             at::AutoDispatchBelowADInplaceOrView guard;
-            using Cat = CategoryAdapter<Category, Args...>;
-            static_assert(AutogradCategory<Cat, Args...>, "Category does not satisfy AutogradCategory concept for given Args...");
-            at::Tensor out = Cat::forward(args...);
+            static_assert(AutogradCategory<Category, Args...>, "Category does not satisfy AutogradCategory concept for given Args...");
+            at::Tensor out = Category::forward(args...);
             SavedHelper::save(ctx, args...);
             return out;
         }
@@ -437,8 +424,7 @@ struct AutogradWrapperFn {
             const at::Tensor& g = grads.at(0);
             auto grads_tuple = apply_with_prefix(
                 [](const at::Tensor& gg, const Args&... unpacked) {
-                    using Cat = CategoryAdapter<Category, Args...>;
-                    return Cat::backward(gg, unpacked...);
+                    return Category::backward(gg, unpacked...);
                 },
                 args,
                 g);
