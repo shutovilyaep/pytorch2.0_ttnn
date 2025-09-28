@@ -303,35 +303,51 @@ inline std::pair<at::Tensor, at::Tensor> call_binary_bw(
 // Categories for unary/binary/binary+alpha
 // =============================
 
-template <auto ForwardTTNN, auto BackwardTTNN>
-struct UnaryCategory {
+// Forward policies
+template <auto ForwardTTNN>
+struct ForwardUnaryPolicy {
     template <typename... Args>
-    static at::Tensor forward(const Args&... args) {
+    static at::Tensor apply(const Args&... args) {
         return tt_eager::ext::unary_wrapper<ForwardTTNN>::invoke(args...);
     }
-
-    template <typename... Args>
-    static std::tuple<at::Tensor> backward(
-        const at::Tensor& grad_out,
-        const Args&... args) {
-        return run_generic_backward<UnaryInvoker<BackwardTTNN>>(grad_out, args...);
-    }
 };
 
-template <auto ForwardTTNN, auto BackwardTTNN>
-struct BinaryCategory {
+template <auto ForwardTTNN>
+struct ForwardBinaryPolicy {
     template <typename... Args>
-    static at::Tensor forward(const Args&... args) {
+    static at::Tensor apply(const Args&... args) {
         return tt_eager::ext::binary_wrapper<ForwardTTNN>::invoke(args...);
     }
+};
 
+template <auto ForwardTTNN>
+struct ForwardBinaryAlphaPolicy {
     template <typename... Args>
-    static std::tuple<at::Tensor, at::Tensor> backward(
-        const at::Tensor& grad_out,
-        const Args&... args) {
-        return run_generic_backward<BinaryInvoker<BackwardTTNN>>(grad_out, args...);
+    static at::Tensor apply(const Args&... args) {
+        return tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>::invoke(args...);
     }
 };
+
+// Generic category composed of a Forward policy and a Backward invoker
+template <typename ForwardPolicy, typename Invoker>
+struct GenericCategory {
+    template <typename... Args>
+    static at::Tensor forward(const Args&... args) {
+        return ForwardPolicy::apply(args...);
+    }
+
+    template <typename... Args>
+    static auto backward(const at::Tensor& grad_out, const Args&... args) {
+        return run_generic_backward<Invoker>(grad_out, args...);
+    }
+};
+
+// Aliases to keep existing names
+template <auto ForwardTTNN, auto BackwardTTNN>
+using UnaryCategory = GenericCategory<ForwardUnaryPolicy<ForwardTTNN>, UnaryInvoker<BackwardTTNN>>;
+
+template <auto ForwardTTNN, auto BackwardTTNN>
+using BinaryCategory = GenericCategory<ForwardBinaryPolicy<ForwardTTNN>, BinaryInvoker<BackwardTTNN>>;
 
 // =============================
 // Binary+alpha (Tensor, Tensor, Scalar) -> Tensor
@@ -387,21 +403,9 @@ concept AutogradCategory = requires(const at::Tensor& g, const Args&... a) {
     requires is_tuple_of_at_tensors<decltype(Category::backward(g, a...))>::value;
 };
 
-// Category for Binary+alpha using existing wrappers/callers
+// Category for Binary+alpha using policies
 template <auto ForwardTTNN, auto BackwardTTNN>
-struct BinaryAlphaCategory {
-    template <typename... Args>
-    static at::Tensor forward(const Args&... args) {
-        return tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>::invoke(args...);
-    }
-
-    template <typename... Args>
-    static std::tuple<at::Tensor, at::Tensor> backward(
-        const at::Tensor& grad_out,
-        const Args&... args) {
-        return run_generic_backward<BinaryAlphaInvoker<BackwardTTNN>>(grad_out, args...);
-    }
-};
+using BinaryAlphaCategory = GenericCategory<ForwardBinaryAlphaPolicy<ForwardTTNN>, BinaryAlphaInvoker<BackwardTTNN>>;
 
 // Autograd wrapper generator parametrized by Category and argument types
 template <typename Category, typename... Args>
