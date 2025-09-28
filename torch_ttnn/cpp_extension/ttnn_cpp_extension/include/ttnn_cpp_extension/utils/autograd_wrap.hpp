@@ -212,28 +212,6 @@ static auto collect_tensor_grads(const Result& result, const Args&... args) {
 }
 
 // =============================
-// Binary (Tensor, Tensor) -> Tensor
-// =============================
-
-// template <auto BackwardTTNN>
-// inline std::pair<at::Tensor, at::Tensor> call_binary_bw(
-//     const at::Tensor& grad_out,
-//     const at::Tensor& a,
-//     const at::Tensor& b) {
-//     ttnn::Tensor g_tile = tileify(grad_out);
-//     ttnn::Tensor a_tile = tileify(a);
-//     ttnn::Tensor b_tile = tileify(b);
-
-//     auto result = invoke_binary_bw_ttnn<BackwardTTNN>(g_tile, a_tile, b_tile);
-//     const ttnn::Tensor& grad_a_tt = pick_result(result, 0);
-//     const ttnn::Tensor& grad_b_tt = pick_result(result, 1);
-
-//     at::Tensor grad_a = make_empty_like_tt(a);
-//     at::Tensor grad_b = make_empty_like_tt(b);
-//     return { write_from_ttnn(grad_a, a, grad_a_tt), write_from_ttnn(grad_b, b, grad_b_tt) };
-// }
-
-// =============================
 // Categories for unary/binary/binary+alpha
 // =============================
 
@@ -259,65 +237,59 @@ struct GenericCategory {
     }
 };
 
-// Some TTNN binary backward ops accept (grad, a, b, memory_config),
-// others require more args: (grad, a, b, are_required_outputs, memory_config, input_grad, other_grad).
-// Provide an invoker that adapts at compile time.
-template <auto Op>
-inline auto invoke_binary_bw_ttnn(
-    const ttnn::Tensor& grad_out,
-    const ttnn::Tensor& a,
-    const ttnn::Tensor& b) {
-    if constexpr (requires { Op(grad_out, a, b, std::nullopt); }) {
-        return Op(grad_out, a, b, std::nullopt);
-    } else {
-        return Op(
-            grad_out,
-            a,
-            b,
-            std::vector<bool>{true, true},
-            std::nullopt,
-            std::nullopt,
-            std::nullopt);
-    }
-}
 
 // Aliases to keep existing names
 template <auto ForwardTTNN, auto BackwardTTNN>
-using UnaryCategory = GenericCategory<tt_eager::ext::unary_wrapper<ForwardTTNN>, [] (const ttnn::Tensor& g, const ttnn::Tensor& a){ return BackwardTTNN(g, a, std::nullopt); }>;
+using UnaryCategory = GenericCategory<
+    tt_eager::ext::unary_wrapper<ForwardTTNN>,
+    [] (const ttnn::Tensor& g, const ttnn::Tensor& a){
+        return BackwardTTNN(g, a, std::nullopt);
+    }
+>;
 
 template <auto ForwardTTNN, auto BackwardTTNN>
-using BinaryCategory = GenericCategory<tt_eager::ext::binary_wrapper<ForwardTTNN>, [] (const ttnn::Tensor& g, const ttnn::Tensor& a, const ttnn::Tensor& b){ return invoke_binary_bw_ttnn<BackwardTTNN>(g, a, b); }>;
+using BinaryCategory = GenericCategory<
+    tt_eager::ext::binary_wrapper<ForwardTTNN>,
+    [] (const ttnn::Tensor& g, const ttnn::Tensor& a, const ttnn::Tensor& b){
+        if constexpr (requires { BackwardTTNN(g, a, b, std::nullopt); }) {
+            return BackwardTTNN(g, a, b, std::nullopt);
+        } else {
+            return BackwardTTNN(
+                g,
+                a,
+                b,
+                std::vector<bool>{true, true},
+                std::nullopt,
+                std::nullopt,
+                std::nullopt);
+        }
+    }
+>;
+
 
 // =============================
 // Binary+alpha (Tensor, Tensor, Scalar) -> Tensor
 // =============================
 
-// Similar adaptation wrapper for addalpha/subalpha backward
-template <auto Op>
-inline auto invoke_binary_alpha_bw_ttnn(
-    const ttnn::Tensor& grad_out,
-    const ttnn::Tensor& a,
-    const ttnn::Tensor& b,
-    float alpha) {
-    if constexpr (requires { Op(grad_out, a, b, alpha, std::nullopt); }) {
-        return Op(grad_out, a, b, alpha, std::nullopt);
-    } else {
-        return Op(
-            grad_out,
-            a,
-            b,
-            alpha,
-            std::vector<bool>{true, true},
-            std::nullopt,
-            std::nullopt,
-            std::nullopt);
-    }
-}
-
 // Category for Binary+alpha using policies
 template <auto ForwardTTNN, auto BackwardTTNN>
-using BinaryAlphaCategory = GenericCategory<tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>, [] (const ttnn::Tensor& g, const ttnn::Tensor& a, const ttnn::Tensor& b, float alpha){ return invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g, a, b, alpha); }>;
-
+using BinaryAlphaCategory = GenericCategory<
+    tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>,
+    [] (const ttnn::Tensor& g, const ttnn::Tensor& a, const ttnn::Tensor& b, float alpha){
+        if constexpr (requires { BackwardTTNN(g, a, b, alpha, std::nullopt); }) {
+            return BackwardTTNN(g, a, b, alpha, std::nullopt);
+        } else {
+            return BackwardTTNN(
+                g,
+                a,
+                b,
+                alpha,
+                std::vector<bool>{true, true},
+                std::nullopt,
+                std::nullopt,
+                std::nullopt);
+        }
+        }>;
 
 // call_binary_alpha_bw inlined directly inside BinaryAlphaCategory::backward
 
