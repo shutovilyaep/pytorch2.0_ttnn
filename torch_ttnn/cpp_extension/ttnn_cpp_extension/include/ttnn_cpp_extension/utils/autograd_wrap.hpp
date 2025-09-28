@@ -351,8 +351,9 @@ inline torch::autograd::variable_list tuple_to_varlist(const std::tuple<T...>& t
 // Category for Binary+alpha using existing wrappers/callers
 template <auto ForwardTTNN, auto BackwardTTNN>
 struct BinaryAlphaCategory {
-    static at::Tensor forward(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
-        return tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>::invoke(a, b, alpha);
+    template <typename... Args>
+    static at::Tensor forward(const Args&... args) {
+        return tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>::invoke(args...);
     }
 
     static std::tuple<at::Tensor, at::Tensor> backward(
