@@ -152,22 +152,22 @@ concept TTNNUnaryBackwardFn = requires(
     Op(grad_out, saved_in, std::nullopt);
 };
 
-// Helper to invoke TTNN unary backward entry points with ATen tensors
-template <auto BackwardTTNN>
-    requires TTNNUnaryBackwardFn<BackwardTTNN>
-inline at::Tensor call_unary_bw(
-    const at::Tensor& grad_out,
-    const at::Tensor& saved_in,
-    const at::Tensor& /*saved_out*/) {
-    ttnn::Tensor g_tile = tileify(grad_out);
-    ttnn::Tensor a_tile = tileify(saved_in);
+// // Helper to invoke TTNN unary backward entry points with ATen tensors
+// template <auto BackwardTTNN>
+//     requires TTNNUnaryBackwardFn<BackwardTTNN>
+// inline at::Tensor call_unary_bw(
+//     const at::Tensor& grad_out,
+//     const at::Tensor& saved_in,
+//     const at::Tensor& /*saved_out*/) {
+//     ttnn::Tensor g_tile = tileify(grad_out);
+//     ttnn::Tensor a_tile = tileify(saved_in);
 
-    auto result = BackwardTTNN(g_tile, a_tile, std::nullopt);
-    const ttnn::Tensor& grad_in_tt = pick_result(result, 0);
+//     auto result = BackwardTTNN(g_tile, a_tile, std::nullopt);
+//     const ttnn::Tensor& grad_in_tt = pick_result(result, 0);
 
-    at::Tensor grad_in = make_empty_like_tt(saved_in);
-    return write_from_ttnn(grad_in, saved_in, grad_in_tt);
-}
+//     at::Tensor grad_in = make_empty_like_tt(saved_in);
+//     return write_from_ttnn(grad_in, saved_in, grad_in_tt);
+// }
 
 
 // General argument preparation policy
@@ -211,27 +211,53 @@ static auto collect_tensor_grads(const Result& result, const Args&... args) {
     return grads_tuple;
 }
 
-// Backward caller is passed explicitly as a non-type template parameter (C++20)
-
-// Single generic backward runner parametrized by Invoker and argument types
-template <auto BackwardCaller, typename... Args>
-static auto run_generic_backward(
-    const at::Tensor& grad_out,
-    const Args&... args) {
-    ttnn::Tensor g_tile = tileify(grad_out);
-    auto prepared = build_prepared_tuple(args...);
-    auto result = apply_with_prefix(
-        [&](const ttnn::Tensor& g, const auto&... prepared_args) {
-            return BackwardCaller(g, prepared_args...);
-        },
-        prepared,
-        g_tile);
-    return collect_tensor_grads(result, args...);
-}
-
 // =============================
 // Binary (Tensor, Tensor) -> Tensor
 // =============================
+
+// template <auto BackwardTTNN>
+// inline std::pair<at::Tensor, at::Tensor> call_binary_bw(
+//     const at::Tensor& grad_out,
+//     const at::Tensor& a,
+//     const at::Tensor& b) {
+//     ttnn::Tensor g_tile = tileify(grad_out);
+//     ttnn::Tensor a_tile = tileify(a);
+//     ttnn::Tensor b_tile = tileify(b);
+
+//     auto result = invoke_binary_bw_ttnn<BackwardTTNN>(g_tile, a_tile, b_tile);
+//     const ttnn::Tensor& grad_a_tt = pick_result(result, 0);
+//     const ttnn::Tensor& grad_b_tt = pick_result(result, 1);
+
+//     at::Tensor grad_a = make_empty_like_tt(a);
+//     at::Tensor grad_b = make_empty_like_tt(b);
+//     return { write_from_ttnn(grad_a, a, grad_a_tt), write_from_ttnn(grad_b, b, grad_b_tt) };
+// }
+
+// =============================
+// Categories for unary/binary/binary+alpha
+// =============================
+
+// Generic category composed of a Forward wrapper (with ::invoke) and a Backward caller
+template <typename ForwardWrapper, auto BackwardCaller>
+struct GenericCategory {
+    template <typename... Args>
+    static at::Tensor forward(const Args&... args) {
+        return ForwardWrapper::invoke(args...);
+    }
+
+    template <typename... Args>
+    static auto backward(const at::Tensor& grad_out, const Args&... args) {
+        ttnn::Tensor g_tile = tileify(grad_out);
+        auto prepared = build_prepared_tuple(args...);
+        auto result = apply_with_prefix(
+            [&](const ttnn::Tensor& g, const auto&... prepared_args) {
+                return BackwardCaller(g, prepared_args...);
+            },
+            prepared,
+            g_tile);
+        return collect_tensor_grads(result, args...);
+    }
+};
 
 // Some TTNN binary backward ops accept (grad, a, b, memory_config),
 // others require more args: (grad, a, b, are_required_outputs, memory_config, input_grad, other_grad).
@@ -254,42 +280,6 @@ inline auto invoke_binary_bw_ttnn(
             std::nullopt);
     }
 }
-
-template <auto BackwardTTNN>
-inline std::pair<at::Tensor, at::Tensor> call_binary_bw(
-    const at::Tensor& grad_out,
-    const at::Tensor& a,
-    const at::Tensor& b) {
-    ttnn::Tensor g_tile = tileify(grad_out);
-    ttnn::Tensor a_tile = tileify(a);
-    ttnn::Tensor b_tile = tileify(b);
-
-    auto result = invoke_binary_bw_ttnn<BackwardTTNN>(g_tile, a_tile, b_tile);
-    const ttnn::Tensor& grad_a_tt = pick_result(result, 0);
-    const ttnn::Tensor& grad_b_tt = pick_result(result, 1);
-
-    at::Tensor grad_a = make_empty_like_tt(a);
-    at::Tensor grad_b = make_empty_like_tt(b);
-    return { write_from_ttnn(grad_a, a, grad_a_tt), write_from_ttnn(grad_b, b, grad_b_tt) };
-}
-
-// =============================
-// Categories for unary/binary/binary+alpha
-// =============================
-
-// Generic category composed of a Forward wrapper (with ::invoke) and a Backward caller
-template <typename ForwardWrapper, auto BackwardCaller>
-struct GenericCategory {
-    template <typename... Args>
-    static at::Tensor forward(const Args&... args) {
-        return ForwardWrapper::invoke(args...);
-    }
-
-    template <typename... Args>
-    static auto backward(const at::Tensor& grad_out, const Args&... args) {
-        return run_generic_backward<BackwardCaller>(grad_out, args...);
-    }
-};
 
 // Aliases to keep existing names
 template <auto ForwardTTNN, auto BackwardTTNN>
