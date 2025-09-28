@@ -396,7 +396,7 @@ struct AutogradWrapperFn {
     struct Fn : public torch::autograd::Function<Fn> {
         static at::Tensor forward(torch::autograd::AutogradContext* ctx, const Args&... args) {
             at::AutoDispatchBelowADInplaceOrView guard;
-            at::Tensor out = Category::template forward<Args...>(args...);
+            at::Tensor out = Category::forward<Args...>(args...);
             SavedHelper::save(ctx, args...);
             return out;
         }
@@ -408,7 +408,7 @@ struct AutogradWrapperFn {
             const at::Tensor& g = grads.at(0);
             auto grads_tuple = apply_with_prefix(
                 [](const at::Tensor& gg, const Args&... unpacked) {
-                    return Category::template backward<Args...>(gg, unpacked...);
+                    return Category::backward<Args...>(gg, unpacked...);
                 },
                 args,
                 g);
