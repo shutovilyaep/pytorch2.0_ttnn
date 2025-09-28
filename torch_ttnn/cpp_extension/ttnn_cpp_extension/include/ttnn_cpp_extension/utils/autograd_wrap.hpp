@@ -170,57 +170,90 @@ inline at::Tensor call_unary_bw(
 }
 
 
-// Generic Autograd wrapper for unary functional ops: Tensor -> Tensor
-template <auto ForwardTTNN, auto BackwardTTNN>
-    requires TTNNUnaryFn<ForwardTTNN> && TTNNUnaryBackwardFn<BackwardTTNN>
-struct autograd_unary_wrapper {
-    struct Saved {
-        at::Tensor in;
-        at::Tensor out;
+// General argument preparation policy
+struct PrepareArg {
+    static ttnn::Tensor to_backend(const at::Tensor& t) { return tileify(t); }
+    static float to_backend(const c10::Scalar& s) { return static_cast<float>(s.toDouble()); }
+};
 
-        static void save(torch::autograd::AutogradContext* ctx, const at::Tensor& in, const at::Tensor& out) {
-            ctx->save_for_backward({in, out});
-        }
+// =============================
+// Generic backward builders
+// =============================
 
-        static Saved load(torch::autograd::AutogradContext* ctx) {
-            auto saved = ctx->get_saved_variables();
-            return Saved{saved.at(0), saved.at(1)};
-        }
+// Build tuple of prepared backend args in the same order as Args...
+template <typename... Args>
+static auto build_prepared_tuple(const Args&... args) {
+    return std::make_tuple(PrepareArg::to_backend(args)...);
+}
+
+// Consume a result that yields gradients per each Tensor in Args...
+// Returns tuple of at::Tensor grads in order of Tensor occurrences in Args...
+template <typename Result, typename... Args>
+static auto collect_tensor_grads(const Result& result, const Args&... args) {
+    size_t result_index = 0;
+    std::tuple<> empty;
+    // Helper lambda to append a new grad tensor to tuple
+    auto append = [](auto tuple, at::Tensor value) {
+        return std::tuple_cat(std::move(tuple), std::make_tuple(std::move(value)));
     };
 
-    // Function object
-    struct Fn : public torch::autograd::Function<Fn> {
-        static at::Tensor forward(
-            torch::autograd::AutogradContext* ctx,
-            const at::Tensor& a) {
-            // Prevent re-entrancy into Autograd while calling the real device forward
-            at::AutoDispatchBelowADInplaceOrView guard;
-
-            // Use PrivateUse1 forward wrapper to do device math
-            at::Tensor out = tt_eager::ext::unary_wrapper<ForwardTTNN>::invoke(a);
-
-            // Save minimal state required by backward (input and output)
-            Saved::save(ctx, a, out);
-            return out;
+    // folder over Args...
+    auto grads_tuple = std::tuple<>{};
+    (void)std::initializer_list<int>{ ([&]{
+        using T = std::decay_t<Args>;
+        if constexpr (std::is_same_v<T, at::Tensor>) {
+            const ttnn::Tensor& grad_tt = pick_result(result, result_index++);
+            at::Tensor grad_like = make_empty_like_tt(args);
+            at::Tensor written = write_from_ttnn(grad_like, args, grad_tt);
+            grads_tuple = append(std::move(grads_tuple), std::move(written));
         }
+    }(), 0)... };
+    return grads_tuple;
+}
 
-        static torch::autograd::variable_list backward(
-            torch::autograd::AutogradContext* ctx,
-            torch::autograd::variable_list grads) {
-            auto saved = Saved::load(ctx);
-
-            const at::Tensor& g = grads.at(0);
-
-            at::Tensor g_in = tt_eager::ext::call_unary_bw<BackwardTTNN>(g, saved.in, saved.out);
-            return {g_in};
-        }
-    };
-
-    // Exact functional schema adaptor (Tensor self -> Tensor)
-    static at::Tensor invoke(const at::Tensor& a) {
-        return Fn::apply(a);
+// Invokers for TTNN backward calls
+template <auto BackwardTTNN>
+struct UnaryInvoker {
+    template <typename... Prepared>
+    static auto run(const ttnn::Tensor& g, const Prepared&... prepared) {
+        static_assert(sizeof...(Prepared) == 1, "UnaryInvoker expects 1 prepared arg");
+        return BackwardTTNN(g, prepared..., std::nullopt);
     }
 };
+
+template <auto BackwardTTNN>
+struct BinaryInvoker {
+    template <typename... Prepared>
+    static auto run(const ttnn::Tensor& g, const Prepared&... prepared) {
+        static_assert(sizeof...(Prepared) == 2, "BinaryInvoker expects 2 prepared args");
+        return invoke_binary_bw_ttnn<BackwardTTNN>(g, prepared...);
+    }
+};
+
+template <auto BackwardTTNN>
+struct BinaryAlphaInvoker {
+    template <typename... Prepared>
+    static auto run(const ttnn::Tensor& g, const Prepared&... prepared) {
+        static_assert(sizeof...(Prepared) == 3, "BinaryAlphaInvoker expects 3 prepared args");
+        return invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g, prepared...);
+    }
+};
+
+// Single generic backward runner parametrized by Invoker and argument types
+template <typename Invoker, typename... Args>
+static auto run_generic_backward(
+    const at::Tensor& grad_out,
+    const Args&... args) {
+    ttnn::Tensor g_tile = tileify(grad_out);
+    auto prepared = build_prepared_tuple(args...);
+    auto result = apply_with_prefix(
+        [&](const ttnn::Tensor& g, const auto&... prepared_args) {
+            return Invoker::run(g, prepared_args...);
+        },
+        prepared,
+        g_tile);
+    return collect_tensor_grads(result, args...);
+}
 
 // =============================
 // Binary (Tensor, Tensor) -> Tensor
@@ -266,46 +299,37 @@ inline std::pair<at::Tensor, at::Tensor> call_binary_bw(
     return { write_from_ttnn(grad_a, a, grad_a_tt), write_from_ttnn(grad_b, b, grad_b_tt) };
 }
 
+// =============================
+// Categories for unary/binary/binary+alpha
+// =============================
+
 template <auto ForwardTTNN, auto BackwardTTNN>
-struct autograd_binary_wrapper {
-    struct Saved {
-        at::Tensor a;
-        at::Tensor b;
+struct UnaryCategory {
+    template <typename... Args>
+    static at::Tensor forward(const Args&... args) {
+        return tt_eager::ext::unary_wrapper<ForwardTTNN>::invoke(args...);
+    }
 
-        static void save(torch::autograd::AutogradContext* ctx, const at::Tensor& a, const at::Tensor& b) {
-            ctx->save_for_backward({a, b});
-        }
+    template <typename... Args>
+    static std::tuple<at::Tensor> backward(
+        const at::Tensor& grad_out,
+        const Args&... args) {
+        return run_generic_backward<UnaryInvoker<BackwardTTNN>>(grad_out, args...);
+    }
+};
 
-        static Saved load(torch::autograd::AutogradContext* ctx) {
-            auto saved = ctx->get_saved_variables();
-            return Saved{saved.at(0), saved.at(1)};
-        }
-    };
+template <auto ForwardTTNN, auto BackwardTTNN>
+struct BinaryCategory {
+    template <typename... Args>
+    static at::Tensor forward(const Args&... args) {
+        return tt_eager::ext::binary_wrapper<ForwardTTNN>::invoke(args...);
+    }
 
-    struct Fn : public torch::autograd::Function<Fn> {
-        static at::Tensor forward(
-            torch::autograd::AutogradContext* ctx,
-            const at::Tensor& a,
-            const at::Tensor& b) {
-            at::AutoDispatchBelowADInplaceOrView guard;
-            at::Tensor out = tt_eager::ext::binary_wrapper<ForwardTTNN>::invoke(a, b);
-            Saved::save(ctx, a, b);
-            return out;
-        }
-
-        static torch::autograd::variable_list backward(
-            torch::autograd::AutogradContext* ctx,
-            torch::autograd::variable_list grads) {
-            auto saved = Saved::load(ctx);
-            const at::Tensor& g = grads.at(0);
-
-            auto [ga, gb] = tt_eager::ext::call_binary_bw<BackwardTTNN>(g, saved.a, saved.b);
-            return {ga, gb};
-        }
-    };
-
-    static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
-        return Fn::apply(a, b);
+    template <typename... Args>
+    static std::tuple<at::Tensor, at::Tensor> backward(
+        const at::Tensor& grad_out,
+        const Args&... args) {
+        return run_generic_backward<BinaryInvoker<BackwardTTNN>>(grad_out, args...);
     }
 };
 
@@ -360,44 +384,7 @@ struct BinaryAlphaCategory {
     static std::tuple<at::Tensor, at::Tensor> backward(
         const at::Tensor& grad_out,
         const Args&... args) {
-        // Compile-time preparation of arguments
-        struct PrepareArg {
-            static ttnn::Tensor apply(const at::Tensor& t) { return tileify(t); }
-            static float apply(const c10::Scalar& s) { return static_cast<float>(s.toDouble()); }
-        };
-
-        auto prepared = std::make_tuple(PrepareArg::apply(args)...);
-        ttnn::Tensor g_tile = tileify(grad_out);
-
-        // Invoke TTNN backward with prepared args (order follows Args...)
-        auto result = apply_with_prefix(
-            [&](const ttnn::Tensor& g, const auto&... prepared_args) {
-                return invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g, prepared_args...);
-            },
-            prepared,
-            g_tile);
-
-        // Write back grads for tensor arguments in order
-        size_t result_index = 0;
-        at::Tensor grad_first;
-        at::Tensor grad_second;
-        size_t tensor_seen = 0;
-
-        (void)std::initializer_list<int>{ (
-            [&](){
-                using T = std::decay_t<Args>;
-                if constexpr (std::is_same_v<T, at::Tensor>) {
-                    const ttnn::Tensor& grad_tt = pick_result(result, result_index++);
-                    at::Tensor grad_like = make_empty_like_tt(args);
-                    at::Tensor written = write_from_ttnn(grad_like, args, grad_tt);
-                    if (tensor_seen == 0) grad_first = std::move(written);
-                    else grad_second = std::move(written);
-                    ++tensor_seen;
-                }
-            }(), 0)... };
-
-        TORCH_CHECK(tensor_seen == 2, "BinaryAlphaCategory::backward expects exactly two Tensor inputs");
-        return std::make_tuple(grad_first, grad_second);
+        return run_generic_backward<BinaryAlphaInvoker<BackwardTTNN>>(grad_out, args...);
     }
 };
 
@@ -409,7 +396,7 @@ struct AutogradWrapperFn {
     struct Fn : public torch::autograd::Function<Fn> {
         static at::Tensor forward(torch::autograd::AutogradContext* ctx, const Args&... args) {
             at::AutoDispatchBelowADInplaceOrView guard;
-            at::Tensor out = Category::forward(args...);
+            at::Tensor out = Category::template forward<Args...>(args...);
             SavedHelper::save(ctx, args...);
             return out;
         }
@@ -421,7 +408,7 @@ struct AutogradWrapperFn {
             const at::Tensor& g = grads.at(0);
             auto grads_tuple = apply_with_prefix(
                 [](const at::Tensor& gg, const Args&... unpacked) {
-                    return Category::backward(gg, unpacked...);
+                    return Category::template backward<Args...>(gg, unpacked...);
                 },
                 args,
                 g);
@@ -436,6 +423,13 @@ struct AutogradWrapperFn {
 
 template <auto ForwardTTNN, auto BackwardTTNN>
 using autograd_binary_alpha_wrapper = AutogradWrapperFn<BinaryAlphaCategory<ForwardTTNN, BackwardTTNN>, at::Tensor, at::Tensor, c10::Scalar>;
+
+template <auto ForwardTTNN, auto BackwardTTNN>
+using autograd_binary_wrapper = AutogradWrapperFn<BinaryCategory<ForwardTTNN, BackwardTTNN>, at::Tensor, at::Tensor>;
+
+template <auto ForwardTTNN, auto BackwardTTNN>
+    requires TTNNUnaryFn<ForwardTTNN> && TTNNUnaryBackwardFn<BackwardTTNN>
+using autograd_unary_wrapper = AutogradWrapperFn<UnaryCategory<ForwardTTNN, BackwardTTNN>, at::Tensor>;
 
 // previous specialized autograd_binary_alpha_wrapper replaced by alias to generic generator above
 
