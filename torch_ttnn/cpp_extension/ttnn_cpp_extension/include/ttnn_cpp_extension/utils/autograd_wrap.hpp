@@ -314,6 +314,11 @@ inline auto invoke_binary_alpha_bw_ttnn(
     }
 }
 
+// Category for Binary+alpha using policies
+template <auto ForwardTTNN, auto BackwardTTNN>
+using BinaryAlphaCategory = GenericCategory<tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>, [] (const ttnn::Tensor& g, const ttnn::Tensor& a, const ttnn::Tensor& b, float alpha){ return invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g, a, b, alpha); }>;
+
+
 // call_binary_alpha_bw inlined directly inside BinaryAlphaCategory::backward
 
 // Generic utilities for tuple -> variable_list
@@ -341,10 +346,6 @@ concept AutogradCategory = requires(const at::Tensor& g, const Args&... a) {
     { Category::forward(a...) } -> std::same_as<at::Tensor>;
     requires is_tuple_of_at_tensors<decltype(Category::backward(g, a...))>::value;
 };
-
-// Category for Binary+alpha using policies
-template <auto ForwardTTNN, auto BackwardTTNN>
-using BinaryAlphaCategory = GenericCategory<tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>, [] (const ttnn::Tensor& g, const ttnn::Tensor& a, const ttnn::Tensor& b, float alpha){ return invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g, a, b, alpha); }>;
 
 // Autograd wrapper generator parametrized by Category and argument types
 template <typename Category, typename... Args>
