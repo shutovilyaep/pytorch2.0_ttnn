@@ -372,6 +372,33 @@ inline torch::autograd::variable_list tuple_to_varlist(const std::tuple<T...>& t
     return tuple_to_varlist_impl(t, std::index_sequence_for<T...>{});
 }
 
+// Check that a type is std::tuple<at::Tensor, ...>
+template <typename T>
+struct is_tuple_of_at_tensors : std::false_type {};
+
+template <typename... Ts>
+struct is_tuple_of_at_tensors<std::tuple<Ts...>>
+    : std::conjunction<std::is_same<Ts, at::Tensor>...> {};
+
+// Category adapter to present non-templated static API for a given Args... set
+template <typename Category, typename... Args>
+struct CategoryAdapter {
+    static at::Tensor forward(const Args&... args) {
+        return Category::template forward<Args...>(args...);
+    }
+
+    static auto backward(const at::Tensor& g, const Args&... args) {
+        return Category::template backward<Args...>(g, args...);
+    }
+};
+
+// Concept for adapted category
+template <typename Cat, typename... Args>
+concept AutogradCategory = requires(const at::Tensor& g, const Args&... a) {
+    { Cat::forward(a...) } -> std::same_as<at::Tensor>;
+    requires is_tuple_of_at_tensors<decltype(Cat::backward(g, a...))>::value;
+};
+
 // Category for Binary+alpha using existing wrappers/callers
 template <auto ForwardTTNN, auto BackwardTTNN>
 struct BinaryAlphaCategory {
@@ -396,7 +423,9 @@ struct AutogradWrapperFn {
     struct Fn : public torch::autograd::Function<Fn> {
         static at::Tensor forward(torch::autograd::AutogradContext* ctx, const Args&... args) {
             at::AutoDispatchBelowADInplaceOrView guard;
-            at::Tensor out = Category::forward<Args...>(args...);
+            using Cat = CategoryAdapter<Category, Args...>;
+            static_assert(AutogradCategory<Cat, Args...>, "Category does not satisfy AutogradCategory concept for given Args...");
+            at::Tensor out = Cat::forward(args...);
             SavedHelper::save(ctx, args...);
             return out;
         }
@@ -408,7 +437,8 @@ struct AutogradWrapperFn {
             const at::Tensor& g = grads.at(0);
             auto grads_tuple = apply_with_prefix(
                 [](const at::Tensor& gg, const Args&... unpacked) {
-                    return Category::backward<Args...>(gg, unpacked...);
+                    using Cat = CategoryAdapter<Category, Args...>;
+                    return Cat::backward(gg, unpacked...);
                 },
                 args,
                 g);
