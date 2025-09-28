@@ -6,6 +6,10 @@
 
 #include <vector>
 #include <optional>
+#include <tuple>
+#include <string>
+#include <utility>
+#include <type_traits>
 
 #include "ttnn_cpp_extension/utils/eager_wrap.hpp"
 
@@ -15,6 +19,117 @@
 // TODO: this is a draft of autograd-related functions
 
 namespace tt_eager::ext {
+
+// =============================
+// Helpers for saving/loading args in AutogradContext (C++20)
+// =============================
+
+// Apply callable to tuple with extra prefix parameters
+template <typename F, typename Tuple, typename... Prefix>
+static auto apply_with_prefix(F&& f, Tuple&& t, Prefix&&... prefix)
+    -> decltype(auto) {
+    return std::apply(
+        [&](auto&&... args) -> decltype(auto) {
+            return std::forward<F>(f)(std::forward<Prefix>(prefix)..., std::forward<decltype(args)>(args)...);
+        },
+        std::forward<Tuple>(t));
+}
+
+template <typename... Args>
+struct SavedArgs {
+    static void save(torch::autograd::AutogradContext* ctx, const Args&... args) {
+        constexpr size_t tensor_count = (0 + ... + (std::is_same_v<Args, at::Tensor> ? 1 : 0));
+        std::vector<at::Tensor> tensors;
+        tensors.reserve(tensor_count);
+        save_impl(ctx, tensors, std::index_sequence_for<Args...>{}, args...);
+        ctx->save_for_backward(tensors);
+    }
+
+    static std::tuple<Args...> load(torch::autograd::AutogradContext* ctx) {
+        auto saved = ctx->get_saved_variables();
+        size_t tensor_index = 0;
+        return load_impl(ctx, saved, tensor_index, std::index_sequence_for<Args...>{});
+    }
+
+private:
+    template <typename T>
+    struct DependentFalse : std::false_type {};
+
+    template <size_t I>
+    static std::string arg_key() {
+        return std::string("arg_") + std::to_string(I);
+    }
+
+    template <size_t I, typename T>
+    struct ArgIO {
+        static void save(
+            torch::autograd::AutogradContext* /*ctx*/,
+            std::vector<at::Tensor>& /*tensors*/,
+            const T& /*value*/) {
+            static_assert(DependentFalse<T>::value, "Unsupported type in SavedArgs. Provide adapter/specialization.");
+        }
+
+        static T load(
+            torch::autograd::AutogradContext* /*ctx*/,
+            const std::vector<at::Tensor>& /*saved_tensors*/,
+            size_t& /*tensor_index*/) {
+            static_assert(DependentFalse<T>::value, "Unsupported type in SavedArgs. Provide adapter/specialization.");
+        }
+    };
+
+    template <size_t I>
+    struct ArgIO<I, at::Tensor> {
+        static void save(
+            torch::autograd::AutogradContext* /*ctx*/,
+            std::vector<at::Tensor>& tensors,
+            const at::Tensor& value) {
+            tensors.emplace_back(value);
+        }
+
+        static at::Tensor load(
+            torch::autograd::AutogradContext* /*ctx*/,
+            const std::vector<at::Tensor>& saved_tensors,
+            size_t& tensor_index) {
+            const at::Tensor& t = saved_tensors.at(tensor_index++);
+            return t;
+        }
+    };
+
+    template <size_t I>
+    struct ArgIO<I, c10::Scalar> {
+        static void save(
+            torch::autograd::AutogradContext* ctx,
+            std::vector<at::Tensor>& /*tensors*/,
+            const c10::Scalar& value) {
+            ctx->saved_data[arg_key<I>()] = value;
+        }
+
+        static c10::Scalar load(
+            torch::autograd::AutogradContext* ctx,
+            const std::vector<at::Tensor>& /*saved_tensors*/,
+            size_t& /*tensor_index*/) {
+            return ctx->saved_data.at(arg_key<I>()).toScalar();
+        }
+    };
+
+    template <size_t... I>
+    static std::tuple<Args...> load_impl(
+        torch::autograd::AutogradContext* ctx,
+        const std::vector<at::Tensor>& saved_tensors,
+        size_t& tensor_index,
+        std::index_sequence<I...>) {
+        return std::tuple<Args...>{ ArgIO<I, Args>::load(ctx, saved_tensors, tensor_index)... };
+    }
+
+    template <size_t... I>
+    static void save_impl(
+        torch::autograd::AutogradContext* ctx,
+        std::vector<at::Tensor>& tensors,
+        std::index_sequence<I...>,
+        const Args&... args) {
+        (ArgIO<I, Args>::save(ctx, tensors, args), ...);
+    }
+};
 
 // Common extractor for TTNN backward results that may be Tensor, vector<Tensor>, or vector<optional<Tensor>>
 inline const ttnn::Tensor& pick_result(const ttnn::Tensor& t, size_t) { return t; }
@@ -220,72 +335,86 @@ inline auto invoke_binary_alpha_bw_ttnn(
     }
 }
 
-template <auto BackwardTTNN>
-inline std::pair<at::Tensor, at::Tensor> call_binary_alpha_bw(
-    const at::Tensor& grad_out,
-    const at::Tensor& a,
-    const at::Tensor& b,
-    const c10::Scalar& alpha) {
-    ttnn::Tensor g_tile = tileify(grad_out);
-    ttnn::Tensor a_tile = tileify(a);
-    ttnn::Tensor b_tile = tileify(b);
-    float alpha_value = static_cast<float>(alpha.toDouble());
+// call_binary_alpha_bw inlined directly inside BinaryAlphaCategory::backward
 
-    auto result = invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g_tile, a_tile, b_tile, alpha_value);
-    const ttnn::Tensor& grad_a_tt = pick_result(result, 0);
-    const ttnn::Tensor& grad_b_tt = pick_result(result, 1);
-
-    at::Tensor grad_a = make_empty_like_tt(a);
-    at::Tensor grad_b = make_empty_like_tt(b);
-    return { write_from_ttnn(grad_a, a, grad_a_tt), write_from_ttnn(grad_b, b, grad_b_tt) };
+// Generic utilities for tuple -> variable_list
+template <typename Tuple, size_t... I>
+inline torch::autograd::variable_list tuple_to_varlist_impl(const Tuple& t, std::index_sequence<I...>) {
+    return { std::get<I>(t)... };
 }
 
+template <typename... T>
+inline torch::autograd::variable_list tuple_to_varlist(const std::tuple<T...>& t) {
+    return tuple_to_varlist_impl(t, std::index_sequence_for<T...>{});
+}
+
+// Category for Binary+alpha using existing wrappers/callers
 template <auto ForwardTTNN, auto BackwardTTNN>
-struct autograd_binary_alpha_wrapper {
-    struct Saved {
-        at::Tensor a;
-        at::Tensor b;
-        c10::Scalar alpha;
+struct BinaryAlphaCategory {
+    static at::Tensor forward(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
+        return tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>::invoke(a, b, alpha);
+    }
 
-        static void save(torch::autograd::AutogradContext* ctx, const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
-            ctx->save_for_backward({a, b});
-            ctx->saved_data["alpha"] = alpha;
-        }
+    static std::tuple<at::Tensor, at::Tensor> backward(
+        const at::Tensor& grad_out,
+        const at::Tensor& a,
+        const at::Tensor& b,
+        const c10::Scalar& alpha) {
+        ttnn::Tensor g_tile = tileify(grad_out);
+        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor b_tile = tileify(b);
+        float alpha_value = static_cast<float>(alpha.toDouble());
 
-        static Saved load(torch::autograd::AutogradContext* ctx) {
-            auto saved = ctx->get_saved_variables();
-            c10::Scalar alpha = ctx->saved_data.at("alpha").toScalar();
-            return Saved{saved.at(0), saved.at(1), alpha};
-        }
-    };
+        auto result = invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g_tile, a_tile, b_tile, alpha_value);
+        const ttnn::Tensor& grad_a_tt = pick_result(result, 0);
+        const ttnn::Tensor& grad_b_tt = pick_result(result, 1);
+
+        at::Tensor grad_a = make_empty_like_tt(a);
+        at::Tensor grad_b = make_empty_like_tt(b);
+        return std::make_tuple(
+            write_from_ttnn(grad_a, a, grad_a_tt),
+            write_from_ttnn(grad_b, b, grad_b_tt)
+        );
+    }
+};
+
+// Autograd wrapper generator parametrized by Category and argument types
+template <typename Category, typename... Args>
+struct AutogradWrapperFn {
+    using SavedHelper = SavedArgs<Args...>;
 
     struct Fn : public torch::autograd::Function<Fn> {
-        static at::Tensor forward(
-            torch::autograd::AutogradContext* ctx,
-            const at::Tensor& a,
-            const at::Tensor& b,
-            const c10::Scalar& alpha) {
+        static at::Tensor forward(torch::autograd::AutogradContext* ctx, const Args&... args) {
             at::AutoDispatchBelowADInplaceOrView guard;
-            at::Tensor out = tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>::invoke(a, b, alpha);
-            Saved::save(ctx, a, b, alpha);
+            at::Tensor out = Category::forward(args...);
+            SavedHelper::save(ctx, args...);
             return out;
         }
 
         static torch::autograd::variable_list backward(
             torch::autograd::AutogradContext* ctx,
             torch::autograd::variable_list grads) {
-            auto saved = Saved::load(ctx);
+            auto args = SavedHelper::load(ctx);
             const at::Tensor& g = grads.at(0);
-
-            auto [ga, gb] = tt_eager::ext::call_binary_alpha_bw<BackwardTTNN>(g, saved.a, saved.b, saved.alpha);
-            return {ga, gb};
+            auto grads_tuple = apply_with_prefix(
+                [](const at::Tensor& gg, const Args&... unpacked) {
+                    return Category::backward(gg, unpacked...);
+                },
+                args,
+                g);
+            return tuple_to_varlist(grads_tuple);
         }
     };
 
-    static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
-        return Fn::apply(a, b, alpha);
+    static at::Tensor invoke(const Args&... args) {
+        return Fn::apply(args...);
     }
 };
+
+template <auto ForwardTTNN, auto BackwardTTNN>
+using autograd_binary_alpha_wrapper = AutogradWrapperFn<BinaryAlphaCategory<ForwardTTNN, BackwardTTNN>, at::Tensor, at::Tensor, c10::Scalar>;
+
+// previous specialized autograd_binary_alpha_wrapper replaced by alias to generic generator above
 
 } // namespace tt_eager::ext
 
