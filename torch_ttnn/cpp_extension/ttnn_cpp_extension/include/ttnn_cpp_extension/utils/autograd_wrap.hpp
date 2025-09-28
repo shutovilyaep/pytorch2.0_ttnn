@@ -211,36 +211,10 @@ static auto collect_tensor_grads(const Result& result, const Args&... args) {
     return grads_tuple;
 }
 
-// Invokers for TTNN backward calls
-template <auto BackwardTTNN>
-struct UnaryInvoker {
-    template <typename... Prepared>
-    static auto run(const ttnn::Tensor& g, const Prepared&... prepared) {
-        static_assert(sizeof...(Prepared) == 1, "UnaryInvoker expects 1 prepared arg");
-        return BackwardTTNN(g, prepared..., std::nullopt);
-    }
-};
-
-template <auto BackwardTTNN>
-struct BinaryInvoker {
-    template <typename... Prepared>
-    static auto run(const ttnn::Tensor& g, const Prepared&... prepared) {
-        static_assert(sizeof...(Prepared) == 2, "BinaryInvoker expects 2 prepared args");
-        return invoke_binary_bw_ttnn<BackwardTTNN>(g, prepared...);
-    }
-};
-
-template <auto BackwardTTNN>
-struct BinaryAlphaInvoker {
-    template <typename... Prepared>
-    static auto run(const ttnn::Tensor& g, const Prepared&... prepared) {
-        static_assert(sizeof...(Prepared) == 3, "BinaryAlphaInvoker expects 3 prepared args");
-        return invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g, prepared...);
-    }
-};
+// Backward caller is passed explicitly as a non-type template parameter (C++20)
 
 // Single generic backward runner parametrized by Invoker and argument types
-template <typename Invoker, typename... Args>
+template <auto BackwardCaller, typename... Args>
 static auto run_generic_backward(
     const at::Tensor& grad_out,
     const Args&... args) {
@@ -248,7 +222,7 @@ static auto run_generic_backward(
     auto prepared = build_prepared_tuple(args...);
     auto result = apply_with_prefix(
         [&](const ttnn::Tensor& g, const auto&... prepared_args) {
-            return Invoker::run(g, prepared_args...);
+            return BackwardCaller(g, prepared_args...);
         },
         prepared,
         g_tile);
@@ -303,8 +277,8 @@ inline std::pair<at::Tensor, at::Tensor> call_binary_bw(
 // Categories for unary/binary/binary+alpha
 // =============================
 
-// Generic category composed of a Forward wrapper (with ::invoke) and a Backward invoker
-template <typename ForwardWrapper, typename Invoker>
+// Generic category composed of a Forward wrapper (with ::invoke) and a Backward caller
+template <typename ForwardWrapper, auto BackwardCaller>
 struct GenericCategory {
     template <typename... Args>
     static at::Tensor forward(const Args&... args) {
@@ -313,16 +287,16 @@ struct GenericCategory {
 
     template <typename... Args>
     static auto backward(const at::Tensor& grad_out, const Args&... args) {
-        return run_generic_backward<Invoker>(grad_out, args...);
+        return run_generic_backward<BackwardCaller>(grad_out, args...);
     }
 };
 
 // Aliases to keep existing names
 template <auto ForwardTTNN, auto BackwardTTNN>
-using UnaryCategory = GenericCategory<tt_eager::ext::unary_wrapper<ForwardTTNN>, UnaryInvoker<BackwardTTNN>>;
+using UnaryCategory = GenericCategory<tt_eager::ext::unary_wrapper<ForwardTTNN>, [] (const ttnn::Tensor& g, const ttnn::Tensor& a){ return BackwardTTNN(g, a, std::nullopt); }>;
 
 template <auto ForwardTTNN, auto BackwardTTNN>
-using BinaryCategory = GenericCategory<tt_eager::ext::binary_wrapper<ForwardTTNN>, BinaryInvoker<BackwardTTNN>>;
+using BinaryCategory = GenericCategory<tt_eager::ext::binary_wrapper<ForwardTTNN>, [] (const ttnn::Tensor& g, const ttnn::Tensor& a, const ttnn::Tensor& b){ return invoke_binary_bw_ttnn<BackwardTTNN>(g, a, b); }>;
 
 // =============================
 // Binary+alpha (Tensor, Tensor, Scalar) -> Tensor
@@ -380,7 +354,7 @@ concept AutogradCategory = requires(const at::Tensor& g, const Args&... a) {
 
 // Category for Binary+alpha using policies
 template <auto ForwardTTNN, auto BackwardTTNN>
-using BinaryAlphaCategory = GenericCategory<tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>, BinaryAlphaInvoker<BackwardTTNN>>;
+using BinaryAlphaCategory = GenericCategory<tt_eager::ext::binary_alpha_wrapper<ForwardTTNN>, [] (const ttnn::Tensor& g, const ttnn::Tensor& a, const ttnn::Tensor& b, float alpha){ return invoke_binary_alpha_bw_ttnn<BackwardTTNN>(g, a, b, alpha); }>;
 
 // Autograd wrapper generator parametrized by Category and argument types
 template <typename Category, typename... Args>
