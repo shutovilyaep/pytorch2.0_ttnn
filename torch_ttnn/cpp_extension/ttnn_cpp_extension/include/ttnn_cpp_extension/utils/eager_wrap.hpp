@@ -39,6 +39,11 @@ concept TTNNUnaryOptIntFn = requires(const ttnn::Tensor& a, std::optional<int32_
 };
 
 template <auto Op>
+concept TTNNUnaryIntFn = requires(const ttnn::Tensor& a, int32_t p) {
+    { Op(a, p) } -> std::same_as<ttnn::Tensor>;
+};
+
+template <auto Op>
 concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
     { Op(a, b) } -> std::same_as<ttnn::Tensor>;
 };
@@ -194,6 +199,31 @@ struct unary_int_param_wrapper {
         return write_from_ttnn(out, in, result);
     }
 };
+
+template <auto Op>
+    requires TTNNUnaryIntFn<Op>
+struct unary_scalar_param_wrapper {
+    static_assert(TTNNUnaryIntFn<Op>, "Op must be ttnn::Tensor (const&, int32_t) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& value) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, value, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const c10::Scalar& value) {
+        return invoke_into(self, value, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        const c10::Scalar& value,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        int32_t v = static_cast<int32_t>(value.toLong());
+        ttnn::Tensor result = Op(a_tile, v);
+        return write_from_ttnn(out, in, result);
+    }
+}; // struct unary_scalar_param_wrapper
 
 template <auto Op>
     requires TTNNBinaryFn<Op>
