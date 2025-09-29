@@ -17,7 +17,7 @@ export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${LD_LIBRARY_PATH:-}"
 export PYTHONFAULTHANDLER=1
 mkdir -p "${CARGO_HOME}" "${RUSTUP_HOME}"
 # Clean previous extension build artifacts to avoid stale CMake cache
-rm -rf ${WORKSPACE_DIR}/torch_ttnn/cpp_extension/build || true
+# rm -rf ${WORKSPACE_DIR}/torch_ttnn/cpp_extension/build || true
 
 pip install -e . --use-pep517 --no-cache-dir --no-build-isolation
 
