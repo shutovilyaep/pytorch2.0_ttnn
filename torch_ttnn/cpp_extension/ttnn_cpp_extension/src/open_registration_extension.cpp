@@ -259,9 +259,8 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("pow.Scalar_out", TORCH_FN(tt_eager::ext::scalar_tensor_binary_wrapper<ttnn::pow>::invoke_into));
     m.impl("pow.Tensor_Scalar", TORCH_FN(tt_eager::ext::unary_scalar_param_wrapper<ttnn::power>::invoke));
     m.impl("pow.Tensor_Scalar_out", TORCH_FN(tt_eager::ext::unary_scalar_param_wrapper<ttnn::power>::invoke_into));
-    // pow_.Scalar
-    // pow_.Tensor
-    // ttnn::pow
+    m.impl("pow_.Scalar", TORCH_FN(tt_eager::ext::unary_scalar_param_wrapper<ttnn::power>::invoke_inplace));
+    m.impl("pow_.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::pow>::invoke_inplace));
     m.impl("nextafter.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::nextafter>::invoke_into));
     m.impl("nextafter", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::nextafter>::invoke));
     // dot
