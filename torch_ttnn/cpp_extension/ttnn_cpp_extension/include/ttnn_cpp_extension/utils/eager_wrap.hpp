@@ -17,7 +17,6 @@
 #include <cstdint>
 #include <random>
 
-#include "ttnn/operations/eltwise/binary/binary_composite.hpp"
 #include "ttnn_cpp_extension/core/TtnnTensorImpl.hpp"
 #include "ttnn_cpp_extension/ops/creation.hpp"
 // #include <fmt/format.h>
@@ -150,6 +149,32 @@ struct scalar_tensor_binary_wrapper {
         ttnn::Tensor base_tt = ttnn::add(zero, base_f);
         ttnn::Tensor result = Op(base_tt, exp_tt);
         return write_from_ttnn(out, exponent, result);
+    }
+};
+
+
+// Tensor-Scalar adapter that materializes a scalar as a Tensor like `a` and applies a binary TTNN op
+template <auto Op>
+    requires TTNNBinaryFn<Op>
+struct tensor_scalar_binary_wrapper {
+    static_assert(TTNNBinaryFn<Op>, "Op must be (const ttnn::Tensor&, const ttnn::Tensor&) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& other) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, other, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const c10::Scalar& other,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        // Build rhs tensor with same shape as `a`, filled with scalar `other`
+        ttnn::Tensor zero = ttnn::multiply(a_tile, 0.0f);
+        const float rhs_f = static_cast<float>(other.toDouble());
+        ttnn::Tensor rhs_tt = ttnn::add(zero, rhs_f);
+        ttnn::Tensor result = Op(a_tile, rhs_tt);
+        return write_from_ttnn(out, a, result);
     }
 };
 

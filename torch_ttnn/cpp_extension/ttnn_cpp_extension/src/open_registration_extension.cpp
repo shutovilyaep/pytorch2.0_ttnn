@@ -300,33 +300,39 @@ static inline void register_binary_ops(torch::Library& m) {
     // Relational ops (Tensor versions only)
     m.impl("eq.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke_into));
     m.impl("eq.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke));
-    // eq.Scalar
-    // eq.Scalar_out
+
+    m.impl("eq.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::eq>::invoke));
+    m.impl("eq.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::eq>::invoke_into));
 
     m.impl("ne.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ne>::invoke_into));
     m.impl("ne.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ne>::invoke));
-    // ne.Scalar
-    // ne.Scalar_out
+    
+    m.impl("ne.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::ne>::invoke));
+    m.impl("ne.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::ne>::invoke_into));
 
     m.impl("ge.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ge>::invoke_into));
     m.impl("ge.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ge>::invoke));
-    // ge.Scalar
-    // ge.Scalar_out
+    
+    m.impl("ge.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::ge>::invoke));
+    m.impl("ge.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::ge>::invoke_into));
 
     m.impl("gt.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::gt>::invoke_into));
     m.impl("gt.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::gt>::invoke));
-    // gt.Scalar
-    // gt.Scalar_out
+    
+    m.impl("gt.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::gt>::invoke));
+    m.impl("gt.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::gt>::invoke_into));
 
     m.impl("le.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::le>::invoke_into));
     m.impl("le.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::le>::invoke));
-    // le.Scalar
-    // le.Scalar_out
+
+    m.impl("le.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::le>::invoke));
+    m.impl("le.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::le>::invoke_into));
 
     m.impl("lt.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::lt>::invoke_into));
     m.impl("lt.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::lt>::invoke));
-    // lt.Scalar
-    // lt.Scalar_out
+
+    m.impl("lt.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::lt>::invoke));
+    m.impl("lt.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::lt>::invoke_into));
 
     // Special ops
     m.impl("logaddexp.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logaddexp>::invoke_into));
