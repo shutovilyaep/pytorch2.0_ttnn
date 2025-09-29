@@ -49,9 +49,10 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("abs", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke));
     m.impl("abs.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_into));
     m.impl("abs_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_inplace));
-    // absolute
-    // absolute.out
-    // absolute_
+    // alias: absolute -> abs
+    m.impl("absolute", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke));
+    m.impl("absolute.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_out));
+    m.impl("absolute_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_inplace));
     m.impl("neg", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke));
     m.impl("neg.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke_into));
     m.impl("neg_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke_inplace));
@@ -144,9 +145,10 @@ static inline void register_unary_ops(torch::Library& m) {
     // m.impl("angle", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke)); // TODO: to move to binary?
     // m.impl("angle.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_into)); // TODO: to move to binary?
     // m.impl("angle_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_inplace)); // TODO: to move to binary?
-    // m.impl("arccosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::arccosh>::invoke));
-    // m.impl("arccosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::arccosh>::invoke_into));
-    // m.impl("arccosh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::arccosh>::invoke_inplace));
+    // alias: arccosh -> acosh
+    m.impl("arccosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke));
+    m.impl("arccosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_into));
+    m.impl("arccosh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_inplace));
     m.impl("asin", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke));
     m.impl("asin.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke_into));
     m.impl("asin_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke_inplace));
