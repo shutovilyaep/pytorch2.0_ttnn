@@ -231,7 +231,7 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("sub.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_alpha_adapter_wrapper<ttnn::subtract>::invoke)); // adapter is used
     m.impl("sub_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_alpha_adapter_wrapper<ttnn::subtract_>::invoke_inplace)); // adapter is used
     m.impl("sub_.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke_inplace));
-    // TODO: adapter? rsub: other - alpha * input
+    // TODO: ttnn::rsub exists
     // rsub.Scalar
     // rsub.Tensor
 
