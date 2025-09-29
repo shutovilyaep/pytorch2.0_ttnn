@@ -1,9 +1,14 @@
 #pragma once
 
+// PR-ready: clean C++20 wrappers around TTNN binary ops for PyTorch dispatch
+// - Uses concepts to validate op signatures at compile time
+// - Avoids passing raw function pointers for TTNN ops; binds ops as NTTPs
+// - Provides out/inplace-style invokers compatible with aten schema
+
 #include <concepts>
 #include <optional>
-#include <variant>
 #include <c10/util/Optional.h>
+#include <optional>
 #include <c10/core/ScalarType.h>
 #include <c10/util/Exception.h>
 #include <ATen/core/Tensor.h>
@@ -14,6 +19,7 @@
 
 #include "ttnn_cpp_extension/core/TtnnTensorImpl.hpp"
 #include "ttnn_cpp_extension/ops/creation.hpp"
+// #include <fmt/format.h>
 #include <ttnn/operations/core/core.hpp>
 #include <ttnn/operations/eltwise/binary/binary.hpp>
 #include <ttnn/tensor/tensor.hpp>
@@ -28,13 +34,23 @@ concept TTNNUnaryFn = requires(const ttnn::Tensor& a) {
 };
 
 template <auto Op>
+concept TTNNUnaryOptIntFn = requires(const ttnn::Tensor& a, std::optional<int32_t> p) {
+    { Op(a, p) } -> std::same_as<ttnn::Tensor>;
+};
+
+template <auto Op>
 concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
     { Op(a, b) } -> std::same_as<ttnn::Tensor>;
 };
 
 template <auto Op>
-concept TTNNBinaryAlphaFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b, double alpha) {
+concept TTNNBinaryAlphaFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b, float alpha) {
     { Op(a, b, alpha) } -> std::same_as<ttnn::Tensor>;
+};
+
+template <auto Op>
+concept TTNNBinaryScalarFn = requires(const ttnn::Tensor& a, float rhs) {
+    { Op(a, rhs) } -> std::same_as<ttnn::Tensor>;
 };
 
 template <auto Op>
@@ -88,21 +104,70 @@ struct unary_wrapper {
         return invoke_into(a, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_out(const at::Tensor& a, at::Tensor& out) {
-        return invoke_into(a, out);
-    }
-    
     [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
         return invoke_into(self, self);
     }
 
-private:
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(in);
         ttnn::Tensor result = Op(a_tile);
         return write_from_ttnn(out, in, result);
     }
 };  // struct unary_wrapper
+
+
+// Unary wrappers for optional integer parameter (e.g., ttnn::round)
+// No-argument variant
+template <auto Op>
+    requires TTNNUnaryOptIntFn<Op>
+struct unary_noarg_wrapper {
+    static_assert(TTNNUnaryOptIntFn<Op>, "Op must be ttnn::Tensor (const&, std::optional<int32_t>) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
+        return invoke_into(self, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor result = Op(a_tile, std::nullopt);
+        return write_from_ttnn(out, in, result);
+    }
+};
+
+// Decimals-param variant
+template <auto Op>
+    requires TTNNUnaryOptIntFn<Op>
+struct unary_int_param_wrapper {
+    static_assert(TTNNUnaryOptIntFn<Op>, "Op must be ttnn::Tensor (const&, std::optional<int32_t>) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke_decimals(const at::Tensor& a, c10::optional<int64_t> decimals) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_decimals_into(a, decimals, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_decimals_inplace(at::Tensor& self, c10::optional<int64_t> decimals) {
+        return invoke_decimals_into(self, decimals, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_decimals_into(
+        const at::Tensor& in,
+        c10::optional<int64_t> decimals,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        std::optional<int32_t> dec_opt = decimals.has_value()
+            ? std::optional<int32_t>(static_cast<int32_t>(decimals.value()))
+            : std::nullopt;
+        ttnn::Tensor result = Op(a_tile, dec_opt);
+        return write_from_ttnn(out, in, result);
+    }
+};
 
 template <auto Op>
     requires TTNNBinaryFn<Op>
@@ -114,15 +179,10 @@ struct binary_wrapper {
         return invoke_into(a, b, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
-        return invoke_into(a, b, out);
-    }
-    
     [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other) {
         return invoke_into(self, other, self);
     }
 
-private:
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
@@ -130,6 +190,31 @@ private:
         return write_from_ttnn(out, a, result);
     }
 };  // struct binary_wrapper
+
+template <auto Op>
+    requires TTNNBinaryScalarFn<Op>
+struct binary_scalar_wrapper {
+    static_assert(TTNNBinaryScalarFn<Op>, "Op must be (const ttnn::Tensor&, float) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& other) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, other, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const c10::Scalar& other) {
+        return invoke_into(self, other, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const c10::Scalar& other,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        const float rhs = static_cast<float>(other.toDouble());
+        ttnn::Tensor result = Op(a_tile, rhs);
+        return write_from_ttnn(out, a, result);
+    }
+};  // struct binary_scalar_wrapper
 
 
 // Alternative binary wrapper that directly uses TTNN ops with explicit alpha parameter (e.g., ttnn::addalpha/subalpha)
@@ -143,15 +228,10 @@ struct binary_alpha_wrapper {
         return invoke_into(a, b, alpha, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_out(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
-        return invoke_into(a, b, alpha, out);
-    }
-    
     [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
         return invoke_into(self, other, alpha, self);
     }
 
-private:
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& a,
         const at::Tensor& b,
@@ -159,10 +239,12 @@ private:
         at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
-        ttnn::Tensor result = Op(a_tile, b_tile, alpha.toDouble());
+        const float alpha_value = static_cast<float>(alpha.toDouble());
+        ttnn::Tensor result = Op(a_tile, b_tile, alpha_value);
         return write_from_ttnn(out, a, result);
     }
-};
+};  // struct binary_alpha_wrapper
+
 
 
 // Random Wrapper
@@ -176,18 +258,10 @@ struct random_wrapper {
         return invoke_into(input, generator, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_out(
-        const at::Tensor& input,
-        c10::optional<at::Generator> generator,
-        at::Tensor& out) {
-        return invoke_into(input, generator, out);
-    }
-    
     [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, c10::optional<at::Generator> generator = c10::nullopt) {
         return invoke_into(self, generator, self);
     }
 
-private:
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& input,
         c10::optional<at::Generator> generator,
@@ -208,6 +282,6 @@ private:
 
         return write_from_ttnn(out, input, result);
     }
-};
+};  // struct random_wrapper
 
 }  // namespace tt_eager::ext
