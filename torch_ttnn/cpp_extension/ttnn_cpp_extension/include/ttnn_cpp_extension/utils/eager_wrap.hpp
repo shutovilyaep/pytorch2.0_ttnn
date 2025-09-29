@@ -123,8 +123,12 @@ struct unary_wrapper {
 
 
 
-// Scalar base ^ Tensor exponent: implements aten::pow.Scalar(Scalar self, Tensor exponent)
-struct scalar_tensor_pow_wrapper {
+// Scalar base ^ Tensor exponent adapter for any TTNN binary op (e.g., ttnn::pow)
+template <auto Op>
+    requires TTNNBinaryFn<Op>
+struct scalar_tensor_binary_wrapper {
+    static_assert(TTNNBinaryFn<Op>, "Op must be (const ttnn::Tensor&, const ttnn::Tensor&) -> ttnn::Tensor");
+
     [[nodiscard]] static at::Tensor invoke(const c10::Scalar& base, const at::Tensor& exponent) {
         at::Tensor out = make_empty_like_tt(exponent);
         return invoke_into(base, exponent, out);
@@ -139,7 +143,7 @@ struct scalar_tensor_pow_wrapper {
         ttnn::Tensor zero = ttnn::multiply(exp_tt, 0.0f);
         const float base_f = static_cast<float>(base.toDouble());
         ttnn::Tensor base_tt = ttnn::add(zero, base_f);
-        ttnn::Tensor result = ttnn::pow(base_tt, exp_tt);
+        ttnn::Tensor result = Op(base_tt, exp_tt);
         return write_from_ttnn(out, exponent, result);
     }
 };

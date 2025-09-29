@@ -255,10 +255,8 @@ static inline void register_binary_ops(torch::Library& m) {
     // true_divide_.Scalar
     // true_divide_.Tensor
     // (handled via divide) no direct ttnn::true_divide
-    m.impl("pow.Scalar", TORCH_FN(tt_eager::ext::scalar_tensor_pow_wrapper::invoke));
-    m.impl("pow.Scalar_out", TORCH_FN(tt_eager::ext::scalar_tensor_pow_wrapper::invoke_into));
-    // pow.Tensor_Scalar
-    // pow.Tensor_Scalar_out
+    m.impl("pow.Scalar", TORCH_FN(tt_eager::ext::scalar_tensor_binary_wrapper<ttnn::pow>::invoke));
+    m.impl("pow.Scalar_out", TORCH_FN(tt_eager::ext::scalar_tensor_binary_wrapper<ttnn::pow>::invoke_into));
     m.impl("pow.Tensor_Scalar", TORCH_FN(tt_eager::ext::unary_scalar_param_wrapper<ttnn::power>::invoke));
     m.impl("pow.Tensor_Scalar_out", TORCH_FN(tt_eager::ext::unary_scalar_param_wrapper<ttnn::power>::invoke_into));
     // pow_.Scalar
