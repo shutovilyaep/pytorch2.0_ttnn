@@ -215,8 +215,8 @@ static inline void register_binary_ops(torch::Library& m) {
     // =========================
     m.impl("add.out", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke_into));
     m.impl("add.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke));
-    m.impl("add.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::add>::invoke));
-    m.impl("add_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::add_>::invoke_inplace));
+    m.impl("add.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_alpha_wrapper<ttnn::add>::invoke));
+    m.impl("add_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_alpha_wrapper<ttnn::add_>::invoke_inplace));
     m.impl("add_.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke_inplace));
     // _add_relu.Tensor
     // _add_relu.out
@@ -224,10 +224,10 @@ static inline void register_binary_ops(torch::Library& m) {
 
     m.impl("sub.out", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke_into));
     m.impl("sub.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke));
-    m.impl("sub.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::subtract>::invoke));
-    m.impl("sub_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::subtract_>::invoke_inplace));
+    m.impl("sub.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_alpha_wrapper<ttnn::subtract>::invoke));
+    m.impl("sub_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_alpha_wrapper<ttnn::subtract_>::invoke_inplace));
     m.impl("sub_.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke_inplace));
-    // rsub.Scalar
+    m.impl("rsub.Scalar", TORCH_FN(tt_eager::ext::rsub_scalar_alpha_wrapper::invoke));
     // rsub.Tensor
 
     // Arithmetic ops
@@ -280,17 +280,14 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("logical_and.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_and>::invoke_into));
     m.impl("logical_and", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_and>::invoke));
     m.impl("logical_and_", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_and_>::invoke_inplace));
-    // ttnn::logical_and_
 
     m.impl("logical_or.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_or>::invoke_into));
     m.impl("logical_or", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_or>::invoke));
     m.impl("logical_or_", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_or_>::invoke_inplace));
-    // ttnn::logical_or_
 
     m.impl("logical_xor.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor>::invoke_into));
     m.impl("logical_xor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor>::invoke));
     m.impl("logical_xor_", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logical_xor_>::invoke_inplace));
-    // ttnn::logical_xor_
 
     // Trigonometric binary ops
     m.impl("atan2.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::atan2>::invoke_into));
