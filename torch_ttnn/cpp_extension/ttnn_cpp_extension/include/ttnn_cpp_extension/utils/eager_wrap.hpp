@@ -116,27 +116,47 @@ struct unary_wrapper {
 };  // struct unary_wrapper
 
 
-// Unary with optional integer parameter (e.g., ttnn::round)
+// Unary wrappers for optional integer parameter (e.g., ttnn::round)
+// No-argument variant
 template <auto Op>
     requires TTNNUnaryOptIntFn<Op>
-struct unary_opt_int_wrapper {
+struct unary_noarg_wrapper {
     static_assert(TTNNUnaryOptIntFn<Op>, "Op must be ttnn::Tensor (const&, std::optional<int32_t>) -> ttnn::Tensor");
 
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& a) {
         at::Tensor out = make_empty_like_tt(a);
-        return invoke_into(a, c10::nullopt, out);
-    }
-
-    [[nodiscard]] static at::Tensor invoke_decimals(const at::Tensor& a, c10::optional<int64_t> decimals) {
-        at::Tensor out = make_empty_like_tt(a);
-        return invoke_into(a, decimals, out);
+        return invoke_into(a, out);
     }
 
     [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
-        return invoke_into(self, c10::nullopt, self);
+        return invoke_into(self, self);
     }
 
     [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor result = Op(a_tile, std::nullopt);
+        return write_from_ttnn(out, in, result);
+    }
+};
+
+// Decimals-param variant
+template <auto Op>
+    requires TTNNUnaryOptIntFn<Op>
+struct unary_int_param_wrapper {
+    static_assert(TTNNUnaryOptIntFn<Op>, "Op must be ttnn::Tensor (const&, std::optional<int32_t>) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke_decimals(const at::Tensor& a, c10::optional<int64_t> decimals) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_decimals_into(a, decimals, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_decimals_inplace(at::Tensor& self, c10::optional<int64_t> decimals) {
+        return invoke_decimals_into(self, decimals, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_decimals_into(
         const at::Tensor& in,
         c10::optional<int64_t> decimals,
         at::Tensor& out) {
@@ -146,19 +166,6 @@ struct unary_opt_int_wrapper {
             : std::nullopt;
         ttnn::Tensor result = Op(a_tile, dec_opt);
         return write_from_ttnn(out, in, result);
-    }
-
-    [[nodiscard]] static at::Tensor& invoke_into(
-        const at::Tensor& in,
-        at::Tensor& out) {
-        return invoke_into(in, c10::nullopt, out);
-    }
-
-    [[nodiscard]] static at::Tensor& invoke_decimals_into(
-        const at::Tensor& in,
-        c10::optional<int64_t> decimals,
-        at::Tensor& out) {
-        return invoke_into(in, decimals, out);
     }
 };
 
