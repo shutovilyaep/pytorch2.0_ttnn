@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <random>
 
+#include "ttnn/operations/eltwise/binary/binary_composite.hpp"
 #include "ttnn_cpp_extension/core/TtnnTensorImpl.hpp"
 #include "ttnn_cpp_extension/ops/creation.hpp"
 // #include <fmt/format.h>
@@ -119,6 +120,29 @@ struct unary_wrapper {
         return write_from_ttnn(out, in, result);
     }
 };  // struct unary_wrapper
+
+
+
+// Scalar base ^ Tensor exponent: implements aten::pow.Scalar(Scalar self, Tensor exponent)
+struct scalar_tensor_pow_wrapper {
+    [[nodiscard]] static at::Tensor invoke(const c10::Scalar& base, const at::Tensor& exponent) {
+        at::Tensor out = make_empty_like_tt(exponent);
+        return invoke_into(base, exponent, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const c10::Scalar& base,
+        const at::Tensor& exponent,
+        at::Tensor& out) {
+        ttnn::Tensor exp_tt = tileify(exponent);
+        // Build base tensor with same shape as exponent, filled with scalar base
+        ttnn::Tensor zero = ttnn::multiply(exp_tt, 0.0f);
+        const float base_f = static_cast<float>(base.toDouble());
+        ttnn::Tensor base_tt = ttnn::add(zero, base_f);
+        ttnn::Tensor result = ttnn::pow(base_tt, exp_tt);
+        return write_from_ttnn(out, exponent, result);
+    }
+};
 
 
 // Binary Tensor-Scalar adapter that matches aten *Scalar signature with alpha parameter
