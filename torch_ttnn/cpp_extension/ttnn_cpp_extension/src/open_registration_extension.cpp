@@ -202,7 +202,7 @@ static inline void register_unary_ops(torch::Library& m) {
 
     m.impl("round", TORCH_FN(tt_eager::ext::unary_noarg_wrapper<ttnn::round>::invoke)); // TODO: unary_noarg_wrapper introduced
     m.impl("round.out", TORCH_FN(tt_eager::ext::unary_noarg_wrapper<ttnn::round>::invoke_into));
-    m.impl("round.decimals", TORCH_FN(tt_eager::ext::unary_int_param_wrapper<ttnn::round>::invoke_decimals)); // unary_int_param_wrapper, to rename
+    m.impl("round.decimals", TORCH_FN(tt_eager::ext::unary_int_param_wrapper<ttnn::round>::invoke_decimals)); // TODO: unary_int_param_wrapper, to rename
     m.impl("round.decimals_out", TORCH_FN(tt_eager::ext::unary_int_param_wrapper<ttnn::round>::invoke_decimals_into));
     m.impl("round_", TORCH_FN(tt_eager::ext::unary_noarg_wrapper<ttnn::round>::invoke_inplace));
     // ttnn::round_bw
