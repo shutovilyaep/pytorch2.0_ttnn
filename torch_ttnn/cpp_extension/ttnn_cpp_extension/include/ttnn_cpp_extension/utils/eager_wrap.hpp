@@ -116,6 +116,34 @@ struct unary_wrapper {
 };  // struct unary_wrapper
 
 
+// Binary Tensor-Scalar adapter that matches aten *Scalar signature with alpha parameter
+template <auto Op>
+    requires TTNNBinaryScalarFn<Op>
+struct binary_scalar_alpha_adapter_wrapper {
+    static_assert(TTNNBinaryScalarFn<Op>, "Op must be (const ttnn::Tensor&, float) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& other, const c10::Scalar& alpha) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, other, alpha, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const c10::Scalar& other, const c10::Scalar& alpha) {
+        return invoke_into(self, other, alpha, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const c10::Scalar& other,
+        const c10::Scalar& alpha,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        const float rhs = static_cast<float>(other.toDouble()) * static_cast<float>(alpha.toDouble());
+        ttnn::Tensor result = Op(a_tile, rhs);
+        return write_from_ttnn(out, a, result);
+    }
+};  // struct binary_scalar_alpha_wrapper
+
+
 // Unary wrappers for optional integer parameter (e.g., ttnn::round)
 // No-argument variant
 template <auto Op>
@@ -147,23 +175,21 @@ template <auto Op>
 struct unary_int_param_wrapper {
     static_assert(TTNNUnaryOptIntFn<Op>, "Op must be ttnn::Tensor (const&, std::optional<int32_t>) -> ttnn::Tensor");
 
-    [[nodiscard]] static at::Tensor invoke_decimals(const at::Tensor& a, c10::optional<int64_t> decimals) {
+    [[nodiscard]] static at::Tensor invoke_decimals(const at::Tensor& a, int64_t decimals) {
         at::Tensor out = make_empty_like_tt(a);
         return invoke_decimals_into(a, decimals, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_decimals_inplace(at::Tensor& self, c10::optional<int64_t> decimals) {
+    [[nodiscard]] static at::Tensor& invoke_decimals_inplace(at::Tensor& self, int64_t decimals) {
         return invoke_decimals_into(self, decimals, self);
     }
 
     [[nodiscard]] static at::Tensor& invoke_decimals_into(
         const at::Tensor& in,
-        c10::optional<int64_t> decimals,
+        int64_t decimals,
         at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(in);
-        std::optional<int32_t> dec_opt = decimals.has_value()
-            ? std::optional<int32_t>(static_cast<int32_t>(decimals.value()))
-            : std::nullopt;
+        std::optional<int32_t> dec_opt = std::optional<int32_t>(static_cast<int32_t>(decimals));
         ttnn::Tensor result = Op(a_tile, dec_opt);
         return write_from_ttnn(out, in, result);
     }
