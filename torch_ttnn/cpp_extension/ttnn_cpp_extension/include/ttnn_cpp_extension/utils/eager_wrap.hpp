@@ -122,13 +122,18 @@ template <auto Op>
 struct unary_opt_int_wrapper {
     static_assert(TTNNUnaryOptIntFn<Op>, "Op must be ttnn::Tensor (const&, std::optional<int32_t>) -> ttnn::Tensor");
 
-    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, c10::optional<int64_t> decimals) {
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, c10::nullopt, out);
+    }
+
+    [[nodiscard]] static at::Tensor invoke_decimals(const at::Tensor& a, c10::optional<int64_t> decimals) {
         at::Tensor out = make_empty_like_tt(a);
         return invoke_into(a, decimals, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, c10::optional<int64_t> decimals) {
-        return invoke_into(self, decimals, self);
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
+        return invoke_into(self, c10::nullopt, self);
     }
 
     [[nodiscard]] static at::Tensor& invoke_into(
@@ -141,6 +146,19 @@ struct unary_opt_int_wrapper {
             : std::nullopt;
         ttnn::Tensor result = Op(a_tile, dec_opt);
         return write_from_ttnn(out, in, result);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        at::Tensor& out) {
+        return invoke_into(in, c10::nullopt, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_decimals_into(
+        const at::Tensor& in,
+        c10::optional<int64_t> decimals,
+        at::Tensor& out) {
+        return invoke_into(in, decimals, out);
     }
 };
 

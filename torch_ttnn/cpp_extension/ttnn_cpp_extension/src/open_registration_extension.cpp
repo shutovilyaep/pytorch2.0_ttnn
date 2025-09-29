@@ -201,6 +201,8 @@ static inline void register_unary_ops(torch::Library& m) {
     // real
     m.impl("round", TORCH_FN(tt_eager::ext::unary_opt_int_wrapper<ttnn::round>::invoke));
     m.impl("round.out", TORCH_FN(tt_eager::ext::unary_opt_int_wrapper<ttnn::round>::invoke_into));
+    m.impl("round.decimals", TORCH_FN(tt_eager::ext::unary_opt_int_wrapper<ttnn::round>::invoke_decimals));
+    m.impl("round.decimals_out", TORCH_FN(tt_eager::ext::unary_opt_int_wrapper<ttnn::round>::invoke_decimals_into));
     m.impl("round_", TORCH_FN(tt_eager::ext::unary_opt_int_wrapper<ttnn::round>::invoke_inplace));
     // ttnn::round_bw
     m.impl("sigmoid", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke));
