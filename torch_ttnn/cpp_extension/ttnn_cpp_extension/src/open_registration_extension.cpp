@@ -240,8 +240,8 @@ static inline void register_binary_ops(torch::Library& m) {
 
     m.impl("div.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::divide>::invoke_into));
     m.impl("div.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::divide>::invoke));
-    // div.Scalar
-    // div_.Scalar
+    m.impl("div.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::divide>::invoke));
+    m.impl("div_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::divide_>::invoke_inplace));
     m.impl("div_.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::divide_>::invoke_inplace));
     // floor_divide
     // floor_divide.Scalar
