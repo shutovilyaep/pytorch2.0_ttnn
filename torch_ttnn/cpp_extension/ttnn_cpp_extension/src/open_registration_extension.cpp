@@ -51,7 +51,7 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("abs_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_inplace));
     // alias: absolute -> abs
     m.impl("absolute", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke));
-    m.impl("absolute.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_out));
+    m.impl("absolute.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_into));
     m.impl("absolute_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::abs>::invoke_inplace));
     m.impl("neg", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke));
     m.impl("neg.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::neg>::invoke_into));
