@@ -143,9 +143,9 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("acosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke));
     m.impl("acosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_into));
     m.impl("acosh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_inplace));
-    // m.impl("angle", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke)); // TODO: to move to binary?
-    // m.impl("angle.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_into)); // TODO: to move to binary?
-    // m.impl("angle_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_inplace)); // TODO: to move to binary?
+    m.impl("angle", TORCH_FN(tt_eager::ext::complex_unary_from_real_wrapper<ttnn::angle>::invoke)); // TODO: check
+    m.impl("angle.out", TORCH_FN(tt_eager::ext::complex_unary_from_real_wrapper<ttnn::angle>::invoke_into)); // TODO: check
+    m.impl("angle_", TORCH_FN(tt_eager::ext::complex_unary_from_real_wrapper<ttnn::angle>::invoke_inplace)); // TODO: check
     // alias: arccosh -> acosh
     m.impl("arccosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke));
     m.impl("arccosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_into));

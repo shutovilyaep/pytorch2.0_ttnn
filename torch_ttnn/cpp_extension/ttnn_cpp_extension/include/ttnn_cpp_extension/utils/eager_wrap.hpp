@@ -23,6 +23,8 @@
 #include <ttnn/operations/core/core.hpp>
 #include <ttnn/operations/eltwise/binary/binary.hpp>
 #include <ttnn/tensor/tensor.hpp>
+#include <ttnn/operations/eltwise/complex/complex.hpp>
+#include <ttnn/types.hpp>
 
 namespace tt_eager::ext {
 
@@ -32,6 +34,10 @@ template <auto Op>
 concept TTNNUnaryFn = requires(const ttnn::Tensor& a) {
     { Op(a) } -> std::same_as<ttnn::Tensor>;
 };
+
+// (removed misplaced unary_from_binary_zero_first_wrapper; see correct placement below)
+
+ 
 
 template <auto Op>
 concept TTNNUnaryOptIntFn = requires(const ttnn::Tensor& a, std::optional<int32_t> p) {
@@ -67,6 +73,8 @@ template <auto Op>
 concept TTNNBinaryOutLikeFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
     { Op(a, b, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
 };
+
+// no concept for complex unary; we'll probe callability in-body with if constexpr
 
 // Helper functions
 inline ttnn::Tensor tileify(const at::Tensor& t) {
@@ -149,6 +157,29 @@ struct scalar_tensor_binary_wrapper {
         ttnn::Tensor base_tt = ttnn::add(zero, base_f);
         ttnn::Tensor result = Op(base_tt, exp_tt);
         return write_from_ttnn(out, exponent, result);
+    }
+};
+
+// Complex-unary wrapper: builds ComplexTensor from real input (imag = 0) and calls a TTNN complex op
+template <auto Op>
+struct complex_unary_from_real_wrapper {
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
+        return invoke_into(self, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, at::Tensor& out) {
+        ttnn::Tensor real_tt = tileify(in);
+        ttnn::Tensor zero_tt = ttnn::multiply(real_tt, 0.0f);
+        ttnn::operations::complex::ComplexTensor ct({real_tt, zero_tt});
+        // Prefer L1 memory for small unary outputs; fall back if needed
+        ttnn::Tensor result = Op(ct, ttnn::L1_MEMORY_CONFIG);
+        return write_from_ttnn(out, in, result);
     }
 };
 
