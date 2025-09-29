@@ -33,7 +33,12 @@ concept TTNNUnaryFn = requires(const ttnn::Tensor& a) {
     { Op(a) } -> std::same_as<ttnn::Tensor>;
 };
 
-// Unary with optional integer parameter (e.g., ttnn::round with optional decimals)
+template <auto Op>
+concept TTNNUnaryOptIntFn = requires(const ttnn::Tensor& a, std::optional<int32_t> p) {
+    { Op(a, p) } -> std::same_as<ttnn::Tensor>;
+};
+
+// Unary with optional integer parameter (e.g., ttnn::round)
 template <auto Op>
     requires TTNNUnaryOptIntFn<Op>
 struct unary_opt_int_wrapper {
@@ -59,69 +64,10 @@ struct unary_opt_int_wrapper {
         ttnn::Tensor result = Op(a_tile, dec_opt);
         return write_from_ttnn(out, in, result);
     }
-};  // struct unary_opt_int_wrapper
-
-// Binary Tensor-Scalar wrapper with alpha parameter (matches aten ...Scalar with alpha)
-template <auto Op>
-    requires TTNNBinaryScalarFn<Op>
-struct binary_scalar_alpha_wrapper {
-    static_assert(TTNNBinaryScalarFn<Op>, "Op must be (const ttnn::Tensor&, float) -> ttnn::Tensor");
-
-    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& other, const c10::Scalar& alpha) {
-        at::Tensor out = make_empty_like_tt(a);
-        return invoke_into(a, other, alpha, out);
-    }
-
-    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const c10::Scalar& other, const c10::Scalar& alpha) {
-        return invoke_into(self, other, alpha, self);
-    }
-
-    [[nodiscard]] static at::Tensor& invoke_into(
-        const at::Tensor& a,
-        const c10::Scalar& other,
-        const c10::Scalar& alpha,
-        at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(a);
-        const float rhs = static_cast<float>(other.toDouble()) * static_cast<float>(alpha.toDouble());
-        ttnn::Tensor result = Op(a_tile, rhs);
-        return write_from_ttnn(out, a, result);
-    }
-};  // struct binary_scalar_alpha_wrapper
-
-// rsub.Scalar with alpha: computes other*alpha - self
-struct rsub_scalar_alpha_wrapper {
-    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& other, const c10::Scalar& alpha) {
-        at::Tensor out = make_empty_like_tt(a);
-        return invoke_into(a, other, alpha, out);
-    }
-
-    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const c10::Scalar& other, const c10::Scalar& alpha) {
-        return invoke_into(self, other, alpha, self);
-    }
-
-    [[nodiscard]] static at::Tensor& invoke_into(
-        const at::Tensor& a,
-        const c10::Scalar& other,
-        const c10::Scalar& alpha,
-        at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(a);
-        const float rhs = static_cast<float>(other.toDouble()) * static_cast<float>(alpha.toDouble());
-        ttnn::Tensor neg_a = ttnn::multiply(a_tile, -1.0f);
-        ttnn::Tensor result = ttnn::add(neg_a, rhs);
-        return write_from_ttnn(out, a, result);
-    }
-};  // struct rsub_scalar_alpha_wrapper
-
-
- 
-
-template <auto Op>
-concept TTNNUnaryOptIntFn = requires(const ttnn::Tensor& a, std::optional<int32_t> p) {
-    { Op(a, p) } -> std::same_as<ttnn::Tensor>;
 };
 
  
- 
+
 
 template <auto Op>
 concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
