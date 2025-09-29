@@ -7,8 +7,8 @@
 
 #include <concepts>
 #include <optional>
-#include <variant>
 #include <c10/util/Optional.h>
+#include <optional>
 #include <c10/core/ScalarType.h>
 #include <c10/util/Exception.h>
 #include <ATen/core/Tensor.h>
@@ -32,6 +32,44 @@ template <auto Op>
 concept TTNNUnaryFn = requires(const ttnn::Tensor& a) {
     { Op(a) } -> std::same_as<ttnn::Tensor>;
 };
+
+ 
+
+// Unary with optional integer parameter (e.g., ttnn::round with optional decimals)
+template <auto Op>
+    requires TTNNUnaryOptIntFn<Op>
+struct unary_opt_int_wrapper {
+    static_assert(TTNNUnaryOptIntFn<Op>, "Op must be ttnn::Tensor (const&, std::optional<int32_t>) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, c10::optional<int64_t> decimals) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, decimals, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, c10::optional<int64_t> decimals) {
+        return invoke_into(self, decimals, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        c10::optional<int64_t> decimals,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        std::optional<int32_t> dec_opt = decimals.has_value()
+            ? std::optional<int32_t>(static_cast<int32_t>(decimals.value()))
+            : std::nullopt;
+        ttnn::Tensor result = Op(a_tile, dec_opt);
+        return write_from_ttnn(out, in, result);
+    }
+};  // struct unary_opt_int_wrapper
+
+template <auto Op>
+concept TTNNUnaryOptIntFn = requires(const ttnn::Tensor& a, std::optional<int32_t> p) {
+    { Op(a, p) } -> std::same_as<ttnn::Tensor>;
+};
+
+ 
+ 
 
 template <auto Op>
 concept TTNNBinaryFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {

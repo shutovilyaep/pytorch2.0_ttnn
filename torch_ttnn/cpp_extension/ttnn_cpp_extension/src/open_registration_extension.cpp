@@ -199,10 +199,9 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("relu", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::relu>::invoke));
     m.impl("relu_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::relu>::invoke_inplace));
     // real
-    // round
-    // round.out
-    // ttnn::round (requires optional integer parameter); add specialized wrapper later
-    // round_
+    m.impl("round", TORCH_FN(tt_eager::ext::unary_opt_int_wrapper<ttnn::round>::invoke));
+    m.impl("round.out", TORCH_FN(tt_eager::ext::unary_opt_int_wrapper<ttnn::round>::invoke_into));
+    m.impl("round_", TORCH_FN(tt_eager::ext::unary_opt_int_wrapper<ttnn::round>::invoke_inplace));
     // ttnn::round_bw
     m.impl("sigmoid", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke));
     m.impl("sigmoid.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke_into));
@@ -225,8 +224,8 @@ static inline void register_binary_ops(torch::Library& m) {
 
     m.impl("sub.out", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke_into));
     m.impl("sub.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke));
-    // sub.Scalar
-    // sub_.Scalar
+    m.impl("sub.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::subtract>::invoke));
+    m.impl("sub_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::subtract_>::invoke_inplace));
     m.impl("sub_.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke_inplace));
     // rsub.Scalar
     // rsub.Tensor
