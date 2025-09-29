@@ -64,6 +64,11 @@ concept TTNNRandomFn = requires(const ttnn::Tensor& a, uint32_t seed) {
     { Op(a, seed, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
 };
 
+template <auto Op>
+concept TTNNBinaryOutLikeFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
+    { Op(a, b, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
+};
+
 // Helper functions
 inline ttnn::Tensor tileify(const at::Tensor& t) {
     TORCH_CHECK(t.device().type() == c10::DeviceType::PrivateUse1, "Tensor must be on TTNN device");
@@ -367,5 +372,27 @@ struct random_wrapper {
         return write_from_ttnn(out, input, result);
     }
 };  // struct random_wrapper
+
+// Binary wrapper for TTNN ops with optional out/dtype/memory/compute params (e.g., ttnn::moreh_dot)
+template <auto Op>
+    requires TTNNBinaryOutLikeFn<Op>
+struct binary_outlike_wrapper {
+    static_assert(TTNNBinaryOutLikeFn<Op>, "Op must be (a, b, opt_out, opt_dtype, opt_mem, opt_cfg) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, b, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const at::Tensor& b,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor b_tile = tileify(b);
+        ttnn::Tensor result = Op(a_tile, b_tile, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+        return write_from_ttnn(out, a, result);
+    }
+};  // struct binary_outlike_wrapper
 
 }  // namespace tt_eager::ext

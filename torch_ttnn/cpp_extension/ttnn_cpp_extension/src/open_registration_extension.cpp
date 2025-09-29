@@ -21,6 +21,7 @@
 #include <ttnn/operations/eltwise/binary/binary_composite.hpp>
 #include <ttnn/operations/reduction/generic/generic_reductions.hpp>
 #include <ttnn/operations/bernoulli/bernoulli.hpp>
+#include <ttnn/operations/moreh/moreh_dot/moreh_dot.hpp>
 
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
@@ -263,8 +264,8 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("pow_.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::pow>::invoke_inplace));
     m.impl("nextafter.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::nextafter>::invoke_into));
     m.impl("nextafter", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::nextafter>::invoke));
-    // dot
-    // dot.out
+    m.impl("dot", TORCH_FN(tt_eager::ext::binary_outlike_wrapper<ttnn::moreh_dot>::invoke));
+    m.impl("dot.out", TORCH_FN(tt_eager::ext::binary_outlike_wrapper<ttnn::moreh_dot>::invoke_into));
     m.impl("hypot.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::hypot>::invoke_into));
     m.impl("hypot", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::hypot>::invoke));
     
