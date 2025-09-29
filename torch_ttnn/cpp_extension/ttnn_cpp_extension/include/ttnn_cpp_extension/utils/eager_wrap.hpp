@@ -44,6 +44,11 @@ concept TTNNBinaryAlphaFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& 
 };
 
 template <auto Op>
+concept TTNNBinaryScalarFn = requires(const ttnn::Tensor& a, float rhs) {
+    { Op(a, rhs) } -> std::same_as<ttnn::Tensor>;
+};
+
+template <auto Op>
 concept TTNNRandomFn = requires(const ttnn::Tensor& a, uint32_t seed) {
     { Op(a, seed, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
 };
@@ -127,6 +132,31 @@ struct binary_wrapper {
     }
 };  // struct binary_wrapper
 
+template <auto Op>
+    requires TTNNBinaryScalarFn<Op>
+struct binary_scalar_wrapper {
+    static_assert(TTNNBinaryScalarFn<Op>, "Op must be (const ttnn::Tensor&, float) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& other) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, other, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const c10::Scalar& other) {
+        return invoke_into(self, other, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const c10::Scalar& other,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        const float rhs = static_cast<float>(other.toDouble());
+        ttnn::Tensor result = Op(a_tile, rhs);
+        return write_from_ttnn(out, a, result);
+    }
+};  // struct binary_scalar_wrapper
+
 
 // Alternative binary wrapper that directly uses TTNN ops with explicit alpha parameter (e.g., ttnn::addalpha/subalpha)
 template <auto Op>
@@ -154,7 +184,8 @@ struct binary_alpha_wrapper {
         ttnn::Tensor result = Op(a_tile, b_tile, alpha_value);
         return write_from_ttnn(out, a, result);
     }
-};
+};  // struct binary_alpha_wrapper
+
 
 
 // Random Wrapper
@@ -192,6 +223,6 @@ struct random_wrapper {
 
         return write_from_ttnn(out, input, result);
     }
-};
+};  // struct random_wrapper
 
 }  // namespace tt_eager::ext

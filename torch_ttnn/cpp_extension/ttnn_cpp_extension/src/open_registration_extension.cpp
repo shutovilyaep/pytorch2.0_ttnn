@@ -216,8 +216,8 @@ static inline void register_binary_ops(torch::Library& m) {
     // =========================
     m.impl("add.out", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke_into));
     m.impl("add.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke));
-    // add.Scalar
-    // add_.Scalar
+    m.impl("add.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::add>::invoke));
+    m.impl("add_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::add_>::invoke_inplace));
     m.impl("add_.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke_inplace));
     // _add_relu.Tensor
     // _add_relu.out
