@@ -10,18 +10,6 @@
 #include "ttnn_cpp_extension/ops/creation.hpp"
 
 #include "ttnn_cpp_extension/utils/eager_wrap.hpp"
-// #include "ttnn_cpp_extension/utils/autograd_wrap.hpp"
-
-#include <ttnn/operations/eltwise/unary/unary.hpp>
-#include <ttnn/operations/eltwise/unary/unary_composite.hpp>
-#include <ttnn/operations/eltwise/complex_unary/complex_unary.hpp>
-#include <ttnn/operations/eltwise/binary/binary.hpp>
-#include <ttnn/operations/eltwise/binary_backward/binary_backward.hpp>
-#include <ttnn/operations/eltwise/binary/binary_composite.hpp>
-#include <ttnn/operations/reduction/generic/generic_reductions.hpp>
-#include <ttnn/operations/bernoulli/bernoulli.hpp>
-
-#include "ttnn_cpp_extension/utils/eager_wrap.hpp"
 // TODO: NOW: FIXME временно отключено: autograd_wrap.hpp вызывает ошибки компиляции при парсинге шаблонов
 // #include "ttnn_cpp_extension/utils/autograd_wrap.hpp"
 
@@ -33,6 +21,7 @@
 #include <ttnn/operations/eltwise/binary/binary_composite.hpp>
 #include <ttnn/operations/reduction/generic/generic_reductions.hpp>
 #include <ttnn/operations/bernoulli/bernoulli.hpp>
+#include <ttnn/operations/moreh/moreh_dot/moreh_dot.hpp>
 
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
@@ -154,9 +143,9 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("acosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke));
     m.impl("acosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_into));
     m.impl("acosh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_inplace));
-    // m.impl("angle", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke)); // TODO: to move to binary?
-    // m.impl("angle.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_into)); // TODO: to move to binary?
-    // m.impl("angle_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_inplace)); // TODO: to move to binary?
+    m.impl("angle", TORCH_FN(tt_eager::ext::complex_unary_from_real_wrapper<ttnn::angle>::invoke)); // TODO: check
+    m.impl("angle.out", TORCH_FN(tt_eager::ext::complex_unary_from_real_wrapper<ttnn::angle>::invoke_into)); // TODO: check
+    m.impl("angle_", TORCH_FN(tt_eager::ext::complex_unary_from_real_wrapper<ttnn::angle>::invoke_inplace)); // TODO: check
     // alias: arccosh -> acosh
     m.impl("arccosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke));
     m.impl("arccosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_into));
@@ -230,8 +219,8 @@ static inline void register_binary_ops(torch::Library& m) {
     // =========================
     m.impl("add.out", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke_into));
     m.impl("add.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke));
-    m.impl("add.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::add>::invoke));
-    m.impl("add_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::add_>::invoke_inplace));
+    m.impl("add.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_alpha_adapter_wrapper<ttnn::add>::invoke)); // adapter is used
+    m.impl("add_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_alpha_adapter_wrapper<ttnn::add_>::invoke_inplace)); // adapter is used
     m.impl("add_.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::addalpha>::invoke_inplace));
     // _add_relu.Tensor
     // _add_relu.out
@@ -239,9 +228,10 @@ static inline void register_binary_ops(torch::Library& m) {
 
     m.impl("sub.out", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke_into));
     m.impl("sub.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke));
-    m.impl("sub.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::subtract>::invoke));
-    m.impl("sub_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::subtract_>::invoke_inplace));
+    m.impl("sub.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_alpha_adapter_wrapper<ttnn::subtract>::invoke)); // adapter is used
+    m.impl("sub_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_alpha_adapter_wrapper<ttnn::subtract_>::invoke_inplace)); // adapter is used
     m.impl("sub_.Tensor", TORCH_FN(tt_eager::ext::binary_alpha_wrapper<ttnn::subalpha>::invoke_inplace));
+    // TODO: ttnn::rsub exists
     // rsub.Scalar
     // rsub.Tensor
 
@@ -252,8 +242,8 @@ static inline void register_binary_ops(torch::Library& m) {
 
     m.impl("div.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::divide>::invoke_into));
     m.impl("div.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::divide>::invoke));
-    // div.Scalar
-    // div_.Scalar
+    m.impl("div.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::divide>::invoke));
+    m.impl("div_.Scalar", TORCH_FN(tt_eager::ext::binary_scalar_wrapper<ttnn::divide_>::invoke_inplace));
     m.impl("div_.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::divide_>::invoke_inplace));
     // floor_divide
     // floor_divide.Scalar
@@ -266,19 +256,16 @@ static inline void register_binary_ops(torch::Library& m) {
     // true_divide_.Scalar
     // true_divide_.Tensor
     // (handled via divide) no direct ttnn::true_divide
-    // pow.Scalar
-    // pow.Scalar_out
-    // pow.Tensor_Scalar
-    // pow.Tensor_Scalar_out
-    // pow.Tensor_Tensor
-    // pow.Tensor_Tensor_out
-    // pow_.Scalar
-    // pow_.Tensor
-    // ttnn::pow
+    m.impl("pow.Scalar", TORCH_FN(tt_eager::ext::scalar_tensor_binary_wrapper<ttnn::pow>::invoke));
+    m.impl("pow.Scalar_out", TORCH_FN(tt_eager::ext::scalar_tensor_binary_wrapper<ttnn::pow>::invoke_into));
+    m.impl("pow.Tensor_Scalar", TORCH_FN(tt_eager::ext::unary_scalar_param_wrapper<ttnn::power>::invoke));
+    m.impl("pow.Tensor_Scalar_out", TORCH_FN(tt_eager::ext::unary_scalar_param_wrapper<ttnn::power>::invoke_into));
+    m.impl("pow_.Scalar", TORCH_FN(tt_eager::ext::unary_scalar_param_wrapper<ttnn::power>::invoke_inplace));
+    m.impl("pow_.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::pow>::invoke_inplace));
     m.impl("nextafter.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::nextafter>::invoke_into));
     m.impl("nextafter", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::nextafter>::invoke));
-    // dot
-    // dot.out
+    m.impl("dot", TORCH_FN(tt_eager::ext::binary_outlike_wrapper<ttnn::moreh_dot>::invoke));
+    m.impl("dot.out", TORCH_FN(tt_eager::ext::binary_outlike_wrapper<ttnn::moreh_dot>::invoke_into));
     m.impl("hypot.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::hypot>::invoke_into));
     m.impl("hypot", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::hypot>::invoke));
     
@@ -313,33 +300,39 @@ static inline void register_binary_ops(torch::Library& m) {
     // Relational ops (Tensor versions only)
     m.impl("eq.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke_into));
     m.impl("eq.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke));
-    // eq.Scalar
-    // eq.Scalar_out
+
+    m.impl("eq.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::eq>::invoke));
+    m.impl("eq.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::eq>::invoke_into));
 
     m.impl("ne.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ne>::invoke_into));
     m.impl("ne.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ne>::invoke));
-    // ne.Scalar
-    // ne.Scalar_out
+    
+    m.impl("ne.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::ne>::invoke));
+    m.impl("ne.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::ne>::invoke_into));
 
     m.impl("ge.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ge>::invoke_into));
     m.impl("ge.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::ge>::invoke));
-    // ge.Scalar
-    // ge.Scalar_out
+    
+    m.impl("ge.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::ge>::invoke));
+    m.impl("ge.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::ge>::invoke_into));
 
     m.impl("gt.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::gt>::invoke_into));
     m.impl("gt.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::gt>::invoke));
-    // gt.Scalar
-    // gt.Scalar_out
+    
+    m.impl("gt.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::gt>::invoke));
+    m.impl("gt.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::gt>::invoke_into));
 
     m.impl("le.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::le>::invoke_into));
     m.impl("le.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::le>::invoke));
-    // le.Scalar
-    // le.Scalar_out
+
+    m.impl("le.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::le>::invoke));
+    m.impl("le.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::le>::invoke_into));
 
     m.impl("lt.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::lt>::invoke_into));
     m.impl("lt.Tensor", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::lt>::invoke));
-    // lt.Scalar
-    // lt.Scalar_out
+
+    m.impl("lt.Scalar", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::lt>::invoke));
+    m.impl("lt.Scalar_out", TORCH_FN(tt_eager::ext::tensor_scalar_binary_wrapper<ttnn::lt>::invoke_into));
 
     // Special ops
     m.impl("logaddexp.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::logaddexp>::invoke_into));

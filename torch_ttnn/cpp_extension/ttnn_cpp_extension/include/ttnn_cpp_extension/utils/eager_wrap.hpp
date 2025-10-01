@@ -23,6 +23,8 @@
 #include <ttnn/operations/core/core.hpp>
 #include <ttnn/operations/eltwise/binary/binary.hpp>
 #include <ttnn/tensor/tensor.hpp>
+#include <ttnn/operations/eltwise/complex/complex.hpp>
+#include <ttnn/types.hpp>
 
 namespace tt_eager::ext {
 
@@ -35,6 +37,11 @@ concept TTNNUnaryFn = requires(const ttnn::Tensor& a) {
 
 template <auto Op>
 concept TTNNUnaryOptIntFn = requires(const ttnn::Tensor& a, std::optional<int32_t> p) {
+    { Op(a, p) } -> std::same_as<ttnn::Tensor>;
+};
+
+template <auto Op>
+concept TTNNUnaryIntFn = requires(const ttnn::Tensor& a, int32_t p) {
     { Op(a, p) } -> std::same_as<ttnn::Tensor>;
 };
 
@@ -57,6 +64,12 @@ template <auto Op>
 concept TTNNRandomFn = requires(const ttnn::Tensor& a, uint32_t seed) {
     { Op(a, seed, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
 };
+
+template <auto Op>
+concept TTNNBinaryOutLikeFn = requires(const ttnn::Tensor& a, const ttnn::Tensor& b) {
+    { Op(a, b, std::nullopt, std::nullopt, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
+};
+
 
 // Helper functions
 inline ttnn::Tensor tileify(const at::Tensor& t) {
@@ -116,6 +129,110 @@ struct unary_wrapper {
 };  // struct unary_wrapper
 
 
+
+// Scalar base ^ Tensor exponent adapter for any TTNN binary op (e.g., ttnn::pow)
+template <auto Op>
+    requires TTNNBinaryFn<Op>
+struct scalar_tensor_binary_wrapper {
+    static_assert(TTNNBinaryFn<Op>, "Op must be (const ttnn::Tensor&, const ttnn::Tensor&) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const c10::Scalar& base, const at::Tensor& exponent) {
+        at::Tensor out = make_empty_like_tt(exponent);
+        return invoke_into(base, exponent, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const c10::Scalar& base,
+        const at::Tensor& exponent,
+        at::Tensor& out) {
+        ttnn::Tensor exp_tt = tileify(exponent);
+        // Build base tensor with same shape as exponent, filled with scalar base
+        ttnn::Tensor zero = ttnn::multiply(exp_tt, 0.0f);
+        const float base_f = static_cast<float>(base.toDouble());
+        ttnn::Tensor base_tt = ttnn::add(zero, base_f);
+        ttnn::Tensor result = Op(base_tt, exp_tt);
+        return write_from_ttnn(out, exponent, result);
+    }
+};
+
+// Complex-unary wrapper: builds ComplexTensor from real input (imag = 0) and calls a TTNN complex op
+template <auto Op>
+struct complex_unary_from_real_wrapper {
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
+        return invoke_into(self, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, at::Tensor& out) {
+        ttnn::Tensor real_tt = tileify(in);
+        ttnn::Tensor zero_tt = ttnn::multiply(real_tt, 0.0f);
+        ttnn::operations::complex::ComplexTensor ct({real_tt, zero_tt});
+        // Prefer L1 memory for small unary outputs; fall back if needed
+        ttnn::Tensor result = Op(ct, ttnn::L1_MEMORY_CONFIG);
+        return write_from_ttnn(out, in, result);
+    }
+};
+
+
+// Tensor-Scalar adapter that materializes a scalar as a Tensor like `a` and applies a binary TTNN op
+template <auto Op>
+    requires TTNNBinaryFn<Op>
+struct tensor_scalar_binary_wrapper {
+    static_assert(TTNNBinaryFn<Op>, "Op must be (const ttnn::Tensor&, const ttnn::Tensor&) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& other) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, other, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const c10::Scalar& other,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        // Build rhs tensor with same shape as `a`, filled with scalar `other`
+        ttnn::Tensor zero = ttnn::multiply(a_tile, 0.0f);
+        const float rhs_f = static_cast<float>(other.toDouble());
+        ttnn::Tensor rhs_tt = ttnn::add(zero, rhs_f);
+        ttnn::Tensor result = Op(a_tile, rhs_tt);
+        return write_from_ttnn(out, a, result);
+    }
+};
+
+
+// Binary Tensor-Scalar adapter that matches aten *Scalar signature with alpha parameter
+template <auto Op>
+    requires TTNNBinaryScalarFn<Op>
+struct binary_scalar_alpha_adapter_wrapper {
+    static_assert(TTNNBinaryScalarFn<Op>, "Op must be (const ttnn::Tensor&, float) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& other, const c10::Scalar& alpha) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, other, alpha, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const c10::Scalar& other, const c10::Scalar& alpha) {
+        return invoke_into(self, other, alpha, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const c10::Scalar& other,
+        const c10::Scalar& alpha,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        const float rhs = static_cast<float>(other.toDouble()) * static_cast<float>(alpha.toDouble());
+        ttnn::Tensor result = Op(a_tile, rhs);
+        return write_from_ttnn(out, a, result);
+    }
+};  // struct binary_scalar_alpha_wrapper
+
+
 // Unary wrappers for optional integer parameter (e.g., ttnn::round)
 // No-argument variant
 template <auto Op>
@@ -147,27 +264,50 @@ template <auto Op>
 struct unary_int_param_wrapper {
     static_assert(TTNNUnaryOptIntFn<Op>, "Op must be ttnn::Tensor (const&, std::optional<int32_t>) -> ttnn::Tensor");
 
-    [[nodiscard]] static at::Tensor invoke_decimals(const at::Tensor& a, c10::optional<int64_t> decimals) {
+    [[nodiscard]] static at::Tensor invoke_decimals(const at::Tensor& a, int64_t decimals) {
         at::Tensor out = make_empty_like_tt(a);
         return invoke_decimals_into(a, decimals, out);
     }
 
-    [[nodiscard]] static at::Tensor& invoke_decimals_inplace(at::Tensor& self, c10::optional<int64_t> decimals) {
+    [[nodiscard]] static at::Tensor& invoke_decimals_inplace(at::Tensor& self, int64_t decimals) {
         return invoke_decimals_into(self, decimals, self);
     }
 
     [[nodiscard]] static at::Tensor& invoke_decimals_into(
         const at::Tensor& in,
-        c10::optional<int64_t> decimals,
+        int64_t decimals,
         at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(in);
-        std::optional<int32_t> dec_opt = decimals.has_value()
-            ? std::optional<int32_t>(static_cast<int32_t>(decimals.value()))
-            : std::nullopt;
+        std::optional<int32_t> dec_opt = std::optional<int32_t>(static_cast<int32_t>(decimals));
         ttnn::Tensor result = Op(a_tile, dec_opt);
         return write_from_ttnn(out, in, result);
     }
 };
+
+template <auto Op>
+    requires TTNNUnaryIntFn<Op>
+struct unary_scalar_param_wrapper {
+    static_assert(TTNNUnaryIntFn<Op>, "Op must be ttnn::Tensor (const&, int32_t) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& value) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, value, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const c10::Scalar& value) {
+        return invoke_into(self, value, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        const c10::Scalar& value,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        int32_t v = static_cast<int32_t>(value.toLong());
+        ttnn::Tensor result = Op(a_tile, v);
+        return write_from_ttnn(out, in, result);
+    }
+}; // struct unary_scalar_param_wrapper
 
 template <auto Op>
     requires TTNNBinaryFn<Op>
@@ -283,5 +423,27 @@ struct random_wrapper {
         return write_from_ttnn(out, input, result);
     }
 };  // struct random_wrapper
+
+// Binary wrapper for TTNN ops with optional out/dtype/memory/compute params (e.g., ttnn::moreh_dot)
+template <auto Op>
+    requires TTNNBinaryOutLikeFn<Op>
+struct binary_outlike_wrapper {
+    static_assert(TTNNBinaryOutLikeFn<Op>, "Op must be (a, b, opt_out, opt_dtype, opt_mem, opt_cfg) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, b, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const at::Tensor& b,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor b_tile = tileify(b);
+        ttnn::Tensor result = Op(a_tile, b_tile, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
+        return write_from_ttnn(out, a, result);
+    }
+};  // struct binary_outlike_wrapper
 
 }  // namespace tt_eager::ext
