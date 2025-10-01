@@ -44,7 +44,7 @@ concept TTNNRandomFn = requires(const ttnn::Tensor& a, uint32_t seed) {
 };
 
 // Helper functions
-inline ttnn::Tensor tileify(const at::Tensor& t) {
+inline ttnn::Tensor tilize(const at::Tensor& t) {
     TORCH_CHECK(t.device().type() == c10::DeviceType::PrivateUse1, "Tensor must be on TTNN device");
 
     at::TtnnTensorImpl* impl = static_cast<at::TtnnTensorImpl*>(t.unsafeGetTensorImpl());
@@ -88,7 +88,7 @@ struct unary_wrapper {
 
 private:
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor a_tile = tilize(in);
         ttnn::Tensor result = Op(a_tile);
         return write_from_ttnn(out, in, result);
     }
@@ -114,8 +114,8 @@ struct binary_wrapper {
 
 private:
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& a, const at::Tensor& b, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(a);
-        ttnn::Tensor b_tile = tileify(b);
+        ttnn::Tensor a_tile = tilize(a);
+        ttnn::Tensor b_tile = tilize(b);
         ttnn::Tensor result = Op(a_tile, b_tile);
         return write_from_ttnn(out, a, result);
     }
@@ -146,8 +146,8 @@ struct binary_alpha_wrapper {
 private:
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(a);
-        ttnn::Tensor b_tile = tileify(b);
+        ttnn::Tensor a_tile = tilize(a);
+        ttnn::Tensor b_tile = tilize(b);
         ttnn::Tensor result = Op(a_tile, b_tile, alpha.toDouble());
         return write_from_ttnn(out, a, result);
     }
@@ -178,7 +178,7 @@ struct random_wrapper {
 private:
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& input, c10::optional<at::Generator> generator, at::Tensor& out) {
-        ttnn::Tensor in_tile = tileify(input);
+        ttnn::Tensor in_tile = tilize(input);
 
         static thread_local std::mt19937 rng(std::random_device{}());
         uint32_t seed = generator.has_value() ? static_cast<uint32_t>(generator.value().current_seed()) : rng();
