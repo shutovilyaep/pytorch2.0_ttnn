@@ -1,7 +1,3 @@
-#include <ATen/native/DispatchStub.h>
-#include <torch/csrc/utils/pybind.h>
-#include <torch/extension.h>
-
 #include "ttnn_cpp_extension/utils/device.hpp"
 
 #include "ttnn_cpp_extension/core/TtnnCustomAllocator.hpp"
@@ -10,7 +6,6 @@
 #include "ttnn_cpp_extension/ops/creation.hpp"
 
 #include "ttnn_cpp_extension/utils/eager_wrap.hpp"
-// #include "ttnn_cpp_extension/utils/autograd_wrap.hpp"
 
 #include <ttnn/operations/eltwise/unary/unary.hpp>
 #include <ttnn/operations/eltwise/unary/unary_composite.hpp>
@@ -21,9 +16,12 @@
 #include <ttnn/operations/reduction/generic/generic_reductions.hpp>
 #include <ttnn/operations/bernoulli/bernoulli.hpp>
 
+#include <ATen/native/DispatchStub.h>
+#include <torch/csrc/utils/pybind.h>
+#include <torch/extension.h>
+
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
-
 
 namespace {
 
@@ -140,42 +138,42 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("acosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke));
     m.impl("acosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_out));
     m.impl("acosh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::acosh>::invoke_inplace));
-    // m.impl("angle", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke)); // TODO: to move to binary?
-    // m.impl("angle.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_out)); // TODO: to move to binary?
-    // m.impl("angle_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_inplace)); // TODO: to move to binary?
+    // m.impl("angle", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke));
+    // m.impl("angle.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_out));
+    // m.impl("angle_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::angle>::invoke_inplace));
     // m.impl("arccosh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::arccosh>::invoke));
     // m.impl("arccosh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::arccosh>::invoke_out));
     // m.impl("arccosh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::arccosh>::invoke_inplace));
+
     m.impl("asin", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke));
     m.impl("asin.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke_out));
     m.impl("asin_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asin>::invoke_inplace));
-    
     m.impl("asinh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke));
     m.impl("asinh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke_out));
     m.impl("asinh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::asinh>::invoke_inplace));
     m.impl("atan", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke));
     m.impl("atan.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_out));
     m.impl("atan_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atan>::invoke_inplace));
-    
     m.impl("atanh", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke));
     m.impl("atanh.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_out));
     m.impl("atanh_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::atanh>::invoke_inplace));
-    // m.impl("conj", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke)); // TODO: to move to binary?
-    // m.impl("conj.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke_out)); // TODO: to move to binary?
-    // m.impl("conj_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke_inplace)); // TODO: to move to binary?
+
+    // m.impl("conj", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke));
+    // m.impl("conj.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke_out));
+    // m.impl("conj_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke_inplace));
     // ttnn::conj_bw
     m.impl("deg2rad", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::deg2rad>::invoke));
     m.impl("deg2rad.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::deg2rad>::invoke_out));
     m.impl("deg2rad_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::deg2rad>::invoke_inplace));
-    
+
     m.impl("digamma", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::digamma>::invoke));
     m.impl("digamma.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::digamma>::invoke_out));
     m.impl("digamma_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::digamma>::invoke_inplace));
-    
+
     m.impl("expm1", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke));
     m.impl("expm1.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke_out));
     m.impl("expm1_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::expm1>::invoke_inplace));
-    
+
     // imag
     m.impl("isfinite", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::isfinite>::invoke));
     m.impl("isfinite.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::isfinite>::invoke_out));
@@ -183,16 +181,15 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("isinf.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::isinf>::invoke_out));
     m.impl("isnan", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::isnan>::invoke));
     m.impl("isnan.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::isnan>::invoke_out));
-    
+
     m.impl("lgamma", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::lgamma>::invoke));
     m.impl("lgamma.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::lgamma>::invoke_out));
     m.impl("lgamma_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::lgamma>::invoke_inplace));
-    
+
     m.impl("rad2deg", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke));
     m.impl("rad2deg.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke_out));
     m.impl("rad2deg_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::rad2deg>::invoke_inplace));
-    
-    
+
     m.impl("relu", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::relu>::invoke));
     m.impl("relu_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::relu>::invoke_inplace));
     // real
@@ -204,7 +201,6 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("sigmoid", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke));
     m.impl("sigmoid.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke_out));
     m.impl("sigmoid_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::sigmoid>::invoke_inplace));
-    
 }
 
 static inline void register_binary_ops(torch::Library& m) {
@@ -264,7 +260,7 @@ static inline void register_binary_ops(torch::Library& m) {
     // dot.out
     m.impl("hypot.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::hypot>::invoke_out));
     m.impl("hypot", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::hypot>::invoke));
-    
+
     // matmul
     // matmul.out
     // mm
@@ -294,7 +290,6 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("atan2.out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::atan2>::invoke_out));
     m.impl("atan2", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::atan2>::invoke));
     m.impl("atan2_", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::atan2>::invoke_inplace));
-    
 
     // Relational ops (Tensor versions only)
     m.impl("eq.Tensor_out", TORCH_FN(tt_eager::ext::binary_wrapper<ttnn::eq>::invoke_out));
@@ -415,7 +410,7 @@ static inline void register_random_ops(torch::Library& m) {
     // ttnn::uniform
 }
 
-} // namespace
+}  // namespace
 
 // This macro registers the kernels to the PyTorch Dispatcher.
 // More details on the dispatcher can be found at
