@@ -250,12 +250,12 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("div.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float<ttnn::divide>::invoke));
     m.impl("div_.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float<ttnn::divide_>::invoke_inplace));
     m.impl("div_.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::divide_>::invoke_inplace));
-    // floor_divide
-    // floor_divide.Scalar
-    // floor_divide.out
-    // floor_divide_.Scalar
-    // floor_divide_.Tensor
-    // ttnn::floor_div
+
+    m.impl("floor_divide", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::floor_div>::invoke));
+    m.impl("floor_divide.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float<ttnn::floor_div>::invoke));
+    m.impl("floor_divide.out", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::floor_div>::invoke_into));
+    m.impl("floor_divide_.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float<ttnn::floor_div>::invoke_inplace));
+    m.impl("floor_divide_.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::floor_div>::invoke_inplace));
     // true_divide.Scalar
     // true_divide.out
     // true_divide_.Scalar
