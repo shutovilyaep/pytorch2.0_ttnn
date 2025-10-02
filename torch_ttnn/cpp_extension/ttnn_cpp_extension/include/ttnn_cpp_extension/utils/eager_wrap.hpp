@@ -616,10 +616,7 @@ struct unary_random_seeded {
     }
 };  // struct unary_random_seeded
 
-// Uniform Random Wrapper with bounds [from, to)
-// - Expected Op signature: ttnn::Tensor (const ttnn::Tensor&, float from, float to, uint32_t seed, opt_mem, opt_cfg)
-// - Behavior: derive seed from Generator or RNG; forward from/to and nullopt for optional params
-// - Example: m.impl("uniform_", TORCH_FN(unary_random_uniform<ttnn::uniform>::invoke_inplace))
+// Uniform Random Wrapper with bounds [from, to) using ttnn::uniform
 template <auto Op>
 concept TTNNUniformSeededFn = requires(const ttnn::Tensor& a, float from, float to, uint32_t seed) {
     { Op(a, from, to, seed, std::nullopt, std::nullopt) } -> std::same_as<ttnn::Tensor>;
@@ -630,15 +627,6 @@ template <auto Op>
 struct unary_random_uniform {
     static_assert(TTNNUniformSeededFn<Op>,
                   "Op must be (const ttnn::Tensor&, float, float, uint32_t, opt_mem, opt_cfg) -> ttnn::Tensor");
-
-    [[nodiscard]] static at::Tensor invoke(
-        const at::Tensor& input,
-        double from,
-        double to,
-        c10::optional<at::Generator> generator = c10::nullopt) {
-        at::Tensor out = make_empty_like_tt(input);
-        return invoke_into(input, from, to, generator, out);
-    }
 
     [[nodiscard]] static at::Tensor& invoke_inplace(
         at::Tensor& self,
@@ -661,14 +649,7 @@ struct unary_random_uniform {
 
         const float low = static_cast<float>(from);
         const float high = static_cast<float>(to);
-        ttnn::Tensor result = Op(
-            in_tile,
-            low,
-            high,
-            seed,
-            std::nullopt,              // memory_config
-            std::nullopt               // compute_kernel_config
-        );
+        ttnn::Tensor result = Op(in_tile, low, high, seed, std::nullopt, std::nullopt);
 
         return write_from_ttnn(out, input, result);
     }
@@ -705,134 +686,78 @@ struct random_like_uniform {
     }
 };  // struct random_like_uniform
 
-// Discrete/creation-based random_: build using ttnn::rand (creator) then adapt to dtype
-// - For floating dtypes and default call: range [0, 2^mantissa)
-// - For integer dtypes default: full dtype range [min, max] (implemented as [min, max+1) then floor)
-// - random_.from (ints): [from, dtype_max]
-// - random_.to (ints): [0, to-1]
+// Discrete/creation-based random_ using ttnn::rand, with minimal branching
 struct random_like_rand {
-    static inline bool is_integral_dtype(const at::ScalarType st) {
-        return st == at::kByte || st == at::kInt;
+    static inline uint32_t seed_of(c10::optional<at::Generator> gen) {
+        static thread_local std::mt19937 rng(std::random_device{}());
+        return gen.has_value() ? static_cast<uint32_t>(gen.value().current_seed()) : rng();
     }
 
-    static inline bool is_floating_dtype(const at::ScalarType st) {
-        return st == at::kFloat || st == at::kBFloat16;
+    static inline double mantissa_bound(at::ScalarType st) {
+        return (st == at::kFloat) ? std::ldexp(1.0, 24) : std::ldexp(1.0, 7);
     }
 
-    static inline std::pair<double, double> integer_min_max(const at::ScalarType st) {
-        switch (st) {
-            case at::kByte:   return {0.0, 256.0};        // [0,255] via [0,256)
-            case at::kInt:    return {static_cast<double>(std::numeric_limits<int32_t>::min()),
-                                      static_cast<double>(static_cast<int64_t>(std::numeric_limits<int32_t>::max()) + 1)};
-            default:          TORCH_CHECK(false, "Unsupported integer dtype for random_ on TTNN");
-        }
+    static inline std::pair<double, double> int_bounds_default(at::ScalarType st) {
+        if (st == at::kByte) return {0.0, 256.0};
+        // kInt
+        return {static_cast<double>(std::numeric_limits<int32_t>::min()),
+                static_cast<double>(static_cast<int64_t>(std::numeric_limits<int32_t>::max()) + 1)};
     }
 
-    static inline double mantissa_upper_bound(const at::ScalarType st) {
-        switch (st) {
-            case at::kFloat:    return std::ldexp(1.0, 24);  // 2^24
-            case at::kBFloat16: return std::ldexp(1.0, 7);   // 2^7
-            default:            TORCH_CHECK(false, "Unsupported floating dtype for random_ on TTNN");
-        }
-    }
-
-    static ttnn::Tensor generate_rand_like(
-        const ttnn::Tensor& like,
-        double low,
-        double high,
-        uint32_t seed) {
-        // Always generate in float32, then post-process
+    static inline ttnn::Tensor sample_f32_like(const ttnn::Tensor& like, double low, double high, uint32_t seed) {
         auto shape = like.logical_shape();
         auto* device = like.device();
         auto layout = like.layout();
-        auto rand_f32 = ttnn::rand(shape, *device, ttnn::DataType::FLOAT32, layout, ttnn::DRAM_MEMORY_CONFIG, static_cast<float>(low), static_cast<float>(high), seed);
-        return rand_f32;
+        return ttnn::rand(shape, *device, ttnn::DataType::FLOAT32, layout, ttnn::DRAM_MEMORY_CONFIG,
+                          static_cast<float>(low), static_cast<float>(high), seed);
     }
 
-    static ttnn::Tensor adapt_to_dtype(
-        const ttnn::Tensor& src,
-        const at::ScalarType target_st,
-        bool is_integer_domain) {
-        if (is_integer_domain) {
-            // floor for discrete uniform then cast to target int dtype
+    static inline ttnn::Tensor cast_after_sampling(const ttnn::Tensor& src, at::ScalarType st, bool is_int) {
+        if (is_int) {
             auto floored = ttnn::floor(src);
-            // Map at::ScalarType to ttnn::DataType
-            ttnn::DataType dt;
-            switch (target_st) {
-                case at::kByte:  dt = ttnn::DataType::UINT8; break;
-                case at::kInt:   dt = ttnn::DataType::INT32; break;
-                default:         TORCH_CHECK(false, "Unsupported integer dtype for TTNN casting in random_");
-            }
+            ttnn::DataType dt = (st == at::kByte) ? ttnn::DataType::UINT8 : ttnn::DataType::INT32;
             return ttnn::typecast(floored, dt);
-        } else {
-            // Floating: cast to target float dtype if needed
-            switch (target_st) {
-                case at::kFloat:    return (src.dtype() == ttnn::DataType::FLOAT32) ? src : ttnn::typecast(src, ttnn::DataType::FLOAT32);
-                case at::kBFloat16: return (src.dtype() == ttnn::DataType::BFLOAT16) ? src : ttnn::typecast(src, ttnn::DataType::BFLOAT16);
-                default:            TORCH_CHECK(false, "Unsupported floating dtype for random_ on TTNN");
-            }
         }
+        if (st == at::kFloat) {
+            return (src.dtype() == ttnn::DataType::FLOAT32) ? src : ttnn::typecast(src, ttnn::DataType::FLOAT32);
+        }
+        // kBFloat16
+        return (src.dtype() == ttnn::DataType::BFLOAT16) ? src : ttnn::typecast(src, ttnn::DataType::BFLOAT16);
     }
 
-    static uint32_t pick_seed(c10::optional<at::Generator> generator) {
-        static thread_local std::mt19937 rng(std::random_device{}());
-        return generator.has_value() ? static_cast<uint32_t>(generator.value().current_seed()) : rng();
-    }
-
-    [[nodiscard]] static at::Tensor& invoke_inplace(
-        at::Tensor& self,
-        c10::optional<at::Generator> generator = c10::nullopt) {
-        const at::ScalarType st = self.scalar_type();
+    static at::Tensor& fill(at::Tensor& self, double low, double high, bool is_int, c10::optional<at::Generator> gen) {
         ttnn::Tensor like = tileify(self);
-        uint32_t seed = pick_seed(generator);
+        uint32_t seed = seed_of(gen);
+        ttnn::Tensor rnd = sample_f32_like(like, low, high, seed);
+        ttnn::Tensor out_tt = cast_after_sampling(rnd, self.scalar_type(), is_int);
+        return write_from_ttnn(self, self, out_tt);
+    }
 
-        if (is_floating_dtype(st)) {
-            double low = 0.0;
-            double high = mantissa_upper_bound(st);
-            ttnn::Tensor rnd = generate_rand_like(like, low, high, seed);
-            ttnn::Tensor out_tt = adapt_to_dtype(rnd, st, false);
-            return write_from_ttnn(self, self, out_tt);
-        } else if (is_integral_dtype(st)) {
-            auto [low, high] = integer_min_max(st);
-            ttnn::Tensor rnd = generate_rand_like(like, low, high, seed);
-            ttnn::Tensor out_tt = adapt_to_dtype(rnd, st, true);
-            return write_from_ttnn(self, self, out_tt);
-        }
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, c10::optional<at::Generator> gen = c10::nullopt) {
+        const auto st = self.scalar_type();
+        if (st == at::kFloat)   return fill(self, 0.0, mantissa_bound(st), false, gen);
+        if (st == at::kBFloat16) return fill(self, 0.0, mantissa_bound(st), false, gen);
+        if (st == at::kByte)    { auto [l,h]=int_bounds_default(st); return fill(self, l, h, true, gen);} 
+        if (st == at::kInt)     { auto [l,h]=int_bounds_default(st); return fill(self, l, h, true, gen);} 
         TORCH_CHECK(false, "Unsupported dtype for random_ on TTNN");
     }
 
     [[nodiscard]] static at::Tensor& invoke_from_inplace(
-        at::Tensor& self,
-        int64_t from,
-        c10::optional<int64_t> to,
-        c10::optional<at::Generator> generator = c10::nullopt) {
-        const at::ScalarType st = self.scalar_type();
-        TORCH_CHECK(is_integral_dtype(st), "random_.from is supported only for integer dtypes on TTNN");
-        ttnn::Tensor like = tileify(self);
-        uint32_t seed = pick_seed(generator);
-        auto [minv, maxp1] = integer_min_max(st);
+        at::Tensor& self, int64_t from, c10::optional<int64_t> to, c10::optional<at::Generator> gen = c10::nullopt) {
+        const auto st = self.scalar_type();
+        TORCH_CHECK(st == at::kByte || st == at::kInt, "random_.from is supported only for uint8/int32 on TTNN");
         double low = static_cast<double>(from);
-        double high = to.has_value() ? static_cast<double>(to.value()) : maxp1; // [low, high)
-        ttnn::Tensor rnd = generate_rand_like(like, low, high, seed);
-        ttnn::Tensor out_tt = adapt_to_dtype(rnd, st, true);
-        return write_from_ttnn(self, self, out_tt);
+        double high = to.has_value() ? static_cast<double>(to.value()) : int_bounds_default(st).second;
+        return fill(self, low, high, true, gen);
     }
 
     [[nodiscard]] static at::Tensor& invoke_to_inplace(
-        at::Tensor& self,
-        int64_t to,
-        c10::optional<at::Generator> generator = c10::nullopt) {
-        const at::ScalarType st = self.scalar_type();
-        TORCH_CHECK(is_integral_dtype(st), "random_.to is supported only for integer dtypes on TTNN");
-        ttnn::Tensor like = tileify(self);
-        uint32_t seed = pick_seed(generator);
-        double low = 0.0;
-        double high = static_cast<double>(to); // [0, to)
-        ttnn::Tensor rnd = generate_rand_like(like, low, high, seed);
-        ttnn::Tensor out_tt = adapt_to_dtype(rnd, st, true);
-        return write_from_ttnn(self, self, out_tt);
+        at::Tensor& self, int64_t to, c10::optional<at::Generator> gen = c10::nullopt) {
+        const auto st = self.scalar_type();
+        TORCH_CHECK(st == at::kByte || st == at::kInt, "random_.to is supported only for uint8/int32 on TTNN");
+        return fill(self, 0.0, static_cast<double>(to), true, gen);
     }
-};  // struct random_like_rand
+};
 
 // Binary wrapper for TTNN ops with optional out/dtype/memory/compute params (e.g., ttnn::moreh_dot)
 // - Expected Op signature: Op(a, b, opt_out, opt_dtype, opt_mem, opt_cfg)
