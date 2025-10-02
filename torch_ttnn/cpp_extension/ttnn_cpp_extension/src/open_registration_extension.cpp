@@ -164,9 +164,9 @@ static inline void register_unary_ops(torch::Library& m) {
     m.impl("atanh", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::atanh>::invoke));
     m.impl("atanh.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::atanh>::invoke_into));
     m.impl("atanh_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::atanh>::invoke_inplace));
-    // m.impl("conj", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke)); // TODO: to move to binary?
-    // m.impl("conj.out", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke_into)); // TODO: to move to binary?
-    // m.impl("conj_", TORCH_FN(tt_eager::ext::unary_wrapper<ttnn::conj>::invoke_inplace)); // TODO: to move to binary?
+    m.impl("conj", TORCH_FN(tt_eager::ext::complex_unary_from_real<ttnn::conj>::invoke));
+    m.impl("conj.out", TORCH_FN(tt_eager::ext::complex_unary_from_real<ttnn::conj>::invoke_into));
+    m.impl("conj_", TORCH_FN(tt_eager::ext::complex_unary_from_real<ttnn::conj>::invoke_inplace));
     // ttnn::conj_bw
     m.impl("deg2rad", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::deg2rad>::invoke));
     m.impl("deg2rad.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::deg2rad>::invoke_into));

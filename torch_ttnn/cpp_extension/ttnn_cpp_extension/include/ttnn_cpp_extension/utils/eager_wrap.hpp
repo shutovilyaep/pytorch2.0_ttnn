@@ -41,6 +41,7 @@
 #include <ATen/core/Generator.h>
 #include <cstdint>
 #include <random>
+#include <type_traits>
 
 #include "ttnn_cpp_extension/core/TtnnTensorImpl.hpp"
 #include "ttnn_cpp_extension/ops/creation.hpp"
@@ -200,7 +201,7 @@ struct binary_scalar_tensor_as_tensor {
 // - Expected Op signature: Complex unary (ttnn::operations::complex::ComplexTensor, ...)
 // - Behavior: make Complex{real=a, imag=0}; prefer L1 memory
 // - Example: m.impl("angle", TORCH_FN(complex_unary_from_real<ttnn::angle>::invoke))
-// - Used by aten ops (examples): angle, angle.out, angle_
+// - Used by aten ops (examples): angle, angle.out, angle_, conj, conj.out, conj_
 template <auto Op>
 struct complex_unary_from_real {
 
@@ -218,8 +219,15 @@ struct complex_unary_from_real {
         ttnn::Tensor zero_tt = ttnn::multiply(real_tt, 0.0f);
         ttnn::operations::complex::ComplexTensor ct({real_tt, zero_tt});
         // Prefer L1 memory for small unary outputs; fall back if needed
-        ttnn::Tensor result = Op(ct, ttnn::L1_MEMORY_CONFIG);
-        return write_from_ttnn(out, in, result);
+        auto ret = Op(ct, ttnn::L1_MEMORY_CONFIG);
+        using ReturnT = decltype(ret);
+        if constexpr (std::is_same_v<ReturnT, ttnn::Tensor>) {
+            return write_from_ttnn(out, in, ret);
+        } else {
+            // For ops like ttnn::conj returning ComplexTensor, take real part for real input
+            ttnn::Tensor real_tt_out = ret.real();
+            return write_from_ttnn(out, in, real_tt_out);
+        }
     }
 };
 
