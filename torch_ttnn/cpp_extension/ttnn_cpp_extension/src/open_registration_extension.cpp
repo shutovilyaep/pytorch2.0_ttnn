@@ -222,9 +222,12 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("add.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float_with_alpha_adapter<ttnn::add>::invoke));
     m.impl("add_.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float_with_alpha_adapter<ttnn::add_>::invoke_inplace));
     m.impl("add_.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor_alpha<ttnn::addalpha>::invoke_inplace));
-    // _add_relu.Tensor
-    // _add_relu.out
-    // _add_relu_.Tensor
+    // _add_relu.* = relu(add.Tensor with alpha=1)
+    // Match aten schema: (Tensor, Tensor, Scalar alpha=1)
+    using AddReluAlphaWrapper = tt_eager::ext::binary_tensor_tensor_alpha_then_unary<ttnn::addalpha, ttnn::relu>;
+    m.impl("_add_relu.Tensor", TORCH_FN(AddReluAlphaWrapper::invoke));
+    m.impl("_add_relu.out", TORCH_FN(AddReluAlphaWrapper::invoke_into));
+    m.impl("_add_relu_.Tensor", TORCH_FN(AddReluAlphaWrapper::invoke_inplace));
 
     m.impl("sub.out", TORCH_FN(tt_eager::ext::binary_tensor_tensor_alpha<ttnn::subalpha>::invoke_into));
     m.impl("sub.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor_alpha<ttnn::subalpha>::invoke));

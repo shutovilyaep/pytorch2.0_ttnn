@@ -476,6 +476,68 @@ struct binary_tensor_tensor_alpha {
 };  // struct binary_tensor_tensor_alpha
 
 
+// Binary alpha (alpha=1.0) then unary: apply BinaryAlphaOp(a, b, 1.0f) then UnaryOp(result)
+// - Expected BinaryAlphaOp: ttnn::Tensor (const ttnn::Tensor&, const ttnn::Tensor&, float)
+// - Expected UnaryOp: ttnn::Tensor (const ttnn::Tensor&)
+// - Example: m.impl("_add_relu.Tensor", TORCH_FN(binary_tensor_tensor_alpha1_then_unary<ttnn::addalpha, ttnn::relu>::invoke))
+template <auto BinaryAlphaOp, auto UnaryOp>
+    requires (TTNNBinaryAlphaFn<BinaryAlphaOp> && TTNNUnaryFn<UnaryOp>)
+struct binary_tensor_tensor_alpha1_then_unary {
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, b, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other) {
+        return invoke_into(self, other, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const at::Tensor& b,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor b_tile = tileify(b);
+        constexpr float kAlpha = 1.0f;
+        ttnn::Tensor tmp = BinaryAlphaOp(a_tile, b_tile, kAlpha);
+        ttnn::Tensor result = UnaryOp(tmp);
+        return write_from_ttnn(out, a, result);
+    }
+};  // struct binary_tensor_tensor_alpha1_then_unary
+
+
+
+// Binary alpha then unary: apply BinaryAlphaOp(a, b, alpha) then UnaryOp(result)
+// - Expected BinaryAlphaOp: ttnn::Tensor (const ttnn::Tensor&, const ttnn::Tensor&, float)
+// - Expected UnaryOp: ttnn::Tensor (const ttnn::Tensor&)
+// - Example: m.impl("_add_relu.Tensor", TORCH_FN(binary_tensor_tensor_alpha_then_unary<ttnn::addalpha, ttnn::relu>::invoke))
+template <auto BinaryAlphaOp, auto UnaryOp>
+    requires (TTNNBinaryAlphaFn<BinaryAlphaOp> && TTNNUnaryFn<UnaryOp>)
+struct binary_tensor_tensor_alpha_then_unary {
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, b, alpha, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
+        return invoke_into(self, other, alpha, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const at::Tensor& b,
+        const c10::Scalar& alpha,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor b_tile = tileify(b);
+        const float alpha_value = static_cast<float>(alpha.toDouble());
+        ttnn::Tensor tmp = BinaryAlphaOp(a_tile, b_tile, alpha_value);
+        ttnn::Tensor result = UnaryOp(tmp);
+        return write_from_ttnn(out, a, result);
+    }
+};  // struct binary_tensor_tensor_alpha_then_unary
+
+
 
 // Random Wrapper
 // - Expected Op signature: ttnn::Tensor (const ttnn::Tensor&, uint32_t, ...)
