@@ -438,45 +438,6 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     register_random_ops(m);
 }
 
-TORCH_LIBRARY_IMPL(aten, AutogradPrivateUse1, m) {
-    // TODO: NOW: FIXME временно отключено: регистрации Autograd вызывают ошибки компиляции
-    // TODO: NOW: FIXME using AsinAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::asin, ttnn::asin_bw>;
-    // TODO: NOW: FIXME m.impl("asin", TORCH_FN(AsinAutograd::invoke));
-
-    // TODO: NOW: FIXME using AtanAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::atan, ttnn::atan_bw>;
-    // TODO: NOW: FIXME m.impl("atan", TORCH_FN(AtanAutograd::invoke));
-
-    // TODO: NOW: FIXME using DigammaAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::digamma, ttnn::digamma_bw>;
-    // TODO: NOW: FIXME m.impl("digamma", TORCH_FN(DigammaAutograd::invoke));
-
-    // TODO: NOW: FIXME using Expm1Autograd = tt_eager::ext::autograd_unary_wrapper<ttnn::expm1, ttnn::expm1_bw>;
-    // TODO: NOW: FIXME m.impl("expm1", TORCH_FN(Expm1Autograd::invoke));
-
-    // TODO: NOW: FIXME using Rad2DegAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::rad2deg, ttnn::rad2deg_bw>;
-    // TODO: NOW: FIXME m.impl("rad2deg", TORCH_FN(Rad2DegAutograd::invoke));
-
-    // TODO: NOW: FIXME using SigmoidAutograd = tt_eager::ext::autograd_unary_wrapper<ttnn::sigmoid, ttnn::sigmoid_bw>;
-    // TODO: NOW: FIXME m.impl("sigmoid", TORCH_FN(SigmoidAutograd::invoke));
-
-    // TODO: NOW: FIXME using MulAutograd = tt_eager::ext::autograd_binary_wrapper<ttnn::multiply, ttnn::mul_bw>;
-    // TODO: NOW: FIXME m.impl("mul.Tensor", TORCH_FN(MulAutograd::invoke));
-
-    // TODO: NOW: FIXME using DivAutograd = tt_eager::ext::autograd_binary_wrapper<ttnn::divide, ttnn::div_bw>;
-    // TODO: NOW: FIXME m.impl("div.Tensor", TORCH_FN(DivAutograd::invoke));
-
-    // TODO: NOW: FIXME using HypotAutograd = tt_eager::ext::autograd_binary_wrapper<ttnn::hypot, ttnn::hypot_bw>;
-    // TODO: NOW: FIXME m.impl("hypot", TORCH_FN(HypotAutograd::invoke));
-
-    // TODO: NOW: FIXME using Atan2Autograd = tt_eager::ext::autograd_binary_wrapper<ttnn::atan2, ttnn::atan2_bw>;
-    // TODO: NOW: FIXME m.impl("atan2", TORCH_FN(Atan2Autograd::invoke));
-
-    // TODO: NOW: FIXME using AddAlphaAutograd = tt_eager::ext::autograd_binary_alpha_wrapper<ttnn::addalpha, ttnn::addalpha_bw>;
-    // TODO: NOW: FIXME m.impl("add.Tensor", TORCH_FN(AddAlphaAutograd::invoke));
-
-    // TODO: NOW: FIXME using SubAlphaAutograd = tt_eager::ext::autograd_binary_alpha_wrapper<ttnn::subalpha, ttnn::subalpha_bw>;
-    // TODO: NOW: FIXME m.impl("sub.Tensor", TORCH_FN(SubAlphaAutograd::invoke));
-}
-
 // This macro registers helper functions associated with the ttnn_device_mode module that can be used in Python
 PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("as_torch_device", &as_torch_device, "get torch device from existing ttnn device");
