@@ -934,4 +934,35 @@ struct reduction_dimlist_unbiased {
     }
 };
 
+// Std/Var with correction flag and out (+dims optional)
+template <auto Op>
+struct reduction_dimlist_unbiased_out {
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        c10::OptionalArrayRef<int64_t> dim,
+        bool unbiased,
+        bool keepdim,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_variant = std::nullopt;
+        if (dim.has_value()) {
+            dim_variant = to_ttnn_dim_variant(*dim);
+        }
+        ttnn::Tensor result = Op(a_tile, dim_variant, keepdim, std::nullopt, std::nullopt, 1.0f, unbiased);
+        return write_from_ttnn(out, in, result);
+    }
+};
+
+template <auto Op>
+struct reduction_all_unbiased_out {
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        bool unbiased,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor result = Op(a_tile, std::nullopt, /*keepdim*/ false, std::nullopt, std::nullopt, 1.0f, unbiased);
+        return write_from_ttnn(out, in, result);
+    }
+};
+
 }  // namespace tt_eager::ext
