@@ -56,6 +56,7 @@
 #include <ttnn/types.hpp>
 #include <ttnn/operations/copy/typecast/typecast.hpp>
 #include <ttnn/operations/rand/rand.hpp>
+#include <variant>
 
 namespace tt_eager::ext {
 
@@ -140,6 +141,33 @@ inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, cons
     out_impl->set_sizes_and_strides_as(like);
     out_impl->set_ttnn_tensor(result);
     return out;
+}
+
+inline std::optional<std::variant<int, ttnn::SmallVector<int>>> to_ttnn_dim_variant(c10::IntArrayRef dims) {
+    if (dims.size() == 0) {
+        return std::nullopt;
+    }
+    if (dims.size() == 1) {
+        return static_cast<int>(dims[0]);
+    }
+    ttnn::SmallVector<int> dv;
+    dv.reserve(dims.size());
+    for (auto d : dims) {
+        dv.push_back(static_cast<int>(d));
+    }
+    return dv;
+}
+
+inline ttnn::DataType to_ttnn_dtype(const at::ScalarType st) {
+    switch (st) {
+        case at::kFloat: return ttnn::DataType::FLOAT32;
+        case at::kBFloat16: return ttnn::DataType::BFLOAT16;
+        case at::kInt: return ttnn::DataType::INT32;
+        case at::kByte: return ttnn::DataType::UINT8;
+        case at::kBool: return ttnn::DataType::BFLOAT16; // No bool tensor in TTNN reduction path; fallback to bf16
+        default:
+            TORCH_CHECK(false, "Unsupported dtype for TTNN reduction: ", st);
+    }
 }
 
 // Unary: expects Op(a) → ttnn::Tensor
@@ -784,5 +812,126 @@ struct binary_tensor_tensor_outlike {
         return write_from_ttnn(out, a, result);
     }
 };  // struct binary_tensor_tensor_outlike
+
+// =========================
+// Reductions (sum/mean/max/min/std/var)
+// =========================
+
+// Value-only reductions without dims (sum/mean/max/min). Optional dtype casts supported via typecast.
+template <auto Op>
+struct reduction_all {
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, c10::optional<at::ScalarType> dtype = c10::nullopt) {
+        at::Tensor out = make_empty_like_tt(a, dtype);
+        return invoke_into(a, dtype, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        c10::optional<at::ScalarType> dtype,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        // dim=nullopt, keepdim=false
+        ttnn::Tensor result = Op(a_tile, std::nullopt, /*keepdim*/ false);
+        if (dtype.has_value()) {
+            result = ttnn::typecast(result, to_ttnn_dtype(*dtype));
+        }
+        return write_from_ttnn(out, in, result);
+    }
+};
+
+// Value-only reductions without dtype (aten max/min variants with no dtype)
+template <auto Op>
+struct reduction_all_nodtype {
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor result = Op(a_tile, std::nullopt, /*keepdim*/ false);
+        return write_from_ttnn(out, in, result);
+    }
+};
+
+// Reductions over dim list (dim can be optional in aten schemas): sum/mean with dtype and out
+template <auto Op>
+struct reduction_dimlist {
+    [[nodiscard]] static at::Tensor invoke(
+        const at::Tensor& a,
+        c10::OptionalArrayRef<int64_t> dim,
+        bool keepdim,
+        c10::optional<at::ScalarType> dtype = c10::nullopt) {
+        at::Tensor out = make_empty_like_tt(a, dtype);
+        return invoke_into(a, dim, keepdim, dtype, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        c10::OptionalArrayRef<int64_t> dim,
+        bool keepdim,
+        c10::optional<at::ScalarType> dtype,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_variant = std::nullopt;
+        if (dim.has_value()) {
+            dim_variant = to_ttnn_dim_variant(*dim);
+        }
+        ttnn::Tensor result = Op(a_tile, dim_variant, keepdim);
+        if (dtype.has_value()) {
+            result = ttnn::typecast(result, to_ttnn_dtype(*dtype));
+        }
+        return write_from_ttnn(out, in, result);
+    }
+};
+
+// Std/Var with unbiased (correction) flag, all-elements
+template <auto Op>
+struct reduction_all_unbiased {
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, bool unbiased = false) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, unbiased, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        bool unbiased,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        // dim=nullopt, keepdim=false, scalar=1.0f, correction=unbiased
+        ttnn::Tensor result = Op(a_tile, std::nullopt, /*keepdim*/ false, std::nullopt, std::nullopt, 1.0f, unbiased);
+        return write_from_ttnn(out, in, result);
+    }
+};
+
+// Std/Var with unbiased (correction) flag over dims
+template <auto Op>
+struct reduction_dimlist_unbiased {
+    [[nodiscard]] static at::Tensor invoke(
+        const at::Tensor& a,
+        c10::OptionalArrayRef<int64_t> dim,
+        bool unbiased,
+        bool keepdim) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, dim, unbiased, keepdim, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        c10::OptionalArrayRef<int64_t> dim,
+        bool unbiased,
+        bool keepdim,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(in);
+        std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_variant = std::nullopt;
+        if (dim.has_value()) {
+            dim_variant = to_ttnn_dim_variant(*dim);
+        }
+        ttnn::Tensor result = Op(a_tile, dim_variant, keepdim, std::nullopt, std::nullopt, 1.0f, unbiased);
+        return write_from_ttnn(out, in, result);
+    }
+};
 
 }  // namespace tt_eager::ext

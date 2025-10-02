@@ -353,56 +353,54 @@ static inline void register_reductions(torch::Library& m) {
     // Reductions
     // =========================
     // Sum
-    // sum
-    // sum.DimnameList_out
-    // sum.IntList_out
+    m.impl("sum", TORCH_FN(tt_eager::ext::reduction_all<ttnn::sum>::invoke));
+    m.impl("sum.dim_IntList", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::sum>::invoke));
+    m.impl("sum.IntList_out", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::sum>::invoke_into));
     // sum.dim_DimnameList
-    // sum.dim_IntList
-    // ttnn::sum
+    // sum.DimnameList_out
 
     // Mean
-    // mean
-    // mean.dim
+    m.impl("mean", TORCH_FN(tt_eager::ext::reduction_all<ttnn::mean>::invoke));
+    m.impl("mean.dim", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::mean>::invoke));
+    m.impl("mean.out", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::mean>::invoke_into));
     // mean.names_dim
     // mean.names_out
-    // mean.out
-    // ttnn::mean
 
-    // Max / Min
-    // max
+    // Max / Min (value-only reductions; aten::max/min no dtype)
+    m.impl("max", TORCH_FN(tt_eager::ext::reduction_all_nodtype<ttnn::max>::invoke));
+    m.impl("min", TORCH_FN(tt_eager::ext::reduction_all_nodtype<ttnn::min>::invoke));
     // max.dim
     // max.dim_max
     // max.names_dim
     // max.names_dim_max
-    // ttnn::max
-    // min
     // min.dim
     // min.dim_min
     // min.names_dim
     // min.names_dim_min
-    // ttnn::min
 
     // Std / Var
-    // std
-    // std.dim
+    // Base (all-elements) with unbiased flag default (correction)
+    m.impl("std", TORCH_FN(tt_eager::ext::reduction_all_unbiased<ttnn::std>::invoke));
+    m.impl("var", TORCH_FN(tt_eager::ext::reduction_all_unbiased<ttnn::var>::invoke));
+
+    // Dim-list variants with unbiased (correction) and keepdim
+    m.impl("std.dim", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased<ttnn::std>::invoke));
+    m.impl("var.dim", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased<ttnn::var>::invoke));
+
+    // std.out
     // std.names_dim
     // std.names_out
-    // std.out
     // std.correction
     // std.correction_out
     // std.correction_names
     // std.correction_names_out
-    // ttnn::std
-    // var
-    // var.dim
+    // var.out
     // var.names_dim
     // var.names_out
-    // var.out
     // var.correction
     // var.correction_out
     // var.correction_names
     // var.correction_names_out
-    // ttnn::var
 }
 
 static inline void register_random_ops(torch::Library& m) {
