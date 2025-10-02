@@ -538,6 +538,37 @@ struct binary_tensor_tensor_alpha_then_unary {
 };  // struct binary_tensor_tensor_alpha_then_unary
 
 
+// Binary alpha with swapped operands: calls Op(b, a, alpha)
+// - Expected Op signature: ttnn::Tensor (const ttnn::Tensor&, const ttnn::Tensor&, float)
+// - Use-case: emulate rsub.Tensor (other - alpha*self) via subalpha(other, self, alpha)
+template <auto Op>
+    requires TTNNBinaryAlphaFn<Op>
+struct binary_tensor_tensor_alpha_swapped {
+    static_assert(TTNNBinaryAlphaFn<Op>, "Op must be (const ttnn::Tensor&, const ttnn::Tensor&, float) -> ttnn::Tensor");
+
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, b, alpha, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
+        return invoke_into(self, other, alpha, self);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a,
+        const at::Tensor& b,
+        const c10::Scalar& alpha,
+        at::Tensor& out) {
+        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor b_tile = tileify(b);
+        const float alpha_value = static_cast<float>(alpha.toDouble());
+        ttnn::Tensor result = Op(b_tile, a_tile, alpha_value);
+        return write_from_ttnn(out, a, result);
+    }
+};  // struct binary_tensor_tensor_alpha_swapped
+
+
 
 // Random Wrapper
 // - Expected Op signature: ttnn::Tensor (const ttnn::Tensor&, uint32_t, ...)
