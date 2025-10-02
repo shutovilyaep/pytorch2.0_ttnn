@@ -21,6 +21,7 @@
 #include <ttnn/operations/eltwise/binary/binary_composite.hpp>
 #include <ttnn/operations/reduction/generic/generic_reductions.hpp>
 #include <ttnn/operations/bernoulli/bernoulli.hpp>
+#include <ttnn/operations/uniform/uniform.hpp>
 #include <ttnn/operations/moreh/moreh_dot/moreh_dot.hpp>
 #include <ttnn/operations/matmul/matmul.hpp>
 
@@ -416,16 +417,12 @@ static inline void register_random_ops(torch::Library& m) {
     // exponential_
     // geometric_
     // normal_
-    // random_
-    // random_.from
-    // random_.to
+    // random_ family: use ttnn::rand creator semantics to match PyTorch behavior
+    m.impl("random_", TORCH_FN(tt_eager::ext::random_like_rand::invoke_inplace));
+    m.impl("random_.from", TORCH_FN(tt_eager::ext::random_like_rand::invoke_from_inplace));
+    m.impl("random_.to", TORCH_FN(tt_eager::ext::random_like_rand::invoke_to_inplace));
     // uniform_
-
-    // Pending TTNN random ops to register
-    // ttnn::prim::rand
-    // ttnn::prim::uniform
-    // ttnn::rand
-    // ttnn::uniform
+    m.impl("uniform_", TORCH_FN(tt_eager::ext::unary_random_uniform<ttnn::uniform>::invoke_inplace));
 }
 
 } // namespace
