@@ -22,6 +22,7 @@
 #include <ttnn/operations/reduction/generic/generic_reductions.hpp>
 #include <ttnn/operations/bernoulli/bernoulli.hpp>
 #include <ttnn/operations/moreh/moreh_dot/moreh_dot.hpp>
+#include <ttnn/operations/matmul/matmul.hpp>
 
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
@@ -274,8 +275,8 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("hypot.out", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::hypot>::invoke_into));
     m.impl("hypot", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::hypot>::invoke));
     
-    // matmul
-    // matmul.out
+    m.impl("matmul.out", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::matmul>::invoke_into));
+    m.impl("matmul", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::matmul>::invoke));
     // mm
     // mm.out
     // mv
