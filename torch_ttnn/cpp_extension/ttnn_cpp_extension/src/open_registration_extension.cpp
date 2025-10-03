@@ -369,14 +369,19 @@ static inline void register_reductions(torch::Library& m) {
     // Max / Min (value-only reductions; aten::max/min no dtype)
     m.impl("max", TORCH_FN(tt_eager::ext::reduction_all_nodtype<ttnn::max>::invoke));
     m.impl("min", TORCH_FN(tt_eager::ext::reduction_all_nodtype<ttnn::min>::invoke));
-    // max.dim
-    // max.dim_max
-    // max.names_dim
-    // max.names_dim_max
-    // min.dim
-    // min.dim_min
-    // min.names_dim
-    // min.names_dim_min
+
+    // max/min with indices along dim (return (values, indices))
+    using MaxPair = tt_eager::ext::reduction_dim_pair<ttnn::max, ttnn::experimental::argmax>;
+    m.impl("max.dim", TORCH_FN(MaxPair::invoke));
+    m.impl("max.dim_max", TORCH_FN(MaxPair::invoke_into));
+    m.impl("max.names_dim", TORCH_FN(MaxPair::invoke_dimname));
+    m.impl("max.names_dim_max", TORCH_FN(MaxPair::invoke_dimname_into));
+
+    using MinPair = tt_eager::ext::reduction_dim_pair<ttnn::min, ttnn::experimental::argmin>;
+    m.impl("min.dim", TORCH_FN(MinPair::invoke));
+    m.impl("min.dim_min", TORCH_FN(MinPair::invoke_into));
+    m.impl("min.names_dim", TORCH_FN(MinPair::invoke_dimname));
+    m.impl("min.names_dim_min", TORCH_FN(MinPair::invoke_dimname_into));
 
     // Std / Var
     // Base (all-elements) with unbiased flag default (correction)

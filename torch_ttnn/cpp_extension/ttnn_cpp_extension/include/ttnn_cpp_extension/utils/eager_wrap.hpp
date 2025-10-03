@@ -56,6 +56,7 @@
 #include <ttnn/types.hpp>
 #include <ttnn/operations/copy/typecast/typecast.hpp>
 #include <ttnn/operations/rand/rand.hpp>
+#include <ttnn/operations/experimental/reduction/argmax/argmax.hpp>
 #include <variant>
 
 namespace tt_eager::ext {
@@ -879,6 +880,15 @@ struct reduction_dimlist {
         return invoke_dimnames_into(a, dimnames, keepdim, dtype, out);
     }
 
+    [[nodiscard]] static at::Tensor invoke_dimname(
+        const at::Tensor& a,
+        at::Dimname dimname,
+        bool keepdim,
+        c10::optional<at::ScalarType> dtype = c10::nullopt) {
+        at::Tensor out = make_empty_like_tt(a, dtype);
+        return invoke_dimname_into(a, dimname, keepdim, dtype, out);
+    }
+
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& in,
         c10::OptionalArrayRef<int64_t> dim,
@@ -915,6 +925,23 @@ struct reduction_dimlist {
             TORCH_CHECK(found, "Dimname not found in tensor");
         }
         return invoke_into(in, c10::OptionalArrayRef<int64_t>(positions), keepdim, dtype, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_dimname_into(
+        const at::Tensor& in,
+        at::Dimname dimname,
+        bool keepdim,
+        c10::optional<at::ScalarType> dtype,
+        at::Tensor& out) {
+        // Map single name to position
+        auto names = in.names();
+        int64_t pos = -1;
+        for (int64_t i = 0; i < static_cast<int64_t>(names.size()); ++i) {
+            if (names[i] == dimname) { pos = i; break; }
+        }
+        TORCH_CHECK(pos >= 0, "Dimname not found in tensor");
+        std::array<int64_t, 1> one = {pos};
+        return invoke_into(in, c10::OptionalArrayRef<int64_t>(one), keepdim, dtype, out);
     }
 };
 
@@ -993,6 +1020,102 @@ struct reduction_all_unbiased_out {
         ttnn::Tensor a_tile = tileify(in);
         ttnn::Tensor result = Op(a_tile, std::nullopt, /*keepdim*/ false, std::nullopt, std::nullopt, 1.0f, unbiased);
         return write_from_ttnn(out, in, result);
+    }
+};
+
+// Max/Min with indices along a single dim (int or Dimname)
+template <auto ReduceOp, auto ArgOp>
+struct reduction_dim_pair {
+    [[nodiscard]] static std::tuple<at::Tensor, at::Tensor> invoke(
+        const at::Tensor& a,
+        int64_t dim,
+        bool keepdim) {
+        ttnn::Tensor a_tile = tileify(a);
+        // values
+        auto dim_variant = std::optional<std::variant<int, ttnn::SmallVector<int>>>(static_cast<int>(dim));
+        ttnn::Tensor v_tt = ReduceOp(a_tile, dim_variant, keepdim);
+        // indices
+        ttnn::Tensor i_tt = ArgOp(a_tile, static_cast<int64_t>(dim), /*all=*/false);
+
+        at::Tensor v_out = make_empty_like_tt(a);
+        at::Tensor i_out = make_empty_like_tt(a, at::kInt);
+        write_from_ttnn(v_out, a, v_tt);
+        write_from_ttnn(i_out, a, i_tt);
+        return {v_out, i_out};
+    }
+
+    [[nodiscard]] static std::tuple<at::Tensor, at::Tensor> invoke_dimnames(
+        const at::Tensor& a,
+        at::DimnameList dimnames,
+        bool keepdim) {
+        // Map names to a single positional dim
+        auto names = a.names();
+        TORCH_CHECK(dimnames.size() == 1, "names_dim expects a single dimension name");
+        int64_t pos = -1;
+        for (int64_t i = 0; i < static_cast<int64_t>(names.size()); ++i) {
+            if (names[i] == dimnames[0]) { pos = i; break; }
+        }
+        TORCH_CHECK(pos >= 0, "Dimname not found in tensor");
+        return invoke(a, pos, keepdim);
+    }
+
+    [[nodiscard]] static std::tuple<at::Tensor, at::Tensor> invoke_dimname(
+        const at::Tensor& a,
+        at::Dimname dimname,
+        bool keepdim) {
+        auto names = a.names();
+        int64_t pos = -1;
+        for (int64_t i = 0; i < static_cast<int64_t>(names.size()); ++i) {
+            if (names[i] == dimname) { pos = i; break; }
+        }
+        TORCH_CHECK(pos >= 0, "Dimname not found in tensor");
+        return invoke(a, pos, keepdim);
+    }
+
+    [[nodiscard]] static std::tuple<at::Tensor&, at::Tensor&> invoke_into(
+        const at::Tensor& a,
+        int64_t dim,
+        bool keepdim,
+        at::Tensor& values_out,
+        at::Tensor& indices_out) {
+        ttnn::Tensor a_tile = tileify(a);
+        auto dim_variant = std::optional<std::variant<int, ttnn::SmallVector<int>>>(static_cast<int>(dim));
+        ttnn::Tensor v_tt = ReduceOp(a_tile, dim_variant, keepdim);
+        ttnn::Tensor i_tt = ArgOp(a_tile, static_cast<int64_t>(dim), /*all=*/false);
+        write_from_ttnn(values_out, a, v_tt);
+        write_from_ttnn(indices_out, a, i_tt);
+        return {values_out, indices_out};
+    }
+
+    [[nodiscard]] static std::tuple<at::Tensor&, at::Tensor&> invoke_dimnames_into(
+        const at::Tensor& a,
+        at::DimnameList dimnames,
+        bool keepdim,
+        at::Tensor& values_out,
+        at::Tensor& indices_out) {
+        auto names = a.names();
+        TORCH_CHECK(dimnames.size() == 1, "names_dim_max expects a single dimension name");
+        int64_t pos = -1;
+        for (int64_t i = 0; i < static_cast<int64_t>(names.size()); ++i) {
+            if (names[i] == dimnames[0]) { pos = i; break; }
+        }
+        TORCH_CHECK(pos >= 0, "Dimname not found in tensor");
+        return invoke_into(a, pos, keepdim, values_out, indices_out);
+    }
+
+    [[nodiscard]] static std::tuple<at::Tensor&, at::Tensor&> invoke_dimname_into(
+        const at::Tensor& a,
+        at::Dimname dimname,
+        bool keepdim,
+        at::Tensor& values_out,
+        at::Tensor& indices_out) {
+        auto names = a.names();
+        int64_t pos = -1;
+        for (int64_t i = 0; i < static_cast<int64_t>(names.size()); ++i) {
+            if (names[i] == dimname) { pos = i; break; }
+        }
+        TORCH_CHECK(pos >= 0, "Dimname not found in tensor");
+        return invoke_into(a, pos, keepdim, values_out, indices_out);
     }
 };
 
