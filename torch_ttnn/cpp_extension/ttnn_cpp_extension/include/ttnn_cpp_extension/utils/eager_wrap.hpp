@@ -990,6 +990,34 @@ struct reduction_dimlist_unbiased {
         ttnn::Tensor result = Op(a_tile, dim_variant, keepdim, std::nullopt, std::nullopt, 1.0f, unbiased);
         return write_from_ttnn(out, in, result);
     }
+
+    [[nodiscard]] static at::Tensor invoke_dimnames(
+        const at::Tensor& a,
+        at::DimnameList dimnames,
+        bool unbiased,
+        bool keepdim) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_dimnames_into(a, dimnames, unbiased, keepdim, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_dimnames_into(
+        const at::Tensor& in,
+        at::DimnameList dimnames,
+        bool unbiased,
+        bool keepdim,
+        at::Tensor& out) {
+        auto names = in.names();
+        std::vector<int64_t> positions;
+        positions.reserve(dimnames.size());
+        for (const auto& dn : dimnames) {
+            bool found = false;
+            for (int64_t i = 0; i < static_cast<int64_t>(names.size()); ++i) {
+                if (names[i] == dn) { positions.push_back(i); found = true; break; }
+            }
+            TORCH_CHECK(found, "Dimname not found in tensor");
+        }
+        return invoke_into(in, c10::OptionalArrayRef<int64_t>(positions), unbiased, keepdim, out);
+    }
 };
 
 // Std/Var with correction flag and out (+dims optional)
@@ -1008,6 +1036,69 @@ struct reduction_dimlist_unbiased_out {
         }
         ttnn::Tensor result = Op(a_tile, dim_variant, keepdim, std::nullopt, std::nullopt, 1.0f, unbiased);
         return write_from_ttnn(out, in, result);
+    }
+};
+
+// Std/Var with integer correction parameter (0/1) and Optional dims
+template <auto Op>
+struct reduction_dimlist_correction {
+    static inline bool to_unbiased(const c10::optional<c10::Scalar>& correction_opt) {
+        if (!correction_opt.has_value()) return true;
+        // Treat non-zero as unbiased=true, zero as false
+        return correction_opt.value().toLong() != 0;
+    }
+
+    [[nodiscard]] static at::Tensor invoke(
+        const at::Tensor& a,
+        c10::OptionalArrayRef<int64_t> dim,
+        const c10::optional<c10::Scalar>& correction,
+        bool keepdim) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_into(a, dim, correction, keepdim, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& in,
+        c10::OptionalArrayRef<int64_t> dim,
+        const c10::optional<c10::Scalar>& correction,
+        bool keepdim,
+        at::Tensor& out) {
+        const bool unbiased = to_unbiased(correction);
+        ttnn::Tensor a_tile = tileify(in);
+        std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_variant = std::nullopt;
+        if (dim.has_value()) {
+            dim_variant = to_ttnn_dim_variant(*dim);
+        }
+        ttnn::Tensor result = Op(a_tile, dim_variant, keepdim, std::nullopt, std::nullopt, 1.0f, unbiased);
+        return write_from_ttnn(out, in, result);
+    }
+
+    [[nodiscard]] static at::Tensor invoke_dimnames(
+        const at::Tensor& a,
+        at::DimnameList dimnames,
+        const c10::optional<c10::Scalar>& correction,
+        bool keepdim) {
+        at::Tensor out = make_empty_like_tt(a);
+        return invoke_dimnames_into(a, dimnames, correction, keepdim, out);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_dimnames_into(
+        const at::Tensor& in,
+        at::DimnameList dimnames,
+        const c10::optional<c10::Scalar>& correction,
+        bool keepdim,
+        at::Tensor& out) {
+        auto names = in.names();
+        std::vector<int64_t> positions;
+        positions.reserve(dimnames.size());
+        for (const auto& dn : dimnames) {
+            bool found = false;
+            for (int64_t i = 0; i < static_cast<int64_t>(names.size()); ++i) {
+                if (names[i] == dn) { positions.push_back(i); found = true; break; }
+            }
+            TORCH_CHECK(found, "Dimname not found in tensor");
+        }
+        return invoke_into(in, c10::OptionalArrayRef<int64_t>(positions), correction, keepdim, out);
     }
 };
 
