@@ -239,8 +239,8 @@ static inline void register_binary_ops(torch::Library& m) {
     // rsub: reverse subtract
     // rsub.Tensor: rsub(self, other, alpha) = other - alpha*self
     // rsub.Scalar: rsub(self, other, alpha) = other - alpha*self
-    m.impl("rsub.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor_alpha_swapped<ttnn::subalpha>::invoke));
-    m.impl("rsub.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float_with_alpha_adapter<ttnn::rsub>::invoke));
+    m.impl("rsub.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor_alpha_swapped<ttnn::subalpha>::invoke)); // TODO: to check
+    m.impl("rsub.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float_with_alpha_adapter<ttnn::rsub>::invoke)); // TODO: to check
 
     // Arithmetic ops
     m.impl("mul.out", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::multiply>::invoke_into));
