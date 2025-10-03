@@ -446,3 +446,12 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
     m.def("as_torch_device", &as_torch_device, "get torch device from existing ttnn device");
     m.def("get_ttnn_tensor", &get_ttnn_tensor, "open ttnn device and get torch device");
 }
+
+// Fallbacks
+TORCH_LIBRARY_IMPL(_, PrivateUse1, m) {
+    m.fallback(torch::CppFunction::makeFallthrough());
+}
+
+TORCH_LIBRARY_IMPL(_, AutogradPrivateUse1, m) {
+    m.fallback(torch::CppFunction::makeFallthrough());
+}
