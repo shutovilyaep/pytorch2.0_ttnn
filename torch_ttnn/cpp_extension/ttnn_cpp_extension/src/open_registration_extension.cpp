@@ -392,7 +392,6 @@ static inline void register_reductions(torch::Library& m) {
     m.impl("std.dim", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased<ttnn::std>::invoke));
     m.impl("var.dim", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased<ttnn::var>::invoke));
 
-    // std.out
     m.impl("std.out", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased_out<ttnn::std>::invoke_into));
     // std.names_dim
     // std.names_out
@@ -400,7 +399,6 @@ static inline void register_reductions(torch::Library& m) {
     // std.correction_out
     // std.correction_names
     // std.correction_names_out
-    // var.out
     m.impl("var.out", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased_out<ttnn::var>::invoke_into));
     // var.names_dim
     // var.names_out
