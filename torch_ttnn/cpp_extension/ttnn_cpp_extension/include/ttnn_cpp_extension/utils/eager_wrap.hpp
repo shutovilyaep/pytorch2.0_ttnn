@@ -44,10 +44,10 @@
 #include <limits>
 #include <cmath>
 #include <type_traits>
+#include <vector>
 
 #include "ttnn_cpp_extension/core/TtnnTensorImpl.hpp"
 #include "ttnn_cpp_extension/ops/creation.hpp"
-// #include <fmt/format.h>
 #include <ttnn/operations/core/core.hpp>
 #include <ttnn/operations/eltwise/binary/binary.hpp>
 #include <ttnn/operations/eltwise/unary/unary.hpp>
@@ -157,6 +157,8 @@ inline std::optional<std::variant<int, ttnn::SmallVector<int>>> to_ttnn_dim_vari
     }
     return dv;
 }
+
+// No direct builder for TTNN SmallVector from names; we map to positions and reuse IntList path
 
 inline ttnn::DataType to_ttnn_dtype(const at::ScalarType st) {
     switch (st) {
@@ -868,6 +870,15 @@ struct reduction_dimlist {
         return invoke_into(a, dim, keepdim, dtype, out);
     }
 
+    [[nodiscard]] static at::Tensor invoke_dimnames(
+        const at::Tensor& a,
+        at::DimnameList dimnames,
+        bool keepdim,
+        c10::optional<at::ScalarType> dtype = c10::nullopt) {
+        at::Tensor out = make_empty_like_tt(a, dtype);
+        return invoke_dimnames_into(a, dimnames, keepdim, dtype, out);
+    }
+
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& in,
         c10::OptionalArrayRef<int64_t> dim,
@@ -884,6 +895,26 @@ struct reduction_dimlist {
             result = ttnn::typecast(result, to_ttnn_dtype(*dtype));
         }
         return write_from_ttnn(out, in, result);
+    }
+
+    [[nodiscard]] static at::Tensor& invoke_dimnames_into(
+        const at::Tensor& in,
+        at::DimnameList dimnames,
+        bool keepdim,
+        c10::optional<at::ScalarType> dtype,
+        at::Tensor& out) {
+        // Map names to positional dims by scanning tensor names
+        auto names = in.names();
+        std::vector<int64_t> positions;
+        positions.reserve(dimnames.size());
+        for (const auto& dn : dimnames) {
+            bool found = false;
+            for (int64_t i = 0; i < static_cast<int64_t>(names.size()); ++i) {
+                if (names[i] == dn) { positions.push_back(i); found = true; break; }
+            }
+            TORCH_CHECK(found, "Dimname not found in tensor");
+        }
+        return invoke_into(in, c10::OptionalArrayRef<int64_t>(positions), keepdim, dtype, out);
     }
 };
 
