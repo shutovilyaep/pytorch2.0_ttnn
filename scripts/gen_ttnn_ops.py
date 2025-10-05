@@ -321,6 +321,26 @@ def main():
         ops: set[str] = set()
         signatures: dict[str, str] = {}
         text = path.read_text(encoding="utf-8", errors="ignore")
+        # Detect deprecated functions by nearby comment markers
+        deprecated_names: set[str] = set()
+        for m in re.finditer(r"^\s*-\s*func:\s*([^\(\s]+)\(", text, re.MULTILINE):
+            name = m.group(1)
+            name = name.split("::")[-1] if "::" in name else name
+            # Look back up to 3 non-empty lines for a DEPRECATED comment
+            start = m.start()
+            prefix = text[:start].splitlines()
+            back = 0
+            seen = 0
+            while back < 50 and len(prefix) - 1 - back >= 0 and seen < 3:
+                line = prefix[len(prefix) - 1 - back].rstrip()
+                back += 1
+                if not line:
+                    continue
+                seen += 1
+                if "DEPRECATED" in line.upper():
+                    deprecated_names.add(name)
+                    break
+
         data = yaml.safe_load(text)
         if not isinstance(data, list):
             raise ValueError("native_functions.yaml: unexpected top-level structure (expected list)")
@@ -330,8 +350,21 @@ def main():
                 name = schema.split("(", 1)[0]
                 if "::" in name:
                     name = name.split("::")[-1]
+                # Skip deprecated and known legacy casts
+                if name in deprecated_names or name.startswith("_cast_"):
+                    continue
                 ops.add(name)
                 signatures.setdefault(name, schema)
+        # Supplement with regex in case YAML loader skipped edge cases
+        for m in re.finditer(r"^\s*-\s*func:\s*([^\(\s]+)\(([^)]*)\)\s*(?:->\s*[^\n]+)?", text, re.MULTILINE):
+            name = m.group(1)
+            args = m.group(2).strip()
+            if "::" in name:
+                name = name.split("::")[-1]
+            if name in deprecated_names or name.startswith("_cast_"):
+                continue
+            ops.add(name)
+            signatures.setdefault(name, f"{name}({args})")
         return ops, signatures
 
     def collect_ops_from_named_registrations(path: Path) -> set[str]:
