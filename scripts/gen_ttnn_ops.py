@@ -2,6 +2,7 @@
 import os
 import re
 from pathlib import Path
+import yaml
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -141,21 +142,21 @@ def main():
         return bases
 
     implemented_ttnn_ops = set()
-    registered_aten_bases = set()
+    registered_aten_names = set()
     try:
         cpp_text = OPEN_REGISTRATION_CPP.read_text(encoding="utf-8", errors="ignore")
         implemented_ttnn_ops = extract_ttnn_bases_from_text(cpp_text)
         # Also record registered aten base names for separate PyTorch ops report
         for m in re.finditer(r'm\.impl\(\s*"([^"]+)"', cpp_text):
             name = m.group(1)
-            if "::" in name:
-                continue
-            base = name.split(".", 1)[0]
-            if base:
-                registered_aten_bases.add(base)
+            # Strip known namespace prefixes for comparison with YAML (which omits namespace)
+            if name.startswith("aten::"):
+                name = name.split("::", 1)[1]
+            if name:
+                registered_aten_names.add(name)
     except Exception:
         implemented_ttnn_ops = set()
-        registered_aten_bases = set()
+        registered_aten_names = set()
 
     # Group TTNN ops similar to groups in open_registration_extension.cpp
     def group_for(rel_path: str, op_name: str) -> str:
@@ -316,19 +317,22 @@ def main():
             pass
         return ops
 
-    def collect_ops_from_native_functions(path: Path) -> set[str]:
+    def collect_ops_from_native_functions(path: Path):
         ops: set[str] = set()
-        try:
-            text = path.read_text(encoding="utf-8", errors="ignore")
-            for m in re.finditer(r"^\s*-\s*func:\s*([^\(\s]+)\(", text, re.MULTILINE):
-                name = m.group(1)
+        signatures: dict[str, str] = {}
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        data = yaml.safe_load(text)
+        if not isinstance(data, list):
+            raise ValueError("native_functions.yaml: unexpected top-level structure (expected list)")
+        for item in data:
+            if isinstance(item, dict) and "func" in item:
+                schema = str(item["func"]).strip()
+                name = schema.split("(", 1)[0]
                 if "::" in name:
                     name = name.split("::")[-1]
-                base = name.split(".", 1)[0]
-                ops.add(base)
-        except Exception:
-            pass
-        return ops
+                ops.add(name)
+                signatures.setdefault(name, schema)
+        return ops, signatures
 
     def collect_ops_from_named_registrations(path: Path) -> set[str]:
         ops: set[str] = set()
@@ -350,10 +354,14 @@ def main():
     named_regs_paths = find_first_file(roots, "NamedRegistrations.cpp")
 
     pytorch_ops: dict[str, set[str]] = {"allowlist": set(), "native": set(), "named_regs": set()}
+    pytorch_schemas: dict[str, str] = {}
     for p in allowlist_paths:
         pytorch_ops["allowlist"].update(collect_ops_from_allowlist(p))
     for p in native_yaml_paths:
-        pytorch_ops["native"].update(collect_ops_from_native_functions(p))
+        ops_set, sigs = collect_ops_from_native_functions(p)
+        pytorch_ops["native"].update(ops_set)
+        for k, v in sigs.items():
+            pytorch_schemas.setdefault(k, v)
     for p in named_regs_paths:
         pytorch_ops["named_regs"].update(collect_ops_from_named_registrations(p))
 
@@ -374,7 +382,11 @@ def main():
                     continue
                 f.write(f"### {source} ({len(sops)})\n")
                 for op in sorted(sops):
-                    f.write(f"{op}\n")
+                    schema = pytorch_schemas.get(op)
+                    if schema and source == "native":
+                        f.write(f"{op}    // {schema}\n")
+                    else:
+                        f.write(f"{op}\n")
                 f.write("\n")
         print(f"Wrote {OUT_PYTORCH_OPS_FILE}")
     except Exception:
@@ -382,7 +394,7 @@ def main():
 
     # Report PyTorch ops missing in our open_registration (by base name)
     try:
-        missing = sorted(op for op in union_ops if op not in registered_aten_bases)
+        missing = sorted(op for op in union_ops if op not in registered_aten_names)
         with OUT_PYTORCH_MISSING_FILE.open("w", encoding="utf-8") as f:
             f.write("PyTorch ops NOT registered in open_registration_extension.cpp (base-name comparison)\n")
             f.write(f"Total missing: {len(missing)}\n\n")
@@ -391,6 +403,32 @@ def main():
         print(f"Wrote {OUT_PYTORCH_MISSING_FILE}")
     except Exception:
         pass
+
+    # =========================
+    # Annotate open_registration_extension.cpp with function signatures from native_functions.yaml
+    # =========================
+    try:
+        if native_yaml_paths:
+            cpp_lines = OPEN_REGISTRATION_CPP.read_text(encoding="utf-8", errors="ignore").splitlines()
+            new_lines = []
+            for line in cpp_lines:
+                m = re.search(r'm\.impl\(\s*"([^"]+)"', line)
+                if m:
+                    op = m.group(1)
+                    op_short = op.split("::", 1)[1] if op.startswith("aten::") else op
+                    schema = pytorch_schemas.get(op_short)
+                    if schema:
+                        indent = re.match(r"\s*", line).group(0)
+                        comment = f"{indent}// schema: {schema}"
+                        # Avoid duplicate insertion if already present
+                        if not (new_lines and new_lines[-1].strip().startswith("// schema:")):
+                            new_lines.append(comment)
+                new_lines.append(line)
+            if new_lines and new_lines != cpp_lines:
+                OPEN_REGISTRATION_CPP.write_text("\n".join(new_lines) + ("\n" if not new_lines[-1].endswith("\n") else ""), encoding="utf-8")
+                print("Annotated open_registration_extension.cpp with native function schemas")
+    except Exception as e:
+        print(f"Annotation skipped: {e}")
 
 
 if __name__ == "__main__":
