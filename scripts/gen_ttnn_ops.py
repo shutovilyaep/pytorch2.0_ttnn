@@ -324,7 +324,8 @@ def main():
                 name = m.group(1)
                 if "::" in name:
                     name = name.split("::")[-1]
-                ops.add(name)
+                base = name.split(".", 1)[0]
+                ops.add(base)
         except Exception:
             pass
         return ops
