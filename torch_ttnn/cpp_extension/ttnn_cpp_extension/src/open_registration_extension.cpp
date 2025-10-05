@@ -24,12 +24,47 @@
 #include <ttnn/operations/uniform/uniform.hpp>
 #include <ttnn/operations/moreh/moreh_dot/moreh_dot.hpp>
 #include <ttnn/operations/matmul/matmul.hpp>
+#include <string>
+#include <initializer_list>
 
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
 
 
 namespace {
+
+// Helper templates to reduce registration boilerplate for unary ops
+template <template<auto> class Wrapper, auto Op>
+static inline void register_unary_triplet(torch::Library& m, std::initializer_list<const char*> names) {
+    for (const char* n : names) {
+        const std::string base(n);
+        const std::string out = base + ".out";
+        const std::string inplace = base + "_";
+        m.impl(base.c_str(), TORCH_FN(Wrapper<Op>::invoke));
+        m.impl(out.c_str(), TORCH_FN(Wrapper<Op>::invoke_into));
+        m.impl(inplace.c_str(), TORCH_FN(Wrapper<Op>::invoke_inplace));
+    }
+}
+
+template <template<auto> class Wrapper, auto Op>
+static inline void register_unary_base_out(torch::Library& m, std::initializer_list<const char*> names) {
+    for (const char* n : names) {
+        const std::string base(n);
+        const std::string out = base + ".out";
+        m.impl(base.c_str(), TORCH_FN(Wrapper<Op>::invoke));
+        m.impl(out.c_str(), TORCH_FN(Wrapper<Op>::invoke_into));
+    }
+}
+
+template <template<auto> class Wrapper, auto Op>
+static inline void register_unary_base_inplace(torch::Library& m, std::initializer_list<const char*> names) {
+    for (const char* n : names) {
+        const std::string base(n);
+        const std::string inplace = base + "_";
+        m.impl(base.c_str(), TORCH_FN(Wrapper<Op>::invoke));
+        m.impl(inplace.c_str(), TORCH_FN(Wrapper<Op>::invoke_inplace));
+    }
+}
 
 static inline void register_core_creation_and_copy(torch::Library& m) {
     // =========================
@@ -52,310 +87,57 @@ static inline void register_unary_ops(torch::Library& m) {
     // =========================
     // Unary ops
     // =========================
-    // schema: abs(Tensor self) -> Tensor
-    m.impl("abs", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::abs>::invoke));
-    // schema: abs.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("abs.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::abs>::invoke_into));
-    // schema: abs_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("abs_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::abs>::invoke_inplace));
-    // alias: absolute -> abs
-    // schema: absolute(Tensor self) -> Tensor
-    m.impl("absolute", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::abs>::invoke));
-    // schema: absolute.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("absolute.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::abs>::invoke_into));
-    // schema: absolute_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("absolute_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::abs>::invoke_inplace));
-    // schema: neg(Tensor self) -> Tensor
-    m.impl("neg", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::neg>::invoke));
-    // schema: neg.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("neg.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::neg>::invoke_into));
-    // schema: neg_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("neg_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::neg>::invoke_inplace));
-    // schema: reciprocal(Tensor self) -> Tensor
-    m.impl("reciprocal", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::reciprocal>::invoke));
-    // schema: reciprocal.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("reciprocal.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::reciprocal>::invoke_into));
-    // schema: reciprocal_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("reciprocal_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::reciprocal>::invoke_inplace));
-    // schema: sqrt(Tensor self) -> Tensor
-    m.impl("sqrt", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sqrt>::invoke));
-    // schema: sqrt.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("sqrt.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sqrt>::invoke_into));
-    // schema: sqrt_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("sqrt_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sqrt>::invoke_inplace));
-    // schema: rsqrt(Tensor self) -> Tensor
-    m.impl("rsqrt", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::rsqrt>::invoke));
-    // schema: rsqrt.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("rsqrt.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::rsqrt>::invoke_into));
-    // schema: rsqrt_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("rsqrt_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::rsqrt>::invoke_inplace));
-    // schema: square(Tensor self) -> Tensor
-    m.impl("square", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::square>::invoke));
-    // schema: square.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("square.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::square>::invoke_into));
-    // schema: square_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("square_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::square>::invoke_inplace));
-    // schema: sin(Tensor self) -> Tensor
-    m.impl("sin", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sin>::invoke));
-    // schema: sin.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("sin.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sin>::invoke_into));
-    // schema: sin_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("sin_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sin>::invoke_inplace));
-    // schema: cos(Tensor self) -> Tensor
-    m.impl("cos", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::cos>::invoke));
-    // schema: cos.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("cos.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::cos>::invoke_into));
-    // schema: cos_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("cos_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::cos>::invoke_inplace));
-    // schema: tan(Tensor self) -> Tensor
-    m.impl("tan", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::tan>::invoke));
-    // schema: tan.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("tan.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::tan>::invoke_into));
-    // schema: tan_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("tan_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::tan>::invoke_inplace));
-    // schema: sinh(Tensor self) -> Tensor
-    m.impl("sinh", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sinh>::invoke));
-    // schema: sinh.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("sinh.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sinh>::invoke_into));
-    // schema: sinh_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("sinh_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sinh>::invoke_inplace));
-    // schema: cosh(Tensor self) -> Tensor
-    m.impl("cosh", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::cosh>::invoke));
-    // schema: cosh.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("cosh.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::cosh>::invoke_into));
-    // schema: cosh_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("cosh_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::cosh>::invoke_inplace));
-    // schema: tanh(Tensor self) -> Tensor
-    m.impl("tanh", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::tanh>::invoke));
-    // schema: tanh.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("tanh.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::tanh>::invoke_into));
-    // schema: tanh_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("tanh_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::tanh>::invoke_inplace));
-    // schema: floor(Tensor self) -> Tensor
-    m.impl("floor", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::floor>::invoke));
-    // schema: floor.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("floor.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::floor>::invoke_into));
-    // schema: floor_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("floor_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::floor>::invoke_inplace));
-    // schema: ceil(Tensor self) -> Tensor
-    m.impl("ceil", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::ceil>::invoke));
-    // schema: ceil.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("ceil.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::ceil>::invoke_into));
-    // schema: ceil_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("ceil_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::ceil>::invoke_inplace));
-    // schema: trunc(Tensor self) -> Tensor
-    m.impl("trunc", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::trunc>::invoke));
-    // schema: trunc.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("trunc.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::trunc>::invoke_into));
-    // schema: trunc_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("trunc_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::trunc>::invoke_inplace));
-    // schema: frac(Tensor self) -> Tensor
-    m.impl("frac", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::frac>::invoke));
-    // schema: frac.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("frac.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::frac>::invoke_into));
-    // schema: frac_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("frac_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::frac>::invoke_inplace));
-    // schema: bitwise_not(Tensor self) -> Tensor
-    m.impl("bitwise_not", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::bitwise_not>::invoke));
-    // schema: bitwise_not.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("bitwise_not.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::bitwise_not>::invoke_into));
-    // schema: bitwise_not_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("bitwise_not_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::bitwise_not>::invoke_inplace));
-    // schema: logical_not(Tensor self) -> Tensor
-    m.impl("logical_not", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::logical_not>::invoke));
-    // schema: logical_not.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("logical_not.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::logical_not>::invoke_into));
-    // schema: logical_not_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("logical_not_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::logical_not>::invoke_inplace));
-    // schema: sign(Tensor self) -> Tensor
-    m.impl("sign", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sign>::invoke));
-    // schema: sign.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("sign.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sign>::invoke_into));
-    // schema: sign_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("sign_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sign>::invoke_inplace));
-    // schema: signbit(Tensor self) -> Tensor
-    m.impl("signbit", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::signbit>::invoke));
-    // schema: signbit.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("signbit.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::signbit>::invoke_into));
-    // schema: i0(Tensor self) -> Tensor
-    m.impl("i0", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::i0>::invoke));
-    // schema: i0.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("i0.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::i0>::invoke_into));
-    // schema: i0_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("i0_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::i0>::invoke_inplace));
-    // schema: erf(Tensor self) -> Tensor
-    m.impl("erf", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::erf>::invoke));
-    // schema: erf.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("erf.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::erf>::invoke_into));
-    // schema: erf_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("erf_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::erf>::invoke_inplace));
-    // schema: erfc(Tensor self) -> Tensor
-    m.impl("erfc", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::erfc>::invoke));
-    // schema: erfc.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("erfc.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::erfc>::invoke_into));
-    // schema: erfc_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("erfc_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::erfc>::invoke_inplace));
-    // schema: erfinv(Tensor self) -> Tensor
-    m.impl("erfinv", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::erfinv>::invoke));
-    // schema: erfinv.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("erfinv.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::erfinv>::invoke_into));
-    // schema: erfinv_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("erfinv_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::erfinv>::invoke_inplace));
-    // schema: exp(Tensor self) -> Tensor
-    m.impl("exp", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::exp>::invoke));
-    // schema: exp.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("exp.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::exp>::invoke_into));
-    // schema: exp_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("exp_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::exp>::invoke_inplace));
-    // schema: log(Tensor self) -> Tensor
-    m.impl("log", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log>::invoke));
-    // schema: log.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("log.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log>::invoke_into));
-    // schema: log_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("log_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log>::invoke_inplace));
-    // schema: log10(Tensor self) -> Tensor
-    m.impl("log10", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log10>::invoke));
-    // schema: log10.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("log10.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log10>::invoke_into));
-    // schema: log10_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("log10_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log10>::invoke_inplace));
-    // schema: log2(Tensor self) -> Tensor
-    m.impl("log2", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log2>::invoke));
-    // schema: log2.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("log2.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log2>::invoke_into));
-    // schema: log2_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("log2_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log2>::invoke_inplace));
-    // schema: log1p(Tensor self) -> Tensor
-    m.impl("log1p", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log1p>::invoke));
-    // schema: log1p.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("log1p.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log1p>::invoke_into));
-    // schema: log1p_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("log1p_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::log1p>::invoke_inplace));
-    // schema: acos(Tensor self) -> Tensor
-    m.impl("acos", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::acos>::invoke));
-    // schema: acos.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("acos.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::acos>::invoke_into));
-    // schema: acos_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("acos_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::acos>::invoke_inplace));
-    // schema: acosh(Tensor self) -> Tensor
-    m.impl("acosh", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::acosh>::invoke));
-    // schema: acosh.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("acosh.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::acosh>::invoke_into));
-    // schema: acosh_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("acosh_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::acosh>::invoke_inplace));
-    // schema: angle(Tensor self) -> Tensor
-    m.impl("angle", TORCH_FN(tt_eager::ext::complex_unary_from_real<ttnn::angle>::invoke)); // TODO: check
-    // schema: angle.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("angle.out", TORCH_FN(tt_eager::ext::complex_unary_from_real<ttnn::angle>::invoke_into)); // TODO: check
-    m.impl("angle_", TORCH_FN(tt_eager::ext::complex_unary_from_real<ttnn::angle>::invoke_inplace)); // TODO: check
-    // alias: arccosh -> acosh
-    // schema: arccosh(Tensor self) -> Tensor
-    m.impl("arccosh", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::acosh>::invoke));
-    // schema: arccosh.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("arccosh.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::acosh>::invoke_into));
-    // schema: arccosh_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("arccosh_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::acosh>::invoke_inplace));
-    // schema: asin(Tensor self) -> Tensor
-    m.impl("asin", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::asin>::invoke));
-    // schema: asin.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("asin.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::asin>::invoke_into));
-    // schema: asin_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("asin_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::asin>::invoke_inplace));
-    
-    // schema: asinh(Tensor self) -> Tensor
-    m.impl("asinh", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::asinh>::invoke));
-    // schema: asinh.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("asinh.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::asinh>::invoke_into));
-    // schema: asinh_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("asinh_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::asinh>::invoke_inplace));
-    // schema: atan(Tensor self) -> Tensor
-    m.impl("atan", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::atan>::invoke));
-    // schema: atan.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("atan.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::atan>::invoke_into));
-    // schema: atan_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("atan_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::atan>::invoke_inplace));
-    
-    // schema: atanh(Tensor self) -> Tensor
-    m.impl("atanh", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::atanh>::invoke));
-    // schema: atanh.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("atanh.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::atanh>::invoke_into));
-    // schema: atanh_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("atanh_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::atanh>::invoke_inplace));
-    // schema: conj(Tensor(a) self) -> Tensor(a)
-    m.impl("conj", TORCH_FN(tt_eager::ext::complex_unary_from_real<ttnn::conj>::invoke));
-    m.impl("conj.out", TORCH_FN(tt_eager::ext::complex_unary_from_real<ttnn::conj>::invoke_into));
-    m.impl("conj_", TORCH_FN(tt_eager::ext::complex_unary_from_real<ttnn::conj>::invoke_inplace));
-    // ttnn::conj_bw
-    // schema: deg2rad(Tensor self) -> Tensor
-    m.impl("deg2rad", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::deg2rad>::invoke));
-    // schema: deg2rad.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("deg2rad.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::deg2rad>::invoke_into));
-    // schema: deg2rad_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("deg2rad_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::deg2rad>::invoke_inplace));
-    
-    // schema: digamma(Tensor self) -> Tensor
-    m.impl("digamma", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::digamma>::invoke));
-    // schema: digamma.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("digamma.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::digamma>::invoke_into));
-    // schema: digamma_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("digamma_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::digamma>::invoke_inplace));
-    
-    // schema: expm1(Tensor self) -> Tensor
-    m.impl("expm1", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::expm1>::invoke));
-    // schema: expm1.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("expm1.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::expm1>::invoke_into));
-    // schema: expm1_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("expm1_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::expm1>::invoke_inplace));
-    
-    // imag
-    // schema: isfinite(Tensor self) -> Tensor
-    m.impl("isfinite", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::isfinite>::invoke));
-    m.impl("isfinite.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::isfinite>::invoke_into));
-    // schema: isinf(Tensor self) -> Tensor
-    m.impl("isinf", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::isinf>::invoke));
-    m.impl("isinf.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::isinf>::invoke_into));
-    // schema: isnan(Tensor self) -> Tensor
-    m.impl("isnan", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::isnan>::invoke));
-    m.impl("isnan.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::isnan>::invoke_into));
-    
-    // schema: lgamma(Tensor self) -> Tensor
-    m.impl("lgamma", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::lgamma>::invoke));
-    // schema: lgamma.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("lgamma.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::lgamma>::invoke_into));
-    // schema: lgamma_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("lgamma_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::lgamma>::invoke_inplace));
-    
-    // schema: rad2deg(Tensor self) -> Tensor
-    m.impl("rad2deg", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::rad2deg>::invoke));
-    // schema: rad2deg.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("rad2deg.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::rad2deg>::invoke_into));
-    // schema: rad2deg_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("rad2deg_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::rad2deg>::invoke_inplace));
-    
-    
-    // schema: relu(Tensor self) -> Tensor
-    m.impl("relu", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::relu>::invoke));
-    // schema: relu_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("relu_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::relu>::invoke_inplace));
-    // real
-
-    // schema: round(Tensor self) -> Tensor
-    m.impl("round", TORCH_FN(tt_eager::ext::unary_tensor_opt_int_none<ttnn::round>::invoke));
-    // schema: round.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("round.out", TORCH_FN(tt_eager::ext::unary_tensor_opt_int_none<ttnn::round>::invoke_into));
-    // schema: round.decimals(Tensor self, *, int decimals) -> Tensor
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::abs>(m, {"abs", "absolute"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::neg>(m, {"neg"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::reciprocal>(m, {"reciprocal"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::sqrt>(m, {"sqrt"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::rsqrt>(m, {"rsqrt"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::square>(m, {"square"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::sin>(m, {"sin"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::cos>(m, {"cos"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::tan>(m, {"tan"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::sinh>(m, {"sinh"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::cosh>(m, {"cosh"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::tanh>(m, {"tanh"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::floor>(m, {"floor"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::ceil>(m, {"ceil"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::trunc>(m, {"trunc"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::frac>(m, {"frac"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::bitwise_not>(m, {"bitwise_not"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::logical_not>(m, {"logical_not"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::sign>(m, {"sign"});
+    register_unary_base_out<tt_eager::ext::unary_tensor, ttnn::signbit>(m, {"signbit"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::i0>(m, {"i0"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::erf>(m, {"erf"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::erfc>(m, {"erfc"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::erfinv>(m, {"erfinv"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::exp>(m, {"exp"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::log>(m, {"log"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::log10>(m, {"log10"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::log2>(m, {"log2"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::log1p>(m, {"log1p"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::acos>(m, {"acos"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::acosh>(m, {"acosh", "arccosh"});
+    register_unary_triplet<tt_eager::ext::complex_unary_from_real, ttnn::angle>(m, {"angle"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::asin>(m, {"asin"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::asinh>(m, {"asinh"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::atan>(m, {"atan"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::atanh>(m, {"atanh"});
+    register_unary_triplet<tt_eager::ext::complex_unary_from_real, ttnn::conj>(m, {"conj"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::deg2rad>(m, {"deg2rad"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::digamma>(m, {"digamma"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::expm1>(m, {"expm1"});
+    register_unary_base_out<tt_eager::ext::unary_tensor, ttnn::isfinite>(m, {"isfinite"});
+    register_unary_base_out<tt_eager::ext::unary_tensor, ttnn::isinf>(m, {"isinf"});
+    register_unary_base_out<tt_eager::ext::unary_tensor, ttnn::isnan>(m, {"isnan"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::lgamma>(m, {"lgamma"});
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::rad2deg>(m, {"rad2deg"});
+    register_unary_base_inplace<tt_eager::ext::unary_tensor, ttnn::relu>(m, {"relu"});
+    // round family: special wrapper with optional int parameter
+    register_unary_triplet<tt_eager::ext::unary_tensor_opt_int_none, ttnn::round>(m, {"round"});
     m.impl("round.decimals", TORCH_FN(tt_eager::ext::unary_tensor_opt_int<ttnn::round>::invoke_decimals));
-    // schema: round.decimals_out(Tensor self, *, int decimals, Tensor(a!) out) -> Tensor(a!)
     m.impl("round.decimals_out", TORCH_FN(tt_eager::ext::unary_tensor_opt_int<ttnn::round>::invoke_decimals_into));
-    // schema: round_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("round_", TORCH_FN(tt_eager::ext::unary_tensor_opt_int_none<ttnn::round>::invoke_inplace));
-    // ttnn::round_bw
-    // schema: sigmoid(Tensor self) -> Tensor
-    m.impl("sigmoid", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sigmoid>::invoke));
-    // schema: sigmoid.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    m.impl("sigmoid.out", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sigmoid>::invoke_into));
-    // schema: sigmoid_(Tensor(a!) self) -> Tensor(a!)
-    m.impl("sigmoid_", TORCH_FN(tt_eager::ext::unary_tensor<ttnn::sigmoid>::invoke_inplace));
+    register_unary_triplet<tt_eager::ext::unary_tensor, ttnn::sigmoid>(m, {"sigmoid"});
     
 }
 
