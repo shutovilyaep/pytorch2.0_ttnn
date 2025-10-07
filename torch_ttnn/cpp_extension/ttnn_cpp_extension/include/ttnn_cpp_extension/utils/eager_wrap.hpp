@@ -1253,6 +1253,30 @@ static inline std::array<uint32_t, 3> to_tuple3(c10::OptionalArrayRef<int64_t> v
     return {static_cast<uint32_t>(x0), static_cast<uint32_t>(x1), static_cast<uint32_t>(x2)};
 }
 
+// IntArrayRef overloads (non-optional args per aten schema)
+static inline std::array<uint32_t, 1> to_tuple1(c10::IntArrayRef v, int64_t def = 1) {
+    int64_t x0 = def;
+    if (v.size() >= 1) x0 = v[0];
+    return {static_cast<uint32_t>(x0)};
+}
+
+static inline std::array<uint32_t, 2> to_tuple2(c10::IntArrayRef v, int64_t def = 1) {
+    int64_t x0 = def, x1 = def;
+    if (v.size() >= 1) x0 = v[0];
+    if (v.size() >= 2) x1 = v[1];
+    if (v.size() == 1) x1 = x0;
+    return {static_cast<uint32_t>(x0), static_cast<uint32_t>(x1)};
+}
+
+static inline std::array<uint32_t, 3> to_tuple3(c10::IntArrayRef v, int64_t def = 1) {
+    int64_t x0 = def, x1 = def, x2 = def;
+    if (v.size() >= 1) x0 = v[0];
+    if (v.size() >= 2) x1 = v[1];
+    if (v.size() >= 3) x2 = v[2];
+    if (v.size() == 1) { x1 = x0; x2 = x0; }
+    return {static_cast<uint32_t>(x0), static_cast<uint32_t>(x1), static_cast<uint32_t>(x2)};
+}
+
 // Output size calculators (PyTorch-compatible)
 static inline uint32_t conv_out_dim(uint32_t in, uint32_t pad, uint32_t dilation, uint32_t kernel, uint32_t stride) {
     // floor((in + 2*pad - dilation*(kernel-1) - 1)/stride + 1)
@@ -1282,9 +1306,9 @@ struct conv2d_aten {
         const at::Tensor& input,
         const at::Tensor& weight,
         const c10::optional<at::Tensor>& bias,
-        c10::OptionalArrayRef<int64_t> stride,
-        c10::OptionalArrayRef<int64_t> padding,
-        c10::OptionalArrayRef<int64_t> dilation,
+        c10::IntArrayRef stride,
+        c10::IntArrayRef padding,
+        c10::IntArrayRef dilation,
         int64_t groups) {
         TORCH_CHECK(input.dim() == 4, "conv2d expects 4D input [N, C, H, W]");
         TORCH_CHECK(weight.dim() == 4, "conv2d expects 4D weight [Cout, Cin/groups, Kh, Kw]");
@@ -1381,9 +1405,9 @@ struct conv1d_aten {
         const at::Tensor& input,
         const at::Tensor& weight,
         const c10::optional<at::Tensor>& bias,
-        c10::OptionalArrayRef<int64_t> stride,
-        c10::OptionalArrayRef<int64_t> padding,
-        c10::OptionalArrayRef<int64_t> dilation,
+        c10::IntArrayRef stride,
+        c10::IntArrayRef padding,
+        c10::IntArrayRef dilation,
         int64_t groups) {
         TORCH_CHECK(input.dim() == 3, "conv1d expects 3D input [N, C, L]");
         TORCH_CHECK(weight.dim() == 3, "conv1d expects 3D weight [Cout, Cin/groups, K]");
@@ -1407,7 +1431,7 @@ struct conv1d_aten {
         auto dilation1 = to_tuple1(dilation, 1);
         // padding can be int or pair (left,right); we map single int symmetrical
         uint32_t pad_val = 0;
-        if (padding.has_value() && padding->size() >= 1) pad_val = static_cast<uint32_t>((*padding)[0]);
+        if (padding.size() >= 1) pad_val = static_cast<uint32_t>(padding[0]);
 
         const uint32_t Lout = conv_out_dim(static_cast<uint32_t>(L), pad_val, dilation1[0], static_cast<uint32_t>(K), stride1[0]);
 
@@ -1420,25 +1444,26 @@ struct conv1d_aten {
 
         auto* device = in_tt.device();
         auto res = ttnn::conv1d(
-            in_tt,
-            w_tt,
-            device,
-            static_cast<uint32_t>(Cin),
-            static_cast<uint32_t>(Cout),
-            static_cast<uint32_t>(N),
-            static_cast<uint32_t>(L),
-            static_cast<uint32_t>(K),
-            stride1[0],
-            std::variant<std::array<uint32_t,2>, uint32_t>{pad_val},
-            dilation1[0],
-            static_cast<uint32_t>(groups),
-            std::nullopt,
-            (bias_local.has_value() ? std::optional<const ttnn::Tensor>(bias_local.value()) : std::nullopt),
-            std::nullopt,
-            std::nullopt,
-            std::nullopt,
-            /*return_output_dim=*/true,
-            /*return_weights_and_bias=*/false);
+            /*input_tensor*/ in_tt,
+            /*weight_tensor*/ w_tt,
+            /*device*/ device,
+            /*in_channels*/ static_cast<uint32_t>(Cin),
+            /*out_channels*/ static_cast<uint32_t>(Cout),
+            /*batch_size*/ static_cast<uint32_t>(N),
+            /*input_length*/ static_cast<uint32_t>(L),
+            /*kernel_size*/ static_cast<uint32_t>(K),
+            /*stride*/ stride1[0],
+            /*padding*/ std::variant<std::array<uint32_t,2>, uint32_t>{pad_val},
+            /*dilation*/ dilation1[0],
+            /*groups*/ static_cast<uint32_t>(groups),
+            /*dtype*/ std::nullopt,
+            /*bias_tensor*/ (bias_local.has_value() ? std::optional<const ttnn::Tensor>(bias_local.value()) : std::nullopt),
+            /*conv_config*/ std::nullopt,
+            /*compute_config*/ std::nullopt,
+            /*memory_config*/ std::nullopt,
+            /*return_output_dim=*/ true,
+            /*return_weights_and_bias=*/ false);
+
 
         ttnn::Tensor out_tt;
         if (std::holds_alternative<ttnn::Tensor>(res)) {
@@ -1461,11 +1486,11 @@ struct conv_transpose2d_aten {
         const at::Tensor& input,
         const at::Tensor& weight,
         const c10::optional<at::Tensor>& bias,
-        c10::OptionalArrayRef<int64_t> stride,
-        c10::OptionalArrayRef<int64_t> padding,
-        c10::OptionalArrayRef<int64_t> output_padding,
+        c10::IntArrayRef stride,
+        c10::IntArrayRef padding,
+        c10::IntArrayRef output_padding,
         int64_t groups,
-        c10::OptionalArrayRef<int64_t> dilation) {
+        c10::IntArrayRef dilation) {
         TORCH_CHECK(input.dim() == 4, "conv_transpose2d expects 4D input [N, C, H, W]");
         TORCH_CHECK(weight.dim() == 4, "conv_transpose2d expects 4D weight [Cin, Cout/groups, Kh, Kw]");
         TORCH_CHECK(!bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1,
@@ -1548,9 +1573,9 @@ struct conv3d_aten {
         const at::Tensor& input,
         const at::Tensor& weight,
         const c10::optional<at::Tensor>& bias,
-        c10::OptionalArrayRef<int64_t> stride,
-        c10::OptionalArrayRef<int64_t> padding,
-        c10::OptionalArrayRef<int64_t> dilation,
+        c10::IntArrayRef stride,
+        c10::IntArrayRef padding,
+        c10::IntArrayRef dilation,
         int64_t groups) {
         TORCH_CHECK(input.dim() == 5, "conv3d expects 5D input [N, C, T, H, W]");
         TORCH_CHECK(weight.dim() == 5, "conv3d expects 5D weight [Cout, Cin/groups, Kt, Kh, Kw]");
@@ -1633,9 +1658,9 @@ struct max_pool2d_aten {
     [[nodiscard]] static at::Tensor invoke(
         const at::Tensor& input,
         c10::IntArrayRef kernel_size,
-        c10::OptionalArrayRef<int64_t> stride,
-        c10::OptionalArrayRef<int64_t> padding,
-        c10::OptionalArrayRef<int64_t> dilation,
+        c10::IntArrayRef stride,
+        c10::IntArrayRef padding,
+        c10::IntArrayRef dilation,
         bool ceil_mode) {
         TORCH_CHECK(input.dim() == 4, "max_pool2d expects 4D input [N, C, H, W]");
         TORCH_CHECK(kernel_size.size() == 2, "max_pool2d: kernel_size must have 2 elements");
@@ -1648,7 +1673,7 @@ struct max_pool2d_aten {
 
         std::array<uint32_t,2> k = {static_cast<uint32_t>(kernel_size[0]), static_cast<uint32_t>(kernel_size[1])};
         std::array<uint32_t,2> s;
-        if (stride.has_value() && stride->size() > 0) {
+        if (stride.size() > 0) {
             auto s2 = to_tuple2(stride, 1);
             s = {s2[0], s2[1]};
         } else {
@@ -1699,10 +1724,11 @@ struct avg_pool2d_aten {
     [[nodiscard]] static at::Tensor invoke(
         const at::Tensor& input,
         c10::IntArrayRef kernel_size,
-        c10::OptionalArrayRef<int64_t> stride,
-        c10::OptionalArrayRef<int64_t> padding,
+        c10::IntArrayRef stride,
+        c10::IntArrayRef padding,
         bool ceil_mode,
-        bool count_include_pad) {
+        bool count_include_pad,
+        c10::optional<int64_t> divisor_override) {
         TORCH_CHECK(input.dim() == 4, "avg_pool2d expects 4D input [N, C, H, W]");
         TORCH_CHECK(kernel_size.size() == 2, "avg_pool2d: kernel_size must have 2 elements");
 
@@ -1714,7 +1740,7 @@ struct avg_pool2d_aten {
 
         std::array<uint32_t,2> k = {static_cast<uint32_t>(kernel_size[0]), static_cast<uint32_t>(kernel_size[1])};
         std::array<uint32_t,2> s;
-        if (stride.has_value() && stride->size() > 0) {
+        if (stride.size() > 0) {
             auto s2 = to_tuple2(stride, 1);
             s = {s2[0], s2[1]};
         } else {
@@ -1732,6 +1758,11 @@ struct avg_pool2d_aten {
             c10::optional<at::Device>(input.device()),
             c10::nullopt);
 
+        std::optional<int32_t> div_opt = std::nullopt;
+        if (divisor_override.has_value()) {
+            div_opt = static_cast<int32_t>(divisor_override.value());
+        }
+
         ttnn::Tensor out_tt = ttnn::avg_pool2d(
             in_tt,
             static_cast<uint32_t>(N),
@@ -1743,7 +1774,7 @@ struct avg_pool2d_aten {
             std::variant<std::array<uint32_t,2>, std::array<uint32_t,4>>{std::array<uint32_t,2>{p[0], p[1]}},
             /*ceil_mode*/ceil_mode,
             /*count_include_pad*/count_include_pad,
-            /*divisor_override*/std::nullopt,
+            /*divisor_override*/div_opt,
             /*memory_config*/std::nullopt,
             /*applied_shard_scheme*/std::nullopt,
             /*in_place_halo*/false,
