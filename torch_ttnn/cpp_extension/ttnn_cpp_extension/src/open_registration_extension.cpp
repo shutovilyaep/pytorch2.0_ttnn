@@ -10,6 +10,7 @@
 #include "ttnn_cpp_extension/ops/creation.hpp"
 
 #include "ttnn_cpp_extension/utils/unary_eager_wrappers.hpp"
+#include "ttnn_cpp_extension/utils/unary_eager_register.hpp"
 #include "ttnn_cpp_extension/utils/binary_eager_wrappers.hpp"
 #include "ttnn_cpp_extension/utils/random_eager_wrappers.hpp"
 #include "ttnn_cpp_extension/utils/reduction_eager_wrappers.hpp"
@@ -108,87 +109,6 @@ static inline void register_core_creation_and_copy(torch::Library& m) {
     // ttnn::to_dtype
     // ttnn::to_layout
     // ttnn::to_memory_config
-}
-
-static inline void register_unary_ops(torch::Library& m) {
-    // =========================
-    // Unary ops
-    // =========================
-    // Standard unary (base/out/_). Example schema:
-    //   schema [::invoke        ]: op(Tensor self) -> Tensor
-    //   schema [::invoke_into   ]: op.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    //   schema [::invoke_inplace]: op_(Tensor(a!) self) -> Tensor(a!)
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::abs>(m, "abs");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::abs>(m, "absolute");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::neg>(m, "neg");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::reciprocal>(m, "reciprocal");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::sqrt>(m, "sqrt");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::rsqrt>(m, "rsqrt");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::square>(m, "square");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::sin>(m, "sin");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::cos>(m, "cos");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::tan>(m, "tan");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::sinh>(m, "sinh");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::cosh>(m, "cosh");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::tanh>(m, "tanh");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::floor>(m, "floor");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::ceil>(m, "ceil");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::trunc>(m, "trunc");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::frac>(m, "frac");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::bitwise_not>(m, "bitwise_not");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::logical_not>(m, "logical_not");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::sign>(m, "sign");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::i0>(m, "i0");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::erf>(m, "erf");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::erfc>(m, "erfc");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::erfinv>(m, "erfinv");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::exp>(m, "exp");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::log>(m, "log");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::log10>(m, "log10");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::log2>(m, "log2");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::log1p>(m, "log1p");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::acos>(m, "acos");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::acosh>(m, "acosh");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::acosh>(m, "arccosh");
-    // Complex unary (real->complex adapter). Example schema:
-    //   schema [::invoke        ]: angle(Tensor self) -> Tensor
-    //   schema [::invoke_into   ]: angle.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    //   schema [::invoke_inplace]: angle_(Tensor(a!) self) -> Tensor(a!)
-    register_unary_base_out_inplace<tt_eager::ext::complex_unary_from_real, ttnn::angle>(m, "angle");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::asin>(m, "asin");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::asinh>(m, "asinh");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::atan>(m, "atan");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::atanh>(m, "atanh");
-    register_unary_base_out_inplace<tt_eager::ext::complex_unary_from_real, ttnn::conj>(m, "conj");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::deg2rad>(m, "deg2rad");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::digamma>(m, "digamma");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::expm1>(m, "expm1");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::lgamma>(m, "lgamma");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::rad2deg>(m, "rad2deg");
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor, ttnn::sigmoid>(m, "sigmoid");
-
-    // Round family (optional decimals). Example schema:
-    //   schema [::invoke]: round(Tensor self) -> Tensor
-    //   schema [::invoke_into]: round.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    //   schema [::invoke_inplace]: round_(Tensor(a!) self) -> Tensor(a!)
-    //   schema [::invoke_decimals]: round.decimals(Tensor self, *, int decimals) -> Tensor
-    //   schema [::invoke_decimals_into]: round.decimals_out(Tensor self, *, int decimals, Tensor(a!) out) -> Tensor(a!)
-    register_unary_base_out_inplace<tt_eager::ext::unary_tensor_opt_int_none, ttnn::round>(m, "round");
-    m.impl("round.decimals", TORCH_FN(tt_eager::ext::unary_tensor_opt_int<ttnn::round>::invoke_decimals));
-    m.impl("round.decimals_out", TORCH_FN(tt_eager::ext::unary_tensor_opt_int<ttnn::round>::invoke_decimals_into));
-
-    // Base + inplace only. Example schema:
-    //   schema [::invoke        ]: op(Tensor self) -> Tensor
-    //   schema [::invoke_inplace]: op_(Tensor(a!) self) -> Tensor(a!)
-    register_unary_base_inplace<tt_eager::ext::unary_tensor, ttnn::relu>(m, "relu");
-
-    // Base + out only (no inplace). Example schema:
-    //   schema [::invoke      ]: op(Tensor self) -> Tensor
-    //   schema [::invoke_into ]: op.out(Tensor self, *, Tensor(a!) out) -> Tensor(a!)
-    register_unary_base_out<tt_eager::ext::unary_tensor, ttnn::signbit>(m, "signbit");
-    register_unary_base_out<tt_eager::ext::unary_tensor, ttnn::isfinite>(m, "isfinite");
-    register_unary_base_out<tt_eager::ext::unary_tensor, ttnn::isinf>(m, "isinf");
-    register_unary_base_out<tt_eager::ext::unary_tensor, ttnn::isnan>(m, "isnan");
 }
 
 static inline void register_binary_ops(torch::Library& m) {
@@ -588,6 +508,8 @@ static inline void register_conv_and_pool_ops(torch::Library& m) {
 // More details on the dispatcher can be found at
 // http://blog.ezyang.com/2020/09/lets-talk-about-the-pytorch-dispatcher/.
 TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
+    using namespace tt_eager::ext;
+
     register_core_creation_and_copy(m);
     register_unary_ops(m);
     register_binary_ops(m);
