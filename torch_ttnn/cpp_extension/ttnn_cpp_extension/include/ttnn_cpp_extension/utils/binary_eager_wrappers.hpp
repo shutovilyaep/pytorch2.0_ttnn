@@ -35,10 +35,12 @@ struct binary_tensor_tensor_alpha_then_unary {
         at::Tensor out = make_empty_like_tt(a);
         return invoke_into(a, b, alpha, out);
     }
-    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
+    [[nodiscard]] static at::Tensor& invoke_inplace(
+        at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
         return invoke_into(self, other, alpha, self);
     }
-    [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
         const float alpha_value = static_cast<float>(alpha.toDouble());
@@ -55,10 +57,12 @@ struct binary_tensor_tensor_alpha_swapped {
         at::Tensor out = make_empty_like_tt(a);
         return invoke_into(a, b, alpha, out);
     }
-    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
+    [[nodiscard]] static at::Tensor& invoke_inplace(
+        at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
         return invoke_into(self, other, alpha, self);
     }
-    [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
         const float alpha_value = static_cast<float>(alpha.toDouble());
@@ -114,10 +118,12 @@ struct binary_tensor_tensor_alpha {
         at::Tensor out = make_empty_like_tt(a);
         return invoke_into(a, b, alpha, out);
     }
-    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
+    [[nodiscard]] static at::Tensor& invoke_inplace(
+        at::Tensor& self, const at::Tensor& other, const c10::Scalar& alpha) {
         return invoke_into(self, other, alpha, self);
     }
-    [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a, const at::Tensor& b, const c10::Scalar& alpha, at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(a);
         ttnn::Tensor b_tile = tileify(b);
         const float alpha_value = static_cast<float>(alpha.toDouble());
@@ -186,10 +192,12 @@ struct binary_tensor_float_with_alpha_adapter {
         at::Tensor out = make_empty_like_tt(a);
         return invoke_into(a, other, alpha, out);
     }
-    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const c10::Scalar& other, const c10::Scalar& alpha) {
+    [[nodiscard]] static at::Tensor& invoke_inplace(
+        at::Tensor& self, const c10::Scalar& other, const c10::Scalar& alpha) {
         return invoke_into(self, other, alpha, self);
     }
-    [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& a, const c10::Scalar& other, const c10::Scalar& alpha, at::Tensor& out) {
+    [[nodiscard]] static at::Tensor& invoke_into(
+        const at::Tensor& a, const c10::Scalar& other, const c10::Scalar& alpha, at::Tensor& out) {
         ttnn::Tensor a_tile = tileify(a);
         const float rhs = static_cast<float>(other.toDouble()) * static_cast<float>(alpha.toDouble());
         ttnn::Tensor result = Op(a_tile, rhs);
@@ -197,7 +205,4 @@ struct binary_tensor_float_with_alpha_adapter {
     }
 };
 
-} // namespace tt_eager::ext
-
-
-
+}  // namespace tt_eager::ext

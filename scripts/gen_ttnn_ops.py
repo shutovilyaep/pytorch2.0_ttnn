@@ -40,7 +40,7 @@ def find_constexpr_name(lines, match_start_index):
             line_index = i
             break
     start_search = max(0, line_index - 3)
-    constexpr_rx = re.compile(r'constexpr\s+auto\s+([A-Za-z_][A-Za-z0-9_]*)\s*=')
+    constexpr_rx = re.compile(r"constexpr\s+auto\s+([A-Za-z_][A-Za-z0-9_]*)\s*=")
     for i in range(line_index, start_search - 1, -1):
         m = constexpr_rx.search(lines[i])
         if m:
@@ -53,7 +53,7 @@ def find_unary_macro_registrations(text: str):
     # and variations: REGISTER_UNARY_OPERATION_WITH_FLOAT_PARAMETER(name, TYPE)
     # We only need the first argument (the variable/op name)
     pattern = re.compile(
-        r'REGISTER_UNARY_OPERATION(?:_[A-Z_]+)?\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,',
+        r"REGISTER_UNARY_OPERATION(?:_[A-Z_]+)?\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,",
         re.MULTILINE | re.DOTALL,
     )
     for m in pattern.finditer(text):
@@ -93,7 +93,7 @@ def main():
         f.write("TTNN operations registered ({} matches)\n\n".format(len(results)))
         for rel, line_no, op_name, var_name in results:
             f.write(f"{rel}:{line_no}\n")
-            f.write(f"  op: \"{op_name}\"\n")
+            f.write(f'  op: "{op_name}"\n')
             if var_name:
                 f.write(f"  var: {var_name}\n")
             f.write("\n")
@@ -208,14 +208,16 @@ def main():
         is_impl = base in implemented_ttnn_ops
         if is_impl:
             implemented_count += 1
-        groups.setdefault(g, []).append({
-            "rel": rel,
-            "line": line_no,
-            "op": op_name,
-            "var": var_name,
-            "base": base,
-            "implemented": is_impl,
-        })
+        groups.setdefault(g, []).append(
+            {
+                "rel": rel,
+                "line": line_no,
+                "op": op_name,
+                "var": var_name,
+                "base": base,
+                "implemented": is_impl,
+            }
+        )
 
     # Sort groups and entries
     for g, entries in groups.items():
@@ -248,7 +250,7 @@ def main():
             entries = groups.get(group_name, [])
             if not entries:
                 continue
-            impl_in_group = sum(1 for e in entries if e["implemented"]) 
+            impl_in_group = sum(1 for e in entries if e["implemented"])
             f.write(f"### {group_name} ({impl_in_group}/{len(entries)})\n")
             for e in entries:
                 prefix = "" if e["implemented"] else "# "
@@ -301,7 +303,9 @@ def main():
         ops: set[str] = set()
         try:
             import json
+
             data = json.loads(path.read_text(encoding="utf-8", errors="ignore"))
+
             # recursively gather all string values
             def gather(x):
                 if isinstance(x, str):
@@ -312,6 +316,7 @@ def main():
                 elif isinstance(x, list):
                     for v in x:
                         gather(v)
+
             gather(data)
         except Exception:
             pass
@@ -404,7 +409,9 @@ def main():
         with OUT_PYTORCH_OPS_FILE.open("w", encoding="utf-8") as f:
             f.write("PyTorch ops scan report\n")
             f.write(f"Roots searched: {', '.join(str(r) for r in roots)}\n")
-            f.write(f"allowlist files: {len(allowlist_paths)}; native_functions.yaml files: {len(native_yaml_paths)}; NamedRegistrations.cpp files: {len(named_regs_paths)}\n")
+            f.write(
+                f"allowlist files: {len(allowlist_paths)}; native_functions.yaml files: {len(native_yaml_paths)}; NamedRegistrations.cpp files: {len(named_regs_paths)}\n"
+            )
             f.write(f"Total unique ops discovered: {len(union_ops)}\n")
             f.write(f"From allowlist: {len(pytorch_ops['allowlist'])}\n")
             f.write(f"From native_functions: {len(pytorch_ops['native'])}\n")
@@ -458,7 +465,9 @@ def main():
                             new_lines.append(comment)
                 new_lines.append(line)
             if new_lines and new_lines != cpp_lines:
-                OPEN_REGISTRATION_CPP.write_text("\n".join(new_lines) + ("\n" if not new_lines[-1].endswith("\n") else ""), encoding="utf-8")
+                OPEN_REGISTRATION_CPP.write_text(
+                    "\n".join(new_lines) + ("\n" if not new_lines[-1].endswith("\n") else ""), encoding="utf-8"
+                )
                 print("Annotated open_registration_extension.cpp with native function schemas")
     except Exception as e:
         print(f"Annotation skipped: {e}")
@@ -466,5 +475,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

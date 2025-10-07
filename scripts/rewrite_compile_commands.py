@@ -31,16 +31,13 @@ def main():
     for entry in data:
         # Required fields
         entry["file"] = rewrite_path(entry.get("file", ""), from_prefix, to_prefix)
-        entry["directory"] = rewrite_path(
-            entry.get("directory", ""), from_prefix, to_prefix
-        )
+        entry["directory"] = rewrite_path(entry.get("directory", ""), from_prefix, to_prefix)
         # Optional fields
         if "command" in entry and isinstance(entry["command"], str):
             entry["command"] = entry["command"].replace(from_prefix, to_prefix)
         if "arguments" in entry and isinstance(entry["arguments"], list):
             entry["arguments"] = [
-                (arg.replace(from_prefix, to_prefix) if isinstance(arg, str) else arg)
-                for arg in entry["arguments"]
+                (arg.replace(from_prefix, to_prefix) if isinstance(arg, str) else arg) for arg in entry["arguments"]
             ]
 
     os.makedirs(os.path.dirname(dst_path), exist_ok=True)
@@ -50,5 +47,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-

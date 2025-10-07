@@ -36,18 +36,12 @@ inline ttnn::Tensor tileify(const at::Tensor& t) {
     return tt;
 }
 
-inline at::Tensor make_empty_like_tt(
-    const at::Tensor& t,
-    c10::optional<at::ScalarType> dtype_override = c10::nullopt) {
+inline at::Tensor make_empty_like_tt(const at::Tensor& t, c10::optional<at::ScalarType> dtype_override = c10::nullopt) {
     c10::optional<at::ScalarType> dtype_opt = dtype_override.has_value()
-        ? c10::optional<at::ScalarType>(*dtype_override)
-        : c10::optional<at::ScalarType>(t.scalar_type());
+                                                  ? c10::optional<at::ScalarType>(*dtype_override)
+                                                  : c10::optional<at::ScalarType>(t.scalar_type());
     return tt_eager::ops::create::custom_empty_memory_format(
-        t.sizes(),
-        dtype_opt,
-        c10::nullopt,
-        c10::optional<at::Device>(t.device()),
-        c10::nullopt);
+        t.sizes(), dtype_opt, c10::nullopt, c10::optional<at::Device>(t.device()), c10::nullopt);
 }
 
 inline at::Tensor& write_from_ttnn(at::Tensor& out, const at::Tensor& like, const ttnn::Tensor& result) {
@@ -79,11 +73,8 @@ inline ttnn::DataType to_ttnn_dtype(const at::ScalarType st) {
         case at::kInt: return ttnn::DataType::INT32;
         case at::kByte: return ttnn::DataType::UINT8;
         case at::kBool: return ttnn::DataType::BFLOAT16;
-        default:
-            TORCH_CHECK(false, "Unsupported dtype for TTNN reduction: ", st);
+        default: TORCH_CHECK(false, "Unsupported dtype for TTNN reduction: ", st);
     }
 }
 
-} // namespace tt_eager::ext
-
-
+}  // namespace tt_eager::ext

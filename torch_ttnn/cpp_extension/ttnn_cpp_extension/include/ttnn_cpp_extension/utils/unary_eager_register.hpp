@@ -4,7 +4,6 @@
 #include <torch/csrc/utils/pybind.h>
 #include <torch/extension.h>
 
-
 #include "ttnn_cpp_extension/utils/unary_eager_wrappers.hpp"
 
 #include <ttnn/operations/eltwise/unary/unary.hpp>
@@ -28,7 +27,7 @@ namespace tt_eager::ext {
 // - register_unary_base_out_inplace: registers base, base.out, base_
 // - register_unary_base_out:         registers base, base.out
 // - register_unary_base_inplace:     registers base, base_
-template <template<auto> class Wrapper, auto Op>
+template <template <auto> class Wrapper, auto Op>
 static inline void register_unary_base_out_inplace(torch::Library& m, const std::string& base) {
     const std::string out = base + ".out";
     const std::string inplace = base + "_";
@@ -37,21 +36,19 @@ static inline void register_unary_base_out_inplace(torch::Library& m, const std:
     m.impl(inplace.c_str(), TORCH_FN(Wrapper<Op>::invoke_inplace));
 }
 
-template <template<auto> class Wrapper, auto Op>
+template <template <auto> class Wrapper, auto Op>
 static inline void register_unary_base_out(torch::Library& m, const std::string& base) {
     const std::string out = base + ".out";
     m.impl(base.c_str(), TORCH_FN(Wrapper<Op>::invoke));
     m.impl(out.c_str(), TORCH_FN(Wrapper<Op>::invoke_into));
 }
 
-template <template<auto> class Wrapper, auto Op>
+template <template <auto> class Wrapper, auto Op>
 static inline void register_unary_base_inplace(torch::Library& m, const std::string& base) {
     const std::string inplace = base + "_";
     m.impl(base.c_str(), TORCH_FN(Wrapper<Op>::invoke));
     m.impl(inplace.c_str(), TORCH_FN(Wrapper<Op>::invoke_inplace));
 }
-
-
 
 static inline void register_unary_ops(torch::Library& m) {
     // =========================
@@ -134,4 +131,4 @@ static inline void register_unary_ops(torch::Library& m) {
     register_unary_base_out<tt_eager::ext::unary_tensor, ttnn::isnan>(m, "isnan");
 }
 
-} // namespace tt_eager::ext
+}  // namespace tt_eager::ext

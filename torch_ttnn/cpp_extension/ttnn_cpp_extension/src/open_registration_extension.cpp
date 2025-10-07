@@ -32,7 +32,6 @@
 // Register custom allocator. Only used to create dummy Torch tensor object.
 REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
 
-
 namespace {
 // Generic convolution dispatcher matching aten.convolution/overrideable
 // Signature must match native_functions.yaml schema
@@ -60,18 +59,18 @@ static at::Tensor aten_convolution_dispatch(
     } else {
         TORCH_CHECK(dim != 3, "convolution: transposed 1D not yet supported on TTNN");
         if (dim == 4) {
-            return tt_eager::ext::conv_transpose2d_aten::invoke(input, weight, bias, stride, padding, output_padding, groups, dilation);
+            return tt_eager::ext::conv_transpose2d_aten::invoke(
+                input, weight, bias, stride, padding, output_padding, groups, dilation);
         }
         TORCH_CHECK(false, "convolution: transposed dim=", dim, " not yet supported on TTNN");
     }
 }
 
-
 // Helper templates for concise unary registrations
 // - register_unary_base_out_inplace: registers base, base.out, base_
 // - register_unary_base_out:         registers base, base.out
 // - register_unary_base_inplace:     registers base, base_
-template <template<auto> class Wrapper, auto Op>
+template <template <auto> class Wrapper, auto Op>
 static inline void register_unary_base_out_inplace(torch::Library& m, const std::string& base) {
     const std::string out = base + ".out";
     const std::string inplace = base + "_";
@@ -80,14 +79,14 @@ static inline void register_unary_base_out_inplace(torch::Library& m, const std:
     m.impl(inplace.c_str(), TORCH_FN(Wrapper<Op>::invoke_inplace));
 }
 
-template <template<auto> class Wrapper, auto Op>
+template <template <auto> class Wrapper, auto Op>
 static inline void register_unary_base_out(torch::Library& m, const std::string& base) {
     const std::string out = base + ".out";
     m.impl(base.c_str(), TORCH_FN(Wrapper<Op>::invoke));
     m.impl(out.c_str(), TORCH_FN(Wrapper<Op>::invoke_into));
 }
 
-template <template<auto> class Wrapper, auto Op>
+template <template <auto> class Wrapper, auto Op>
 static inline void register_unary_base_inplace(torch::Library& m, const std::string& base) {
     const std::string inplace = base + "_";
     m.impl(base.c_str(), TORCH_FN(Wrapper<Op>::invoke));
@@ -99,9 +98,11 @@ static inline void register_core_creation_and_copy(torch::Library& m) {
     // Core ops: creation and copy
     // =========================
     // From Pytorch's NamesRegistrations.cpp
-    // schema: empty_strided(SymInt[] size, SymInt[] stride, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None) -> Tensor
+    // schema: empty_strided(SymInt[] size, SymInt[] stride, *, ScalarType? dtype=None, Layout? layout=None, Device?
+    // device=None, bool? pin_memory=None) -> Tensor
     m.impl("aten::empty_strided", &tt_eager::ops::create::custom_empty_strided);
-    // schema: empty.memory_format(SymInt[] size, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None, bool? pin_memory=None, MemoryFormat? memory_format=None) -> Tensor
+    // schema: empty.memory_format(SymInt[] size, *, ScalarType? dtype=None, Layout? layout=None, Device? device=None,
+    // bool? pin_memory=None, MemoryFormat? memory_format=None) -> Tensor
     m.impl("empty.memory_format", &tt_eager::ops::create::custom_empty_memory_format);
     // schema: _copy_from(Tensor self, Tensor dst, bool non_blocking=False) -> Tensor
     m.impl("_copy_from", &ttnn_copy_from);
@@ -142,16 +143,22 @@ static inline void register_binary_ops(torch::Library& m) {
     // schema: sub.Scalar(Tensor self, Scalar other, Scalar alpha=1) -> Tensor
     m.impl("sub.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float_with_alpha_adapter<ttnn::subtract>::invoke));
     // schema: sub_.Scalar(Tensor(a!) self, Scalar other, Scalar alpha=1) -> Tensor(a!)
-    m.impl("sub_.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float_with_alpha_adapter<ttnn::subtract_>::invoke_inplace));
+    m.impl(
+        "sub_.Scalar",
+        TORCH_FN(tt_eager::ext::binary_tensor_float_with_alpha_adapter<ttnn::subtract_>::invoke_inplace));
     // schema: sub_.Tensor(Tensor(a!) self, Tensor other, *, Scalar alpha=1) -> Tensor(a!)
     m.impl("sub_.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor_alpha<ttnn::subalpha>::invoke_inplace));
     // rsub: reverse subtract
     // rsub.Tensor: rsub(self, other, alpha) = other - alpha*self
     // rsub.Scalar: rsub(self, other, alpha) = other - alpha*self
     // schema: rsub.Tensor(Tensor self, Tensor other, *, Scalar alpha=1) -> Tensor
-    m.impl("rsub.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor_alpha_swapped<ttnn::subalpha>::invoke)); // TODO: to check
+    m.impl(
+        "rsub.Tensor",
+        TORCH_FN(tt_eager::ext::binary_tensor_tensor_alpha_swapped<ttnn::subalpha>::invoke));  // TODO: to check
     // schema: rsub.Scalar(Tensor self, Scalar other, Scalar alpha=1) -> Tensor
-    m.impl("rsub.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_float_with_alpha_adapter<ttnn::rsub>::invoke)); // TODO: to check
+    m.impl(
+        "rsub.Scalar",
+        TORCH_FN(tt_eager::ext::binary_tensor_float_with_alpha_adapter<ttnn::rsub>::invoke));  // TODO: to check
 
     // Arithmetic ops
     // schema: mul.out(Tensor self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
@@ -211,7 +218,7 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("hypot.out", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::hypot>::invoke_into));
     // schema: hypot(Tensor self, Tensor other) -> Tensor
     m.impl("hypot", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::hypot>::invoke));
-    
+
     // schema: matmul.out(Tensor self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
     m.impl("matmul.out", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::matmul>::invoke_into));
     // schema: matmul(Tensor self, Tensor other) -> Tensor
@@ -252,7 +259,6 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("atan2", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::atan2>::invoke));
     // schema: atan2_(Tensor(a!) self, Tensor other) -> Tensor(a!)
     m.impl("atan2_", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::atan2>::invoke_inplace));
-    
 
     // Relational ops (Tensor versions only)
     // schema: eq.Tensor_out(Tensor self, Tensor other, *, Tensor(a!) out) -> Tensor(a!)
@@ -269,7 +275,7 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("ne.Tensor_out", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::ne>::invoke_into));
     // schema: ne.Tensor(Tensor self, Tensor other) -> Tensor
     m.impl("ne.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::ne>::invoke));
-    
+
     // schema: ne.Scalar(Tensor self, Scalar other) -> Tensor
     m.impl("ne.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_scalar_as_tensor<ttnn::ne>::invoke));
     // schema: ne.Scalar_out(Tensor self, Scalar other, *, Tensor(a!) out) -> Tensor(a!)
@@ -279,7 +285,7 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("ge.Tensor_out", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::ge>::invoke_into));
     // schema: ge.Tensor(Tensor self, Tensor other) -> Tensor
     m.impl("ge.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::ge>::invoke));
-    
+
     // schema: ge.Scalar(Tensor self, Scalar other) -> Tensor
     m.impl("ge.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_scalar_as_tensor<ttnn::ge>::invoke));
     // schema: ge.Scalar_out(Tensor self, Scalar other, *, Tensor(a!) out) -> Tensor(a!)
@@ -289,7 +295,7 @@ static inline void register_binary_ops(torch::Library& m) {
     m.impl("gt.Tensor_out", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::gt>::invoke_into));
     // schema: gt.Tensor(Tensor self, Tensor other) -> Tensor
     m.impl("gt.Tensor", TORCH_FN(tt_eager::ext::binary_tensor_tensor<ttnn::gt>::invoke));
-    
+
     // schema: gt.Scalar(Tensor self, Scalar other) -> Tensor
     m.impl("gt.Scalar", TORCH_FN(tt_eager::ext::binary_tensor_scalar_as_tensor<ttnn::gt>::invoke));
     // schema: gt.Scalar_out(Tensor self, Scalar other, *, Tensor(a!) out) -> Tensor(a!)
@@ -335,11 +341,13 @@ static inline void register_reductions(torch::Library& m) {
     m.impl("sum", TORCH_FN(tt_eager::ext::reduction_all<ttnn::sum>::invoke));
     // schema: sum.dim_IntList(Tensor self, int[1]? dim, bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
     m.impl("sum.dim_IntList", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::sum>::invoke));
-    // schema: sum.IntList_out(Tensor self, int[1]? dim, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out) -> Tensor(a!)
+    // schema: sum.IntList_out(Tensor self, int[1]? dim, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out)
+    // -> Tensor(a!)
     m.impl("sum.IntList_out", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::sum>::invoke_into));
     // schema: sum.dim_DimnameList(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
     m.impl("sum.dim_DimnameList", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::sum>::invoke_dimnames));
-    // schema: sum.DimnameList_out(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out) -> Tensor(a!)
+    // schema: sum.DimnameList_out(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None,
+    // Tensor(a!) out) -> Tensor(a!)
     m.impl("sum.DimnameList_out", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::sum>::invoke_dimnames_into));
 
     // Mean
@@ -347,11 +355,13 @@ static inline void register_reductions(torch::Library& m) {
     m.impl("mean", TORCH_FN(tt_eager::ext::reduction_all<ttnn::mean>::invoke));
     // schema: mean.dim(Tensor self, int[1]? dim, bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
     m.impl("mean.dim", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::mean>::invoke));
-    // schema: mean.out(Tensor self, int[1]? dim, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out) -> Tensor(a!)
+    // schema: mean.out(Tensor self, int[1]? dim, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out) ->
+    // Tensor(a!)
     m.impl("mean.out", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::mean>::invoke_into));
     // schema: mean.names_dim(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None) -> Tensor
     m.impl("mean.names_dim", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::mean>::invoke_dimnames));
-    // schema: mean.names_out(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!) out) -> Tensor(a!)
+    // schema: mean.names_out(Tensor self, Dimname[1] dim, bool keepdim=False, *, ScalarType? dtype=None, Tensor(a!)
+    // out) -> Tensor(a!)
     m.impl("mean.names_out", TORCH_FN(tt_eager::ext::reduction_dimlist<ttnn::mean>::invoke_dimnames_into));
 
     // Max / Min (value-only reductions; aten::max/min no dtype)
@@ -364,21 +374,25 @@ static inline void register_reductions(torch::Library& m) {
     using MaxPair = tt_eager::ext::reduction_dim_pair<ttnn::max, ttnn::experimental::argmax>;
     // schema: max.dim(Tensor self, int dim, bool keepdim=False) -> (Tensor values, Tensor indices)
     m.impl("max.dim", TORCH_FN(MaxPair::invoke));
-    // schema: max.dim_max(Tensor self, int dim, bool keepdim=False, *, Tensor(a!) max, Tensor(b!) max_values) -> (Tensor(a!) values, Tensor(b!) indices)
+    // schema: max.dim_max(Tensor self, int dim, bool keepdim=False, *, Tensor(a!) max, Tensor(b!) max_values) ->
+    // (Tensor(a!) values, Tensor(b!) indices)
     m.impl("max.dim_max", TORCH_FN(MaxPair::invoke_into));
     // schema: max.names_dim(Tensor self, Dimname dim, bool keepdim=False) -> (Tensor values, Tensor indices)
     m.impl("max.names_dim", TORCH_FN(MaxPair::invoke_dimname));
-    // schema: max.names_dim_max(Tensor self, Dimname dim, bool keepdim=False, *, Tensor(a!) max, Tensor(b!) max_values) -> (Tensor(a!) values, Tensor(b!) indices)
+    // schema: max.names_dim_max(Tensor self, Dimname dim, bool keepdim=False, *, Tensor(a!) max, Tensor(b!) max_values)
+    // -> (Tensor(a!) values, Tensor(b!) indices)
     m.impl("max.names_dim_max", TORCH_FN(MaxPair::invoke_dimname_into));
 
     using MinPair = tt_eager::ext::reduction_dim_pair<ttnn::min, ttnn::experimental::argmin>;
     // schema: min.dim(Tensor self, int dim, bool keepdim=False) -> (Tensor values, Tensor indices)
     m.impl("min.dim", TORCH_FN(MinPair::invoke));
-    // schema: min.dim_min(Tensor self, int dim, bool keepdim=False, *, Tensor(a!) min, Tensor(b!) min_indices) -> (Tensor(a!) values, Tensor(b!) indices)
+    // schema: min.dim_min(Tensor self, int dim, bool keepdim=False, *, Tensor(a!) min, Tensor(b!) min_indices) ->
+    // (Tensor(a!) values, Tensor(b!) indices)
     m.impl("min.dim_min", TORCH_FN(MinPair::invoke_into));
     // schema: min.names_dim(Tensor self, Dimname dim, bool keepdim=False) -> (Tensor values, Tensor indices)
     m.impl("min.names_dim", TORCH_FN(MinPair::invoke_dimname));
-    // schema: min.names_dim_min(Tensor self, Dimname dim, bool keepdim=False, *, Tensor(a!) min, Tensor(b!) min_indices) -> (Tensor(a!) values, Tensor(b!) indices)
+    // schema: min.names_dim_min(Tensor self, Dimname dim, bool keepdim=False, *, Tensor(a!) min, Tensor(b!)
+    // min_indices) -> (Tensor(a!) values, Tensor(b!) indices)
     m.impl("min.names_dim_min", TORCH_FN(MinPair::invoke_dimname_into));
 
     // Std / Var
@@ -388,39 +402,52 @@ static inline void register_reductions(torch::Library& m) {
     // schema: std(Tensor self, bool unbiased=True) -> Tensor
     m.impl("std", TORCH_FN(tt_eager::ext::reduction_all_unbiased<ttnn::std>::invoke));
 
-    // schema: var.out(Tensor self, int[1]? dim, bool unbiased=True, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
+    // schema: var.out(Tensor self, int[1]? dim, bool unbiased=True, bool keepdim=False, *, Tensor(a!) out) ->
+    // Tensor(a!)
     m.impl("var.out", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased_out<ttnn::var>::invoke_into));
     // schema: var.correction(Tensor self, int[1]? dim=None, *, Scalar? correction=None, bool keepdim=False) -> Tensor
     m.impl("var.correction", TORCH_FN(tt_eager::ext::reduction_dimlist_correction<ttnn::var>::invoke));
-    // schema: var.correction_names(Tensor self, Dimname[1] dim, *, Scalar? correction=None, bool keepdim=False) -> Tensor
+    // schema: var.correction_names(Tensor self, Dimname[1] dim, *, Scalar? correction=None, bool keepdim=False) ->
+    // Tensor
     m.impl("var.correction_names", TORCH_FN(tt_eager::ext::reduction_dimlist_correction<ttnn::var>::invoke_dimnames));
-    // schema: var.correction_names_out(Tensor self, Dimname[1] dim, *, Scalar? correction=None, bool keepdim=False, Tensor(a!) out) -> Tensor(a!)
-    m.impl("var.correction_names_out", TORCH_FN(tt_eager::ext::reduction_dimlist_correction<ttnn::var>::invoke_dimnames_into));
-    // schema: var.correction_out(Tensor self, int[1]? dim=None, *, Scalar? correction=None, bool keepdim=False, Tensor(a!) out) -> Tensor(a!)
+    // schema: var.correction_names_out(Tensor self, Dimname[1] dim, *, Scalar? correction=None, bool keepdim=False,
+    // Tensor(a!) out) -> Tensor(a!)
+    m.impl(
+        "var.correction_names_out",
+        TORCH_FN(tt_eager::ext::reduction_dimlist_correction<ttnn::var>::invoke_dimnames_into));
+    // schema: var.correction_out(Tensor self, int[1]? dim=None, *, Scalar? correction=None, bool keepdim=False,
+    // Tensor(a!) out) -> Tensor(a!)
     m.impl("var.correction_out", TORCH_FN(tt_eager::ext::reduction_dimlist_correction<ttnn::var>::invoke_into));
     // schema: var.dim(Tensor self, int[1]? dim, bool unbiased=True, bool keepdim=False) -> Tensor
     m.impl("var.dim", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased<ttnn::var>::invoke));
     // schema: var.names_dim(Tensor self, Dimname[1] dim, bool unbiased=True, bool keepdim=False) -> Tensor
     m.impl("var.names_dim", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased<ttnn::var>::invoke_dimnames));
-    // schema: var.names_out(Tensor self, Dimname[1] dim, bool unbiased=True, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
+    // schema: var.names_out(Tensor self, Dimname[1] dim, bool unbiased=True, bool keepdim=False, *, Tensor(a!) out) ->
+    // Tensor(a!)
     m.impl("var.names_out", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased<ttnn::var>::invoke_dimnames_into));
 
-
-    // schema: std.out(Tensor self, int[1]? dim, bool unbiased=True, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
+    // schema: std.out(Tensor self, int[1]? dim, bool unbiased=True, bool keepdim=False, *, Tensor(a!) out) ->
+    // Tensor(a!)
     m.impl("std.out", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased_out<ttnn::std>::invoke_into));
     // schema: std.correction(Tensor self, int[1]? dim=None, *, Scalar? correction=None, bool keepdim=False) -> Tensor
     m.impl("std.correction", TORCH_FN(tt_eager::ext::reduction_dimlist_correction<ttnn::std>::invoke));
-    // schema: std.correction_names(Tensor self, Dimname[1] dim, *, Scalar? correction=None, bool keepdim=False) -> Tensor
+    // schema: std.correction_names(Tensor self, Dimname[1] dim, *, Scalar? correction=None, bool keepdim=False) ->
+    // Tensor
     m.impl("std.correction_names", TORCH_FN(tt_eager::ext::reduction_dimlist_correction<ttnn::std>::invoke_dimnames));
-    // schema: std.correction_names_out(Tensor self, Dimname[1] dim, *, Scalar? correction=None, bool keepdim=False, Tensor(a!) out) -> Tensor(a!)
-    m.impl("std.correction_names_out", TORCH_FN(tt_eager::ext::reduction_dimlist_correction<ttnn::std>::invoke_dimnames_into));
-    // schema: std.correction_out(Tensor self, int[1]? dim=None, *, Scalar? correction=None, bool keepdim=False, Tensor(a!) out) -> Tensor(a!)
+    // schema: std.correction_names_out(Tensor self, Dimname[1] dim, *, Scalar? correction=None, bool keepdim=False,
+    // Tensor(a!) out) -> Tensor(a!)
+    m.impl(
+        "std.correction_names_out",
+        TORCH_FN(tt_eager::ext::reduction_dimlist_correction<ttnn::std>::invoke_dimnames_into));
+    // schema: std.correction_out(Tensor self, int[1]? dim=None, *, Scalar? correction=None, bool keepdim=False,
+    // Tensor(a!) out) -> Tensor(a!)
     m.impl("std.correction_out", TORCH_FN(tt_eager::ext::reduction_dimlist_correction<ttnn::std>::invoke_into));
     // schema: std.dim(Tensor self, int[1]? dim, bool unbiased=True, bool keepdim=False) -> Tensor
     m.impl("std.dim", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased<ttnn::std>::invoke));
     // schema: std.names_dim(Tensor self, Dimname[1] dim, bool unbiased=True, bool keepdim=False) -> Tensor
     m.impl("std.names_dim", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased<ttnn::std>::invoke_dimnames));
-    // schema: std.names_out(Tensor self, Dimname[1] dim, bool unbiased=True, bool keepdim=False, *, Tensor(a!) out) -> Tensor(a!)
+    // schema: std.names_out(Tensor self, Dimname[1] dim, bool unbiased=True, bool keepdim=False, *, Tensor(a!) out) ->
+    // Tensor(a!)
     m.impl("std.names_out", TORCH_FN(tt_eager::ext::reduction_dimlist_unbiased<ttnn::std>::invoke_dimnames_into));
 }
 
@@ -455,20 +482,34 @@ static inline void register_conv_and_pool_ops(torch::Library& m) {
     // Convolution ops
     // =========================
     // From native_functions.yaml, available schemas (signatures below for reference):
-    // - convolution(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding, SymInt[] dilation, bool transposed, SymInt[] output_padding, SymInt groups) -> Tensor
-    // - convolution_overrideable(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding, SymInt[] dilation, bool transposed, SymInt[] output_padding, SymInt groups) -> Tensor
-    // - _convolution(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding, SymInt[] dilation, bool transposed, SymInt[] output_padding, SymInt groups, bool benchmark, bool deterministic, bool cudnn_enabled, bool allow_tf32) -> Tensor
-    // - _convolution_mode(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, str padding, SymInt[] dilation, SymInt groups) -> Tensor
-    // - conv1d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[1] stride=1, SymInt[1] padding=0, SymInt[1] dilation=1, SymInt groups=1) -> Tensor
-    // - conv2d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0, SymInt[2] dilation=1, SymInt groups=1) -> Tensor
-    // - conv3d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, SymInt[3] dilation=1, SymInt groups=1) -> Tensor
-    // - conv1d.padding(Tensor input, Tensor weight, Tensor? bias=None, SymInt[1] stride=1, str padding="valid", SymInt[1] dilation=1, SymInt groups=1) -> Tensor
-    // - conv2d.padding(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, str padding="valid", SymInt[2] dilation=1, SymInt groups=1) -> Tensor
-    // - conv3d.padding(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, str padding="valid", SymInt[3] dilation=1, SymInt groups=1) -> Tensor
+    // - convolution(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding, SymInt[] dilation,
+    // bool transposed, SymInt[] output_padding, SymInt groups) -> Tensor
+    // - convolution_overrideable(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding, SymInt[]
+    // dilation, bool transposed, SymInt[] output_padding, SymInt groups) -> Tensor
+    // - _convolution(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding, SymInt[] dilation,
+    // bool transposed, SymInt[] output_padding, SymInt groups, bool benchmark, bool deterministic, bool cudnn_enabled,
+    // bool allow_tf32) -> Tensor
+    // - _convolution_mode(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, str padding, SymInt[] dilation,
+    // SymInt groups) -> Tensor
+    // - conv1d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[1] stride=1, SymInt[1] padding=0, SymInt[1]
+    // dilation=1, SymInt groups=1) -> Tensor
+    // - conv2d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0, SymInt[2]
+    // dilation=1, SymInt groups=1) -> Tensor
+    // - conv3d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, SymInt[3]
+    // dilation=1, SymInt groups=1) -> Tensor
+    // - conv1d.padding(Tensor input, Tensor weight, Tensor? bias=None, SymInt[1] stride=1, str padding="valid",
+    // SymInt[1] dilation=1, SymInt groups=1) -> Tensor
+    // - conv2d.padding(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, str padding="valid",
+    // SymInt[2] dilation=1, SymInt groups=1) -> Tensor
+    // - conv3d.padding(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, str padding="valid",
+    // SymInt[3] dilation=1, SymInt groups=1) -> Tensor
     // - conv_tbc(Tensor self, Tensor weight, Tensor bias, int pad=0) -> Tensor
-    // - conv_transpose1d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[1] stride=1, SymInt[1] padding=0, SymInt[1] output_padding=0, SymInt groups=1, SymInt[1] dilation=1) -> Tensor
-    // - conv_transpose2d.input(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0, SymInt[2] output_padding=0, SymInt groups=1, SymInt[2] dilation=1) -> Tensor
-    // - conv_transpose3d.input(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, SymInt[3] output_padding=0, SymInt groups=1, SymInt[3] dilation=1) -> Tensor
+    // - conv_transpose1d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[1] stride=1, SymInt[1] padding=0,
+    // SymInt[1] output_padding=0, SymInt groups=1, SymInt[1] dilation=1) -> Tensor
+    // - conv_transpose2d.input(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0,
+    // SymInt[2] output_padding=0, SymInt groups=1, SymInt[2] dilation=1) -> Tensor
+    // - conv_transpose3d.input(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0,
+    // SymInt[3] output_padding=0, SymInt groups=1, SymInt[3] dilation=1) -> Tensor
 
     // Implemented via TTNN wrappers (Conv):
     // conv1d
@@ -485,9 +526,11 @@ static inline void register_conv_and_pool_ops(torch::Library& m) {
     m.impl("convolution_overrideable", TORCH_FN(aten_convolution_dispatch));
 
     // Pooling (2D):
-    // max_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, int[2] dilation=1, bool ceil_mode=False)
+    // max_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, int[2] dilation=1, bool
+    // ceil_mode=False)
     m.impl("max_pool2d", TORCH_FN(tt_eager::ext::max_pool2d_aten::invoke));
-    // avg_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, bool ceil_mode=False, bool count_include_pad=True)
+    // avg_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, bool ceil_mode=False, bool
+    // count_include_pad=True)
     m.impl("avg_pool2d", TORCH_FN(tt_eager::ext::avg_pool2d_aten::invoke));
     // adaptive_avg_pool2d(Tensor self, SymInt[2] output_size) -> Tensor
     m.impl("adaptive_avg_pool2d", TORCH_FN(tt_eager::ext::adaptive_avg_pool2d_aten::invoke));
@@ -502,7 +545,7 @@ static inline void register_conv_and_pool_ops(torch::Library& m) {
     // m.impl("conv_transpose1d", ...);
     // m.impl("conv_transpose3d.input", ...);
 }
-} // namespace
+}  // namespace
 
 // This macro registers the kernels to the PyTorch Dispatcher.
 // More details on the dispatcher can be found at
@@ -525,10 +568,6 @@ PYBIND11_MODULE(TORCH_EXTENSION_NAME, m) {
 }
 
 // Fallbacks
-TORCH_LIBRARY_IMPL(_, PrivateUse1, m) {
-    m.fallback(torch::CppFunction::makeFallthrough());
-}
+TORCH_LIBRARY_IMPL(_, PrivateUse1, m) { m.fallback(torch::CppFunction::makeFallthrough()); }
 
-TORCH_LIBRARY_IMPL(_, AutogradPrivateUse1, m) {
-    m.fallback(torch::CppFunction::makeFallthrough());
-}
+TORCH_LIBRARY_IMPL(_, AutogradPrivateUse1, m) { m.fallback(torch::CppFunction::makeFallthrough()); }

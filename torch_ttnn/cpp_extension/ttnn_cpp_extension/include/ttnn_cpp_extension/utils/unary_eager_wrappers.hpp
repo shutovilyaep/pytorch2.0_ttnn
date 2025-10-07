@@ -34,9 +34,7 @@ struct unary_tensor {
         at::Tensor out = tt_eager::ext::make_empty_like_tt(a);
         return invoke_into(a, out);
     }
-    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
-        return invoke_into(self, self);
-    }
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) { return invoke_into(self, self); }
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, at::Tensor& out) {
         ttnn::Tensor a_tile = tt_eager::ext::tileify(in);
         ttnn::Tensor result = Op(a_tile);
@@ -52,9 +50,7 @@ struct unary_tensor_opt_int_none {
         at::Tensor out = tt_eager::ext::make_empty_like_tt(a);
         return invoke_into(a, out);
     }
-    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
-        return invoke_into(self, self);
-    }
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) { return invoke_into(self, self); }
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, at::Tensor& out) {
         ttnn::Tensor a_tile = tt_eager::ext::tileify(in);
         ttnn::Tensor result = Op(a_tile, std::nullopt);
@@ -106,9 +102,7 @@ struct complex_unary_from_real {
         at::Tensor out = tt_eager::ext::make_empty_like_tt(a);
         return invoke_into(a, out);
     }
-    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) {
-        return invoke_into(self, self);
-    }
+    [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self) { return invoke_into(self, self); }
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, at::Tensor& out) {
         ttnn::Tensor real_tt = tt_eager::ext::tileify(in);
         ttnn::Tensor zero_tt = ttnn::multiply(real_tt, 0.0f);
@@ -124,5 +118,4 @@ struct complex_unary_from_real {
     }
 };
 
-} // namespace tt_eager::ext
-
+}  // namespace tt_eager::ext

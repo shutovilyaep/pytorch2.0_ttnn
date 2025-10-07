@@ -19,16 +19,24 @@ namespace tt_eager::ext {
 // -------- Helpers to parse IntArrayRefs into fixed-size arrays --------
 static inline std::array<uint32_t, 1> to_tuple1(c10::OptionalArrayRef<int64_t> v, int64_t def = 1) {
     int64_t x0 = def;
-    if (v.has_value() && v->size() >= 1) x0 = (*v)[0];
+    if (v.has_value() && v->size() >= 1) {
+        x0 = (*v)[0];
+    }
     return {static_cast<uint32_t>(x0)};
 }
 
 static inline std::array<uint32_t, 2> to_tuple2(c10::OptionalArrayRef<int64_t> v, int64_t def = 1) {
     int64_t x0 = def, x1 = def;
     if (v.has_value()) {
-        if (v->size() >= 1) x0 = (*v)[0];
-        if (v->size() >= 2) x1 = (*v)[1];
-        if (v->size() == 1) x1 = x0; // broadcast single to both
+        if (v->size() >= 1) {
+            x0 = (*v)[0];
+        }
+        if (v->size() >= 2) {
+            x1 = (*v)[1];
+        }
+        if (v->size() == 1) {
+            x1 = x0;  // broadcast single to both
+        }
     }
     return {static_cast<uint32_t>(x0), static_cast<uint32_t>(x1)};
 }
@@ -36,10 +44,19 @@ static inline std::array<uint32_t, 2> to_tuple2(c10::OptionalArrayRef<int64_t> v
 static inline std::array<uint32_t, 3> to_tuple3(c10::OptionalArrayRef<int64_t> v, int64_t def = 1) {
     int64_t x0 = def, x1 = def, x2 = def;
     if (v.has_value()) {
-        if (v->size() >= 1) x0 = (*v)[0];
-        if (v->size() >= 2) x1 = (*v)[1];
-        if (v->size() >= 3) x2 = (*v)[2];
-        if (v->size() == 1) { x1 = x0; x2 = x0; }
+        if (v->size() >= 1) {
+            x0 = (*v)[0];
+        }
+        if (v->size() >= 2) {
+            x1 = (*v)[1];
+        }
+        if (v->size() >= 3) {
+            x2 = (*v)[2];
+        }
+        if (v->size() == 1) {
+            x1 = x0;
+            x2 = x0;
+        }
     }
     return {static_cast<uint32_t>(x0), static_cast<uint32_t>(x1), static_cast<uint32_t>(x2)};
 }
@@ -47,45 +64,57 @@ static inline std::array<uint32_t, 3> to_tuple3(c10::OptionalArrayRef<int64_t> v
 // IntArrayRef overloads (non-optional args per aten schema)
 static inline std::array<uint32_t, 1> to_tuple1(c10::IntArrayRef v, int64_t def = 1) {
     int64_t x0 = def;
-    if (v.size() >= 1) x0 = v[0];
+    if (v.size() >= 1) {
+        x0 = v[0];
+    }
     return {static_cast<uint32_t>(x0)};
 }
 
 static inline std::array<uint32_t, 2> to_tuple2(c10::IntArrayRef v, int64_t def = 1) {
     int64_t x0 = def, x1 = def;
-    if (v.size() >= 1) x0 = v[0];
-    if (v.size() >= 2) x1 = v[1];
-    if (v.size() == 1) x1 = x0;
+    if (v.size() >= 1) {
+        x0 = v[0];
+    }
+    if (v.size() >= 2) {
+        x1 = v[1];
+    }
+    if (v.size() == 1) {
+        x1 = x0;
+    }
     return {static_cast<uint32_t>(x0), static_cast<uint32_t>(x1)};
 }
 
 static inline std::array<uint32_t, 3> to_tuple3(c10::IntArrayRef v, int64_t def = 1) {
     int64_t x0 = def, x1 = def, x2 = def;
-    if (v.size() >= 1) x0 = v[0];
-    if (v.size() >= 2) x1 = v[1];
-    if (v.size() >= 3) x2 = v[2];
-    if (v.size() == 1) { x1 = x0; x2 = x0; }
+    if (v.size() >= 1) {
+        x0 = v[0];
+    }
+    if (v.size() >= 2) {
+        x1 = v[1];
+    }
+    if (v.size() >= 3) {
+        x2 = v[2];
+    }
+    if (v.size() == 1) {
+        x1 = x0;
+        x2 = x0;
+    }
     return {static_cast<uint32_t>(x0), static_cast<uint32_t>(x1), static_cast<uint32_t>(x2)};
 }
 
 // -------- Output size calculators (PyTorch-compatible) --------
 static inline uint32_t conv_out_dim(uint32_t in, uint32_t pad, uint32_t dilation, uint32_t kernel, uint32_t stride) {
-    int64_t num = static_cast<int64_t>(in) + 2 * static_cast<int64_t>(pad) - static_cast<int64_t>(dilation) * (static_cast<int64_t>(kernel) - 1) - 1;
+    int64_t num = static_cast<int64_t>(in) + 2 * static_cast<int64_t>(pad) -
+                  static_cast<int64_t>(dilation) * (static_cast<int64_t>(kernel) - 1) - 1;
     int64_t out = num / static_cast<int64_t>(stride) + 1;
     return static_cast<uint32_t>(std::max<int64_t>(out, 0));
 }
 
 static inline uint32_t conv_transpose_out_dim(
-    uint32_t in,
-    uint32_t pad,
-    uint32_t dilation,
-    uint32_t kernel,
-    uint32_t stride,
-    uint32_t output_padding) {
-    int64_t out = (static_cast<int64_t>(in) - 1) * static_cast<int64_t>(stride)
-                - 2 * static_cast<int64_t>(pad)
-                + static_cast<int64_t>(dilation) * (static_cast<int64_t>(kernel) - 1)
-                + static_cast<int64_t>(output_padding) + 1;
+    uint32_t in, uint32_t pad, uint32_t dilation, uint32_t kernel, uint32_t stride, uint32_t output_padding) {
+    int64_t out = (static_cast<int64_t>(in) - 1) * static_cast<int64_t>(stride) - 2 * static_cast<int64_t>(pad) +
+                  static_cast<int64_t>(dilation) * (static_cast<int64_t>(kernel) - 1) +
+                  static_cast<int64_t>(output_padding) + 1;
     return static_cast<uint32_t>(std::max<int64_t>(out, 0));
 }
 
@@ -101,7 +130,8 @@ struct conv2d_aten {
         int64_t groups) {
         TORCH_CHECK(input.dim() == 4, "conv2d expects 4D input [N, C, H, W]");
         TORCH_CHECK(weight.dim() == 4, "conv2d expects 4D weight [Cout, Cin/groups, Kh, Kw]");
-        TORCH_CHECK(!bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
+        TORCH_CHECK(
+            !bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
 
         ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
         ttnn::Tensor w_tt = tt_eager::ext::tileify(weight);
@@ -122,8 +152,10 @@ struct conv2d_aten {
         auto dilation2 = to_tuple2(dilation, 1);
         auto padding2 = to_tuple2(padding, 0);
 
-        const uint32_t Hout = conv_out_dim(static_cast<uint32_t>(H), padding2[0], dilation2[0], static_cast<uint32_t>(Kh), stride2[0]);
-        const uint32_t Wout = conv_out_dim(static_cast<uint32_t>(W), padding2[1], dilation2[1], static_cast<uint32_t>(Kw), stride2[1]);
+        const uint32_t Hout =
+            conv_out_dim(static_cast<uint32_t>(H), padding2[0], dilation2[0], static_cast<uint32_t>(Kh), stride2[0]);
+        const uint32_t Wout =
+            conv_out_dim(static_cast<uint32_t>(W), padding2[1], dilation2[1], static_cast<uint32_t>(Kw), stride2[1]);
 
         at::Tensor out = tt_eager::ops::create::custom_empty_memory_format(
             {N, Cout, static_cast<int64_t>(Hout), static_cast<int64_t>(Wout)},
@@ -133,7 +165,8 @@ struct conv2d_aten {
             c10::nullopt);
 
         std::array<uint32_t, 2> kernel = {static_cast<uint32_t>(Kh), static_cast<uint32_t>(Kw)};
-        std::variant<std::array<uint32_t, 2>, std::array<uint32_t, 4>> pad_variant = std::array<uint32_t, 2>{padding2[0], padding2[1]};
+        std::variant<std::array<uint32_t, 2>, std::array<uint32_t, 4>> pad_variant =
+            std::array<uint32_t, 2>{padding2[0], padding2[1]};
 
         auto* device = in_tt.device();
         const uint32_t in_ch = static_cast<uint32_t>(Cin);
@@ -171,11 +204,15 @@ struct conv2d_aten {
             out_tt = std::get<ttnn::Tensor>(res);
         } else if (std::holds_alternative<std::tuple<ttnn::Tensor, std::tuple<uint32_t, uint32_t>>>(res)) {
             out_tt = std::get<0>(std::get<std::tuple<ttnn::Tensor, std::tuple<uint32_t, uint32_t>>>(res));
-        } else if (std::holds_alternative<std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res)) {
-            out_tt = std::get<0>(std::get<std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
-        } else {
+        } else if (std::holds_alternative<
+                       std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res)) {
             out_tt = std::get<0>(
-                std::get<std::tuple<ttnn::Tensor, std::tuple<uint32_t, uint32_t>, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
+                std::get<std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
+        } else {
+            out_tt = std::get<0>(std::get<std::tuple<
+                                     ttnn::Tensor,
+                                     std::tuple<uint32_t, uint32_t>,
+                                     std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
         }
 
         return tt_eager::ext::write_from_ttnn(out, out, out_tt);
@@ -193,7 +230,8 @@ struct conv1d_aten {
         int64_t groups) {
         TORCH_CHECK(input.dim() == 3, "conv1d expects 3D input [N, C, L]");
         TORCH_CHECK(weight.dim() == 3, "conv1d expects 3D weight [Cout, Cin/groups, K]");
-        TORCH_CHECK(!bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
+        TORCH_CHECK(
+            !bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
 
         ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
         ttnn::Tensor w_tt = tt_eager::ext::tileify(weight);
@@ -211,9 +249,12 @@ struct conv1d_aten {
         auto stride1 = to_tuple1(stride, 1);
         auto dilation1 = to_tuple1(dilation, 1);
         uint32_t pad_val = 0;
-        if (padding.size() >= 1) pad_val = static_cast<uint32_t>(padding[0]);
+        if (padding.size() >= 1) {
+            pad_val = static_cast<uint32_t>(padding[0]);
+        }
 
-        const uint32_t Lout = conv_out_dim(static_cast<uint32_t>(L), pad_val, dilation1[0], static_cast<uint32_t>(K), stride1[0]);
+        const uint32_t Lout =
+            conv_out_dim(static_cast<uint32_t>(L), pad_val, dilation1[0], static_cast<uint32_t>(K), stride1[0]);
 
         at::Tensor out = tt_eager::ops::create::custom_empty_memory_format(
             {N, Cout, static_cast<int64_t>(Lout)},
@@ -233,7 +274,7 @@ struct conv1d_aten {
             static_cast<uint32_t>(L),
             static_cast<uint32_t>(K),
             stride1[0],
-            std::variant<std::array<uint32_t,2>, uint32_t>{pad_val},
+            std::variant<std::array<uint32_t, 2>, uint32_t>{pad_val},
             dilation1[0],
             static_cast<uint32_t>(groups),
             std::nullopt,
@@ -241,18 +282,22 @@ struct conv1d_aten {
             std::nullopt,
             std::nullopt,
             std::nullopt,
-            /*return_output_dim=*/ true,
-            /*return_weights_and_bias=*/ false);
+            /*return_output_dim=*/true,
+            /*return_weights_and_bias=*/false);
 
         ttnn::Tensor out_tt;
         if (std::holds_alternative<ttnn::Tensor>(res)) {
             out_tt = std::get<ttnn::Tensor>(res);
         } else if (std::holds_alternative<std::tuple<ttnn::Tensor, uint32_t>>(res)) {
             out_tt = std::get<0>(std::get<std::tuple<ttnn::Tensor, uint32_t>>(res));
-        } else if (std::holds_alternative<std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res)) {
-            out_tt = std::get<0>(std::get<std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
+        } else if (std::holds_alternative<
+                       std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res)) {
+            out_tt = std::get<0>(
+                std::get<std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
         } else {
-            out_tt = std::get<0>(std::get<std::tuple<ttnn::Tensor, uint32_t, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
+            out_tt = std::get<0>(
+                std::get<std::tuple<ttnn::Tensor, uint32_t, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(
+                    res));
         }
 
         return tt_eager::ext::write_from_ttnn(out, out, out_tt);
@@ -271,7 +316,8 @@ struct conv_transpose2d_aten {
         c10::IntArrayRef dilation) {
         TORCH_CHECK(input.dim() == 4, "conv_transpose2d expects 4D input [N, C, H, W]");
         TORCH_CHECK(weight.dim() == 4, "conv_transpose2d expects 4D weight [Cin, Cout/groups, Kh, Kw]");
-        TORCH_CHECK(!bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
+        TORCH_CHECK(
+            !bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
 
         ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
         ttnn::Tensor w_tt = tt_eager::ext::tileify(weight);
@@ -293,8 +339,10 @@ struct conv_transpose2d_aten {
         auto padding2 = to_tuple2(padding, 0);
         auto outpad2 = to_tuple2(output_padding, 0);
 
-        const uint32_t Hout = conv_transpose_out_dim(static_cast<uint32_t>(H), padding2[0], dilation2[0], static_cast<uint32_t>(Kh), stride2[0], outpad2[0]);
-        const uint32_t Wout = conv_transpose_out_dim(static_cast<uint32_t>(W), padding2[1], dilation2[1], static_cast<uint32_t>(Kw), stride2[1], outpad2[1]);
+        const uint32_t Hout = conv_transpose_out_dim(
+            static_cast<uint32_t>(H), padding2[0], dilation2[0], static_cast<uint32_t>(Kh), stride2[0], outpad2[0]);
+        const uint32_t Wout = conv_transpose_out_dim(
+            static_cast<uint32_t>(W), padding2[1], dilation2[1], static_cast<uint32_t>(Kw), stride2[1], outpad2[1]);
 
         at::Tensor out = tt_eager::ops::create::custom_empty_memory_format(
             {N, Cout, static_cast<int64_t>(Hout), static_cast<int64_t>(Wout)},
@@ -314,10 +362,10 @@ struct conv_transpose2d_aten {
             static_cast<uint32_t>(N),
             static_cast<uint32_t>(H),
             static_cast<uint32_t>(W),
-            std::array<uint32_t,2>{static_cast<uint32_t>(Kh), static_cast<uint32_t>(Kw)},
+            std::array<uint32_t, 2>{static_cast<uint32_t>(Kh), static_cast<uint32_t>(Kw)},
             stride2,
-            std::array<uint32_t,2>{padding2[0], padding2[1]},
-            std::array<uint32_t,2>{outpad2[0], outpad2[1]},
+            std::array<uint32_t, 2>{padding2[0], padding2[1]},
+            std::array<uint32_t, 2>{outpad2[0], outpad2[1]},
             dilation2,
             static_cast<uint32_t>(groups),
             std::nullopt,
@@ -334,11 +382,15 @@ struct conv_transpose2d_aten {
             out_tt = std::get<ttnn::Tensor>(res);
         } else if (std::holds_alternative<std::tuple<ttnn::Tensor, std::tuple<uint32_t, uint32_t>>>(res)) {
             out_tt = std::get<0>(std::get<std::tuple<ttnn::Tensor, std::tuple<uint32_t, uint32_t>>>(res));
-        } else if (std::holds_alternative<std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res)) {
-            out_tt = std::get<0>(std::get<std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
-        } else {
+        } else if (std::holds_alternative<
+                       std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res)) {
             out_tt = std::get<0>(
-                std::get<std::tuple<ttnn::Tensor, std::tuple<uint32_t, uint32_t>, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
+                std::get<std::tuple<ttnn::Tensor, std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
+        } else {
+            out_tt = std::get<0>(std::get<std::tuple<
+                                     ttnn::Tensor,
+                                     std::tuple<uint32_t, uint32_t>,
+                                     std::tuple<ttnn::Tensor, std::optional<ttnn::Tensor>>>>(res));
         }
 
         return tt_eager::ext::write_from_ttnn(out, out, out_tt);
@@ -356,7 +408,8 @@ struct conv3d_aten {
         int64_t groups) {
         TORCH_CHECK(input.dim() == 5, "conv3d expects 5D input [N, C, T, H, W]");
         TORCH_CHECK(weight.dim() == 5, "conv3d expects 5D weight [Cout, Cin/groups, Kt, Kh, Kw]");
-        TORCH_CHECK(!bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
+        TORCH_CHECK(
+            !bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
 
         ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
         ttnn::Tensor w_tt = tt_eager::ext::tileify(weight);
@@ -379,9 +432,12 @@ struct conv3d_aten {
         auto dilation3 = to_tuple3(dilation, 1);
         auto padding3 = to_tuple3(padding, 0);
 
-        const uint32_t Tout = conv_out_dim(static_cast<uint32_t>(T), padding3[0], dilation3[0], static_cast<uint32_t>(Kt), stride3[0]);
-        const uint32_t Hout = conv_out_dim(static_cast<uint32_t>(H), padding3[1], dilation3[1], static_cast<uint32_t>(Kh), stride3[1]);
-        const uint32_t Wout = conv_out_dim(static_cast<uint32_t>(W), padding3[2], dilation3[2], static_cast<uint32_t>(Kw), stride3[2]);
+        const uint32_t Tout =
+            conv_out_dim(static_cast<uint32_t>(T), padding3[0], dilation3[0], static_cast<uint32_t>(Kt), stride3[0]);
+        const uint32_t Hout =
+            conv_out_dim(static_cast<uint32_t>(H), padding3[1], dilation3[1], static_cast<uint32_t>(Kh), stride3[1]);
+        const uint32_t Wout =
+            conv_out_dim(static_cast<uint32_t>(W), padding3[2], dilation3[2], static_cast<uint32_t>(Kw), stride3[2]);
 
         at::Tensor out = tt_eager::ops::create::custom_empty_memory_format(
             {N, Cout, static_cast<int64_t>(Tout), static_cast<int64_t>(Hout), static_cast<int64_t>(Wout)},
@@ -391,34 +447,34 @@ struct conv3d_aten {
             c10::nullopt);
 
         using ttnn::operations::experimental::conv3d::Conv3dConfig;
-        Conv3dConfig cfg{tt::tt_metal::DataType::BFLOAT16,
-                         tt::tt_metal::DataType::BFLOAT16,
-                         tt::tt_metal::Layout::ROW_MAJOR,
-                         1, 1, 1,
-                         0, 0,
-                         static_cast<uint32_t>(Cout),
-                         {static_cast<uint32_t>(Kt), static_cast<uint32_t>(Kh), static_cast<uint32_t>(Kw)},
-                         {stride3[0], stride3[1], stride3[2]},
-                         {padding3[0], padding3[1], padding3[2]},
-                         "zeros",
-                         static_cast<uint32_t>(groups),
-                         {1,1}};
+        Conv3dConfig cfg{
+            tt::tt_metal::DataType::BFLOAT16,
+            tt::tt_metal::DataType::BFLOAT16,
+            tt::tt_metal::Layout::ROW_MAJOR,
+            1,
+            1,
+            1,
+            0,
+            0,
+            static_cast<uint32_t>(Cout),
+            {static_cast<uint32_t>(Kt), static_cast<uint32_t>(Kh), static_cast<uint32_t>(Kw)},
+            {stride3[0], stride3[1], stride3[2]},
+            {padding3[0], padding3[1], padding3[2]},
+            "zeros",
+            static_cast<uint32_t>(groups),
+            {1, 1}};
 
-        ttnn::Tensor out_tt = ttnn::experimental::conv3d(
-            in_tt,
-            w_tt,
-            b_tt,
-            cfg,
-            std::nullopt,
-            std::nullopt);
+        ttnn::Tensor out_tt = ttnn::experimental::conv3d(in_tt, w_tt, b_tt, cfg, std::nullopt, std::nullopt);
 
         return tt_eager::ext::write_from_ttnn(out, out, out_tt);
     }
 };
 
 // -------- Pooling helpers --------
-static inline uint32_t pool_out_dim(uint32_t in, uint32_t pad, uint32_t dilation, uint32_t kernel, uint32_t stride, bool ceil_mode) {
-    int64_t effective = static_cast<int64_t>(in) + 2 * static_cast<int64_t>(pad) - static_cast<int64_t>(dilation) * (static_cast<int64_t>(kernel) - 1) - 1;
+static inline uint32_t pool_out_dim(
+    uint32_t in, uint32_t pad, uint32_t dilation, uint32_t kernel, uint32_t stride, bool ceil_mode) {
+    int64_t effective = static_cast<int64_t>(in) + 2 * static_cast<int64_t>(pad) -
+                        static_cast<int64_t>(dilation) * (static_cast<int64_t>(kernel) - 1) - 1;
     double val = static_cast<double>(effective) / static_cast<double>(stride) + 1.0;
     int64_t out = ceil_mode ? static_cast<int64_t>(std::ceil(val)) : static_cast<int64_t>(std::floor(val));
     return static_cast<uint32_t>(std::max<int64_t>(out, 0));
@@ -441,8 +497,8 @@ struct max_pool2d_aten {
         const int64_t H = input.size(2);
         const int64_t W = input.size(3);
 
-        std::array<uint32_t,2> k = {static_cast<uint32_t>(kernel_size[0]), static_cast<uint32_t>(kernel_size[1])};
-        std::array<uint32_t,2> s;
+        std::array<uint32_t, 2> k = {static_cast<uint32_t>(kernel_size[0]), static_cast<uint32_t>(kernel_size[1])};
+        std::array<uint32_t, 2> s;
         if (stride.size() > 0) {
             auto s2 = to_tuple2(stride, 1);
             s = {s2[0], s2[1]};
@@ -470,21 +526,21 @@ struct max_pool2d_aten {
             static_cast<uint32_t>(C),
             k,
             s,
-            std::variant<std::array<uint32_t,2>, std::array<uint32_t,4>>{std::array<uint32_t,2>{p[0], p[1]}},
+            std::variant<std::array<uint32_t, 2>, std::array<uint32_t, 4>>{std::array<uint32_t, 2>{p[0], p[1]}},
             d,
-            /*ceil_mode*/ceil_mode,
-            /*memory_config*/std::nullopt,
-            /*applied_shard_scheme*/std::nullopt,
-            /*in_place_halo*/false,
-            /*deallocate_input*/false,
-            /*reallocate_halo_output*/true,
-            /*return_indices*/false,
-            /*dtype*/ttnn::DataType::BFLOAT16,
-            /*output_layout*/ttnn::ROW_MAJOR_LAYOUT);
+            /*ceil_mode*/ ceil_mode,
+            /*memory_config*/ std::nullopt,
+            /*applied_shard_scheme*/ std::nullopt,
+            /*in_place_halo*/ false,
+            /*deallocate_input*/ false,
+            /*reallocate_halo_output*/ true,
+            /*return_indices*/ false,
+            /*dtype*/ ttnn::DataType::BFLOAT16,
+            /*output_layout*/ ttnn::ROW_MAJOR_LAYOUT);
 
         ttnn::Tensor out_tt = std::holds_alternative<ttnn::Tensor>(res)
-            ? std::get<ttnn::Tensor>(res)
-            : std::get<ttnn::operations::pool::MaxPoolWithIndicesResult>(res).output;
+                                  ? std::get<ttnn::Tensor>(res)
+                                  : std::get<ttnn::operations::pool::MaxPoolWithIndicesResult>(res).output;
         return tt_eager::ext::write_from_ttnn(out, out, out_tt);
     }
 };
@@ -507,8 +563,8 @@ struct avg_pool2d_aten {
         const int64_t H = input.size(2);
         const int64_t W = input.size(3);
 
-        std::array<uint32_t,2> k = {static_cast<uint32_t>(kernel_size[0]), static_cast<uint32_t>(kernel_size[1])};
-        std::array<uint32_t,2> s;
+        std::array<uint32_t, 2> k = {static_cast<uint32_t>(kernel_size[0]), static_cast<uint32_t>(kernel_size[1])};
+        std::array<uint32_t, 2> s;
         if (stride.size() > 0) {
             auto s2 = to_tuple2(stride, 1);
             s = {s2[0], s2[1]};
@@ -517,8 +573,8 @@ struct avg_pool2d_aten {
         }
         auto p = to_tuple2(padding, 0);
 
-        const uint32_t Hout = pool_out_dim(static_cast<uint32_t>(H), p[0], /*dilation*/1, k[0], s[0], ceil_mode);
-        const uint32_t Wout = pool_out_dim(static_cast<uint32_t>(W), p[1], /*dilation*/1, k[1], s[1], ceil_mode);
+        const uint32_t Hout = pool_out_dim(static_cast<uint32_t>(H), p[0], /*dilation*/ 1, k[0], s[0], ceil_mode);
+        const uint32_t Wout = pool_out_dim(static_cast<uint32_t>(W), p[1], /*dilation*/ 1, k[1], s[1], ceil_mode);
 
         at::Tensor out = tt_eager::ops::create::custom_empty_memory_format(
             {N, C, static_cast<int64_t>(Hout), static_cast<int64_t>(Wout)},
@@ -540,29 +596,29 @@ struct avg_pool2d_aten {
             static_cast<uint32_t>(C),
             k,
             s,
-            std::variant<std::array<uint32_t,2>, std::array<uint32_t,4>>{std::array<uint32_t,2>{p[0], p[1]}},
-            /*ceil_mode*/ceil_mode,
-            /*count_include_pad*/count_include_pad,
-            /*divisor_override*/div_opt,
-            /*memory_config*/std::nullopt,
-            /*applied_shard_scheme*/std::nullopt,
-            /*in_place_halo*/false,
-            /*deallocate_input*/false,
-            /*reallocate_halo_output*/true,
-            /*dtype*/ttnn::DataType::BFLOAT16,
-            /*output_layout*/ttnn::ROW_MAJOR_LAYOUT);
+            std::variant<std::array<uint32_t, 2>, std::array<uint32_t, 4>>{std::array<uint32_t, 2>{p[0], p[1]}},
+            /*ceil_mode*/ ceil_mode,
+            /*count_include_pad*/ count_include_pad,
+            /*divisor_override*/ div_opt,
+            /*memory_config*/ std::nullopt,
+            /*applied_shard_scheme*/ std::nullopt,
+            /*in_place_halo*/ false,
+            /*deallocate_input*/ false,
+            /*reallocate_halo_output*/ true,
+            /*dtype*/ ttnn::DataType::BFLOAT16,
+            /*output_layout*/ ttnn::ROW_MAJOR_LAYOUT);
 
         return tt_eager::ext::write_from_ttnn(out, out, out_tt);
     }
 };
 
 struct adaptive_avg_pool2d_aten {
-    [[nodiscard]] static at::Tensor invoke(
-        const at::Tensor& input,
-        c10::IntArrayRef output_size) {
+    [[nodiscard]] static at::Tensor invoke(const at::Tensor& input, c10::IntArrayRef output_size) {
         TORCH_CHECK(input.dim() == 4, "adaptive_avg_pool2d expects 4D input [N, C, H, W]");
         TORCH_CHECK(output_size.size() == 2, "adaptive_avg_pool2d: output_size must be 2 elements");
-        TORCH_CHECK(output_size[0] == 1 && output_size[1] == 1, "adaptive_avg_pool2d currently supports only output_size=[1,1] on TTNN");
+        TORCH_CHECK(
+            output_size[0] == 1 && output_size[1] == 1,
+            "adaptive_avg_pool2d currently supports only output_size=[1,1] on TTNN");
 
         ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
         ttnn::Tensor out_tt = ttnn::global_avg_pool2d(in_tt);
@@ -576,7 +632,4 @@ struct adaptive_avg_pool2d_aten {
     }
 };
 
-} // namespace tt_eager::ext
-
-
-
+}  // namespace tt_eager::ext
