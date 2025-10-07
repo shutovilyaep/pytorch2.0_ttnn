@@ -14,8 +14,6 @@
 #include "ttnn_cpp_extension/utils/random_eager_wrappers.hpp"
 #include "ttnn_cpp_extension/utils/reduction_eager_wrappers.hpp"
 #include "ttnn_cpp_extension/utils/conv_pool_eager_wrappers.hpp"
-// TODO: NOW: FIXME временно отключено: autograd_wrap.hpp вызывает ошибки компиляции при парсинге шаблонов
-// #include "ttnn_cpp_extension/utils/autograd_wrap.hpp"
 
 #include <ttnn/operations/eltwise/unary/unary.hpp>
 #include <ttnn/operations/eltwise/unary/unary_composite.hpp>
