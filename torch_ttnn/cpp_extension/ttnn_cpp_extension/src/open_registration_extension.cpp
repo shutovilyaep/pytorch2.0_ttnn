@@ -496,7 +496,7 @@ static inline void register_random_ops(torch::Library& m) {
     m.impl("uniform_", TORCH_FN(tt_eager::ext::unary_random_uniform<ttnn::uniform>::invoke_inplace));
 }
 
-static inline void register_convolution_ops(torch::Library& m) {
+static inline void register_conv_and_pool_ops(torch::Library& m) {
     // =========================
     // Convolution ops
     // =========================
@@ -516,7 +516,7 @@ static inline void register_convolution_ops(torch::Library& m) {
     // - conv_transpose2d.input(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0, SymInt[2] output_padding=0, SymInt groups=1, SymInt[2] dilation=1) -> Tensor
     // - conv_transpose3d.input(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, SymInt[3] output_padding=0, SymInt groups=1, SymInt[3] dilation=1) -> Tensor
 
-    // Implemented via TTNN wrappers:
+    // Implemented via TTNN wrappers (Conv):
     // conv1d
     m.impl("conv1d", TORCH_FN(tt_eager::ext::conv1d_aten::invoke));
     // conv2d
@@ -525,6 +525,14 @@ static inline void register_convolution_ops(torch::Library& m) {
     m.impl("conv3d", TORCH_FN(tt_eager::ext::conv3d_aten::invoke));
     // conv_transpose2d.input
     m.impl("conv_transpose2d.input", TORCH_FN(tt_eager::ext::conv_transpose2d_aten::invoke));
+
+    // Pooling (2D):
+    // max_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, int[2] dilation=1, bool ceil_mode=False)
+    m.impl("max_pool2d", TORCH_FN(tt_eager::ext::max_pool2d_aten::invoke));
+    // avg_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, bool ceil_mode=False, bool count_include_pad=True)
+    m.impl("avg_pool2d", TORCH_FN(tt_eager::ext::avg_pool2d_aten::invoke));
+    // adaptive_avg_pool2d(Tensor self, SymInt[2] output_size) -> Tensor
+    m.impl("adaptive_avg_pool2d", TORCH_FN(tt_eager::ext::adaptive_avg_pool2d_aten::invoke));
 
     // Not implemented yet (reserved):
     // m.impl("convolution", ...);
@@ -547,7 +555,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     register_core_creation_and_copy(m);
     register_unary_ops(m);
     register_binary_ops(m);
-    register_convolution_ops(m);
+    register_conv_and_pool_ops(m);
     register_reductions(m);
     register_random_ops(m);
 }

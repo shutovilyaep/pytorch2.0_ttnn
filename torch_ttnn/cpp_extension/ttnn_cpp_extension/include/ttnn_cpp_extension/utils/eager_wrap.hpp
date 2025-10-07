@@ -63,6 +63,8 @@
 #include <ttnn/operations/conv/conv2d/conv2d.hpp>
 #include <ttnn/operations/conv/conv_transpose2d/conv_transpose2d.hpp>
 #include <ttnn/operations/experimental/conv3d/conv3d.hpp>
+#include <ttnn/operations/pool/generic/generic_pools.hpp>
+#include <ttnn/operations/pool/global_avg_pool/global_avg_pool.hpp>
 
 namespace tt_eager::ext {
 
@@ -1219,7 +1221,7 @@ struct reduction_dim_pair {
 
 
 // =========================
-// Convolution wrappers (aten schemas → TTNN ops)
+// Convolution/Pooling wrappers (aten schemas → TTNN ops)
 // =========================
 namespace tt_eager::ext {
 
@@ -1609,6 +1611,169 @@ struct conv3d_aten {
             std::nullopt,
             std::nullopt);
 
+        return write_from_ttnn(out, out, out_tt);
+    }
+};
+
+} // namespace tt_eager::ext
+
+namespace tt_eager::ext {
+
+// -------- Pooling helpers --------
+static inline uint32_t pool_out_dim(uint32_t in, uint32_t pad, uint32_t dilation, uint32_t kernel, uint32_t stride, bool ceil_mode) {
+    // PyTorch formula: floor or ceil depending on ceil_mode
+    int64_t effective = static_cast<int64_t>(in) + 2 * static_cast<int64_t>(pad) - static_cast<int64_t>(dilation) * (static_cast<int64_t>(kernel) - 1) - 1;
+    double val = static_cast<double>(effective) / static_cast<double>(stride) + 1.0;
+    int64_t out = ceil_mode ? static_cast<int64_t>(std::ceil(val)) : static_cast<int64_t>(std::floor(val));
+    return static_cast<uint32_t>(std::max<int64_t>(out, 0));
+}
+
+// aten::max_pool2d(self, kernel_size[2], stride[2]=[], padding[2]=0, dilation[2]=1, ceil_mode=False)
+struct max_pool2d_aten {
+    [[nodiscard]] static at::Tensor invoke(
+        const at::Tensor& input,
+        c10::IntArrayRef kernel_size,
+        c10::OptionalArrayRef<int64_t> stride,
+        c10::OptionalArrayRef<int64_t> padding,
+        c10::OptionalArrayRef<int64_t> dilation,
+        bool ceil_mode) {
+        TORCH_CHECK(input.dim() == 4, "max_pool2d expects 4D input [N, C, H, W]");
+        TORCH_CHECK(kernel_size.size() == 2, "max_pool2d: kernel_size must have 2 elements");
+
+        ttnn::Tensor in_tt = tileify(input);
+        const int64_t N = input.size(0);
+        const int64_t C = input.size(1);
+        const int64_t H = input.size(2);
+        const int64_t W = input.size(3);
+
+        std::array<uint32_t,2> k = {static_cast<uint32_t>(kernel_size[0]), static_cast<uint32_t>(kernel_size[1])};
+        std::array<uint32_t,2> s;
+        if (stride.has_value() && stride->size() > 0) {
+            auto s2 = to_tuple2(stride, 1);
+            s = {s2[0], s2[1]};
+        } else {
+            s = k; // default stride = kernel_size
+        }
+        auto d = to_tuple2(dilation, 1);
+        auto p = to_tuple2(padding, 0);
+
+        const uint32_t Hout = pool_out_dim(static_cast<uint32_t>(H), p[0], d[0], k[0], s[0], ceil_mode);
+        const uint32_t Wout = pool_out_dim(static_cast<uint32_t>(W), p[1], d[1], k[1], s[1], ceil_mode);
+
+        at::Tensor out = tt_eager::ops::create::custom_empty_memory_format(
+            {N, C, static_cast<int64_t>(Hout), static_cast<int64_t>(Wout)},
+            c10::optional<at::ScalarType>(input.scalar_type()),
+            c10::nullopt,
+            c10::optional<at::Device>(input.device()),
+            c10::nullopt);
+
+        auto res = ttnn::max_pool2d(
+            in_tt,
+            static_cast<uint32_t>(N),
+            static_cast<uint32_t>(H),
+            static_cast<uint32_t>(W),
+            static_cast<uint32_t>(C),
+            k,
+            s,
+            std::variant<std::array<uint32_t,2>, std::array<uint32_t,4>>{std::array<uint32_t,2>{p[0], p[1]}},
+            d,
+            /*ceil_mode*/ceil_mode,
+            /*memory_config*/std::nullopt,
+            /*applied_shard_scheme*/std::nullopt,
+            /*in_place_halo*/false,
+            /*deallocate_input*/false,
+            /*reallocate_halo_output*/true,
+            /*return_indices*/false,
+            /*dtype*/ttnn::DataType::BFLOAT16,
+            /*output_layout*/ttnn::ROW_MAJOR_LAYOUT);
+
+        ttnn::Tensor out_tt = std::holds_alternative<ttnn::Tensor>(res)
+            ? std::get<ttnn::Tensor>(res)
+            : std::get<ttnn::operations::pool::MaxPoolWithIndicesResult>(res).output;
+        return write_from_ttnn(out, out, out_tt);
+    }
+};
+
+// aten::avg_pool2d(self, kernel_size[2], stride[2]=[], padding[2]=0, ceil_mode=False, count_include_pad=True) -> Tensor
+struct avg_pool2d_aten {
+    [[nodiscard]] static at::Tensor invoke(
+        const at::Tensor& input,
+        c10::IntArrayRef kernel_size,
+        c10::OptionalArrayRef<int64_t> stride,
+        c10::OptionalArrayRef<int64_t> padding,
+        bool ceil_mode,
+        bool count_include_pad) {
+        TORCH_CHECK(input.dim() == 4, "avg_pool2d expects 4D input [N, C, H, W]");
+        TORCH_CHECK(kernel_size.size() == 2, "avg_pool2d: kernel_size must have 2 elements");
+
+        ttnn::Tensor in_tt = tileify(input);
+        const int64_t N = input.size(0);
+        const int64_t C = input.size(1);
+        const int64_t H = input.size(2);
+        const int64_t W = input.size(3);
+
+        std::array<uint32_t,2> k = {static_cast<uint32_t>(kernel_size[0]), static_cast<uint32_t>(kernel_size[1])};
+        std::array<uint32_t,2> s;
+        if (stride.has_value() && stride->size() > 0) {
+            auto s2 = to_tuple2(stride, 1);
+            s = {s2[0], s2[1]};
+        } else {
+            s = k; // default stride = kernel_size
+        }
+        auto p = to_tuple2(padding, 0);
+
+        const uint32_t Hout = pool_out_dim(static_cast<uint32_t>(H), p[0], /*dilation*/1, k[0], s[0], ceil_mode);
+        const uint32_t Wout = pool_out_dim(static_cast<uint32_t>(W), p[1], /*dilation*/1, k[1], s[1], ceil_mode);
+
+        at::Tensor out = tt_eager::ops::create::custom_empty_memory_format(
+            {N, C, static_cast<int64_t>(Hout), static_cast<int64_t>(Wout)},
+            c10::optional<at::ScalarType>(input.scalar_type()),
+            c10::nullopt,
+            c10::optional<at::Device>(input.device()),
+            c10::nullopt);
+
+        ttnn::Tensor out_tt = ttnn::avg_pool2d(
+            in_tt,
+            static_cast<uint32_t>(N),
+            static_cast<uint32_t>(H),
+            static_cast<uint32_t>(W),
+            static_cast<uint32_t>(C),
+            k,
+            s,
+            std::variant<std::array<uint32_t,2>, std::array<uint32_t,4>>{std::array<uint32_t,2>{p[0], p[1]}},
+            /*ceil_mode*/ceil_mode,
+            /*count_include_pad*/count_include_pad,
+            /*divisor_override*/std::nullopt,
+            /*memory_config*/std::nullopt,
+            /*applied_shard_scheme*/std::nullopt,
+            /*in_place_halo*/false,
+            /*deallocate_input*/false,
+            /*reallocate_halo_output*/true,
+            /*dtype*/ttnn::DataType::BFLOAT16,
+            /*output_layout*/ttnn::ROW_MAJOR_LAYOUT);
+
+        return write_from_ttnn(out, out, out_tt);
+    }
+};
+
+// aten::adaptive_avg_pool2d(self, output_size[2]) -> Tensor (limited to output_size == [1,1])
+struct adaptive_avg_pool2d_aten {
+    [[nodiscard]] static at::Tensor invoke(
+        const at::Tensor& input,
+        c10::IntArrayRef output_size) {
+        TORCH_CHECK(input.dim() == 4, "adaptive_avg_pool2d expects 4D input [N, C, H, W]");
+        TORCH_CHECK(output_size.size() == 2, "adaptive_avg_pool2d: output_size must be 2 elements");
+        TORCH_CHECK(output_size[0] == 1 && output_size[1] == 1,
+                    "adaptive_avg_pool2d currently supports only output_size=[1,1] on TTNN");
+
+        ttnn::Tensor in_tt = tileify(input);
+        ttnn::Tensor out_tt = ttnn::global_avg_pool2d(in_tt);
+        at::Tensor out = tt_eager::ops::create::custom_empty_memory_format(
+            {input.size(0), input.size(1), 1, 1},
+            c10::optional<at::ScalarType>(input.scalar_type()),
+            c10::nullopt,
+            c10::optional<at::Device>(input.device()),
+            c10::nullopt);
         return write_from_ttnn(out, out, out_tt);
     }
 };
