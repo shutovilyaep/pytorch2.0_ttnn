@@ -52,61 +52,45 @@ static inline void register_conv_and_pool_ops(torch::Library& m) {
     // =========================
     // Convolution ops
     // =========================
-    // From native_functions.yaml, available schemas (signatures below for reference):
-    // - convolution(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding, SymInt[] dilation,
-    // bool transposed, SymInt[] output_padding, SymInt groups) -> Tensor
-    // - convolution_overrideable(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding, SymInt[]
-    // dilation, bool transposed, SymInt[] output_padding, SymInt groups) -> Tensor
-    // - _convolution(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding, SymInt[] dilation,
-    // bool transposed, SymInt[] output_padding, SymInt groups, bool benchmark, bool deterministic, bool cudnn_enabled,
-    // bool allow_tf32) -> Tensor
-    // - _convolution_mode(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, str padding, SymInt[] dilation,
-    // SymInt groups) -> Tensor
-    // - conv1d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[1] stride=1, SymInt[1] padding=0, SymInt[1]
-    // dilation=1, SymInt groups=1) -> Tensor
-    // - conv2d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0, SymInt[2]
-    // dilation=1, SymInt groups=1) -> Tensor
-    // - conv3d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, SymInt[3]
-    // dilation=1, SymInt groups=1) -> Tensor
-    // - conv1d.padding(Tensor input, Tensor weight, Tensor? bias=None, SymInt[1] stride=1, str padding="valid",
-    // SymInt[1] dilation=1, SymInt groups=1) -> Tensor
-    // - conv2d.padding(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, str padding="valid",
-    // SymInt[2] dilation=1, SymInt groups=1) -> Tensor
-    // - conv3d.padding(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, str padding="valid",
-    // SymInt[3] dilation=1, SymInt groups=1) -> Tensor
-    // - conv_tbc(Tensor self, Tensor weight, Tensor bias, int pad=0) -> Tensor
-    // - conv_transpose1d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[1] stride=1, SymInt[1] padding=0,
-    // SymInt[1] output_padding=0, SymInt groups=1, SymInt[1] dilation=1) -> Tensor
-    // - conv_transpose2d.input(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0,
-    // SymInt[2] output_padding=0, SymInt groups=1, SymInt[2] dilation=1) -> Tensor
-    // - conv_transpose3d.input(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0,
-    // SymInt[3] output_padding=0, SymInt groups=1, SymInt[3] dilation=1) -> Tensor
 
     // Implemented via TTNN wrappers (Conv):
     // conv1d
+    // schema: conv1d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[1] stride=1, SymInt[1] padding=0, SymInt[1]
+    // dilation=1, SymInt groups=1) -> Tensor
     m.impl("conv1d", TORCH_FN(tt_eager::ext::conv1d_aten::invoke));
     // conv2d
+    // schema: conv2d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, SymInt[2] padding=0, SymInt[2]
+    // dilation=1, SymInt groups=1) -> Tensor
     m.impl("conv2d", TORCH_FN(tt_eager::ext::conv2d_aten::invoke));
     // conv3d (uses ttnn::experimental::conv3d)
+    // schema: conv3d(Tensor input, Tensor weight, Tensor? bias=None, SymInt[3] stride=1, SymInt[3] padding=0, SymInt[3]
+    // dilation=1, SymInt groups=1) -> Tensor
     m.impl("conv3d", TORCH_FN(tt_eager::ext::conv3d_aten::invoke));
     // conv_transpose2d.input
+    // schema: conv_transpose2d.input(Tensor input, Tensor weight, Tensor? bias=None, SymInt[2] stride=1, SymInt[2]
+    // padding=0, SymInt[2] output_padding=0, SymInt groups=1, SymInt[2] dilation=1) -> Tensor
     m.impl("conv_transpose2d.input", TORCH_FN(tt_eager::ext::conv_transpose2d_aten::invoke));
 
     // Register generic convolution entry points
+    // schema: convolution(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding, SymInt[]
+    // dilation, bool transposed, SymInt[] output_padding, SymInt groups) -> Tensor
     m.impl("convolution", TORCH_FN(aten_convolution_dispatch));
+    // schema: convolution_overrideable(Tensor input, Tensor weight, Tensor? bias, SymInt[] stride, SymInt[] padding,
+    // SymInt[] dilation, bool transposed, SymInt[] output_padding, SymInt groups) -> Tensor
     m.impl("convolution_overrideable", TORCH_FN(aten_convolution_dispatch));
 
     // Pooling (2D):
-    // max_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, int[2] dilation=1, bool
-    // ceil_mode=False)
+    // schema: max_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, int[2] dilation=1, bool
+    // ceil_mode=False) -> Tensor
     m.impl("max_pool2d", TORCH_FN(tt_eager::ext::max_pool2d_aten::invoke));
-    // avg_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, bool ceil_mode=False, bool
-    // count_include_pad=True)
+    // schema: avg_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, bool ceil_mode=False,
+    // bool count_include_pad=True) -> Tensor
     m.impl("avg_pool2d", TORCH_FN(tt_eager::ext::avg_pool2d_aten::invoke));
-    // adaptive_avg_pool2d(Tensor self, SymInt[2] output_size) -> Tensor
+
+    // schema: adaptive_avg_pool2d(Tensor self, SymInt[2] output_size) -> Tensor
     m.impl("adaptive_avg_pool2d", TORCH_FN(tt_eager::ext::adaptive_avg_pool2d_aten::invoke));
 
-    // Not implemented yet (reserved):
+    // Not implemented yet:
     // m.impl("_convolution", ...);
     // m.impl("_convolution_mode", ...);
     // m.impl("conv1d.padding", ...);
