@@ -1,0 +1,15 @@
+v0.59.1 migration notes (immediate change only)
+
+- Removed -DFMT_HEADER_ONLY from torch_ttnn/cpp_extension/CMakeLists.txt
+  - Rationale: Upstream tt-metal switched logging/asserts to use spdlog with fmt compile-time formatting (see v0.59.1 diff: assert.hpp changes and tt-logger/spdlog updates). Keeping FMT_HEADER_ONLY caused compile errors in assert.hpp due to fmt/spdlog mismatch. Removing the define lets spdlog use its compatible fmt symbols.
+- Added CPM dependencies and linkage to mirror tt-metal's third_party:
+  - Boost 1.86.0 (headers + core) via CPMAddPackage
+  - fmt 11.1.4 (fmt::fmt-header-only), spdlog 1.15.2 (SPDLOG_FMT_EXTERNAL_HO)
+  - reflect v1.2.6 (Reflect::Reflect INTERFACE target, include root; -DNTEST to disable header self-tests)
+  - magic_enum v0.9.7, nlohmann_json v3.11.3
+  - tt-logger 1.1.3 (link tt-logger::tt-logger if exported; fallback to include dir)
+- Removed ad-hoc header globs from find_prebuilt_ttnn.cmake; rely on CPM targets; kept only TTNN/tt-metal public include dirs.
+- Updated TTNN API usage:
+  - ttnn::to_layout(...) calls updated to new signature without extra optional args in ttnn_cpp_extension/src/ops/binary.cpp.
+- Runtime/linking:
+  - Set BUILD_RPATH/INSTALL_RPATH to ${TT_METAL_HOME}/build/lib so the extension finds libtt_metal/_ttnn at import time.

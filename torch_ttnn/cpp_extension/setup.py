@@ -8,6 +8,9 @@ import sysconfig
 import torch
 
 
+PROJECT_SOURCE_DIR = os.path.abspath(os.path.dirname(__file__))
+
+
 class CMakeExtension(Extension):
     def __init__(self, name, source_dir=".", cmake_args=None, **kwargs):
         Extension.__init__(self, name, sources=[])
@@ -27,6 +30,7 @@ class CMakeBuild(build_ext):
         # Configure CMake
         cmake_args = [
             f"-DCMAKE_BUILD_TYPE=Release",
+            f"-DCMAKE_EXPORT_COMPILE_COMMANDS=ON",
             f"-DTORCH_INSTALL_PREFIX={sysconfig.get_paths()['purelib']}",
             f"-DCMAKE_PREFIX_PATH={torch.utils.cmake_prefix_path}",
             f"-DPYTHON_EXECUTABLE={sys.executable}",
@@ -41,18 +45,26 @@ class CMakeBuild(build_ext):
         if "-DENABLE_SUBMODULE_TT_METAL_BUILD=ON" in extra_cmake_flags:
             extra_cmake_flags.append("-DENABLE_LOCAL_TT_METAL_BUILD=OFF")
 
-        torch_cxx_flags = get_torch_abi_related_compiler_flags()
-        if torch_cxx_flags:
-            flags_str = " ".join(torch_cxx_flags)
-            extra_cmake_flags.append(f"-DCMAKE_CXX_FLAGS={flags_str}")
+        # Derive only the _GLIBCXX ABI value from torch and pass it as a dedicated CMake var
+        abi_flags = get_torch_abi_related_compiler_flags()
+        for f in abi_flags:
+            if f.startswith("-D_GLIBCXX_USE_CXX11_ABI="):
+                abi_val = f.split("=")[-1]
+                extra_cmake_flags.append(f"-DTTNN_EXT_CXX11_ABI={abi_val}")
+                break
 
         if extra_cmake_flags:
             cmake_args.extend(extra_cmake_flags)
 
         cmake_args.extend(ext.cmake_args)
 
+        # Printing full CMD to run (to copy-paste easily later to rerun manually)
+
+        print(f"Running: cmake in {build_dir}: {ext.source_dir} {' '.join(cmake_args)}")
+
         # Build the extension
-        subprocess.check_call(["cmake", ext.source_dir] + cmake_args, cwd=build_dir)
+        source_dir = os.environ.get("EXT_SOURCE_DIR", ext.source_dir)
+        subprocess.check_call(["cmake", source_dir] + cmake_args, cwd=build_dir)
         subprocess.check_call(["cmake", "--build", ".", "--parallel"], cwd=build_dir)
 
         # Copy the extension to the correct location
@@ -67,7 +79,7 @@ setup(
     ext_modules=[
         CMakeExtension(
             name="ttnn_device_extension",
-            source_dir=".",
+            source_dir=PROJECT_SOURCE_DIR,
             cmake_args=[],
         ),
     ],
