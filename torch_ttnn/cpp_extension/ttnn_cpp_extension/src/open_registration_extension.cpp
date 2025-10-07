@@ -9,9 +9,12 @@
 
 #include "ttnn_cpp_extension/ops/creation.hpp"
 
-#include "ttnn_cpp_extension/utils/eager_wrap.hpp"
-// TODO: NOW: FIXME временно отключено: autograd_wrap.hpp вызывает ошибки компиляции при парсинге шаблонов
-// #include "ttnn_cpp_extension/utils/autograd_wrap.hpp"
+// Temporary: include monolithic eager wrappers until full split
+// Grouped eager wrappers
+#include "ttnn_cpp_extension/utils/unary_eager_wrappers.hpp"
+#include "ttnn_cpp_extension/utils/binary_eager_wrappers.hpp"
+#include "ttnn_cpp_extension/utils/reduction_eager_wrappers.hpp"
+#include "ttnn_cpp_extension/utils/conv_pool_eager_wrappers.hpp"
 
 #include <ttnn/operations/eltwise/unary/unary.hpp>
 #include <ttnn/operations/eltwise/unary/unary_composite.hpp>
