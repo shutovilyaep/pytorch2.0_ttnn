@@ -8,6 +8,7 @@
 #include <ttnn/operations/rand/rand.hpp>
 #include <ttnn/operations/bernoulli/bernoulli.hpp>
 #include <ttnn/operations/uniform/uniform.hpp>
+#include <ttnn/operations/eltwise/unary/unary.hpp>
 
 namespace tt_eager::ext {
 
