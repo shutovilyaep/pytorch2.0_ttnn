@@ -31,6 +31,38 @@ REGISTER_ALLOCATOR(c10::DeviceType::PrivateUse1, &get_ttnn_custom_allocator());
 
 
 namespace {
+// Generic convolution dispatcher matching aten.convolution/overrideable
+// Signature must match native_functions.yaml schema
+static at::Tensor aten_convolution_dispatch(
+    const at::Tensor& input,
+    const at::Tensor& weight,
+    const c10::optional<at::Tensor>& bias,
+    c10::IntArrayRef stride,
+    c10::IntArrayRef padding,
+    c10::IntArrayRef dilation,
+    bool transposed,
+    c10::IntArrayRef output_padding,
+    int64_t groups) {
+    const int64_t dim = input.dim();
+    TORCH_CHECK(dim == weight.dim(), "convolution: input and weight must have same rank");
+    if (!transposed) {
+        if (dim == 3) {
+            return tt_eager::ext::conv1d_aten::invoke(input, weight, bias, stride, padding, dilation, groups);
+        } else if (dim == 4) {
+            return tt_eager::ext::conv2d_aten::invoke(input, weight, bias, stride, padding, dilation, groups);
+        } else if (dim == 5) {
+            return tt_eager::ext::conv3d_aten::invoke(input, weight, bias, stride, padding, dilation, groups);
+        }
+        TORCH_CHECK(false, "convolution: unsupported input dim=", dim, " (expected 3,4,5)");
+    } else {
+        TORCH_CHECK(dim != 3, "convolution: transposed 1D not yet supported on TTNN");
+        if (dim == 4) {
+            return tt_eager::ext::conv_transpose2d_aten::invoke(input, weight, bias, stride, padding, output_padding, groups, dilation);
+        }
+        TORCH_CHECK(false, "convolution: transposed dim=", dim, " not yet supported on TTNN");
+    }
+}
+
 
 // Helper templates for concise unary registrations
 // - register_unary_base_out_inplace: registers base, base.out, base_
@@ -526,6 +558,10 @@ static inline void register_conv_and_pool_ops(torch::Library& m) {
     // conv_transpose2d.input
     m.impl("conv_transpose2d.input", TORCH_FN(tt_eager::ext::conv_transpose2d_aten::invoke));
 
+    // Register generic convolution entry points
+    m.impl("convolution", TORCH_FN(aten_convolution_dispatch));
+    m.impl("convolution_overrideable", TORCH_FN(aten_convolution_dispatch));
+
     // Pooling (2D):
     // max_pool2d(Tensor self, int[2] kernel_size, int[2] stride=[], int[2] padding=0, int[2] dilation=1, bool ceil_mode=False)
     m.impl("max_pool2d", TORCH_FN(tt_eager::ext::max_pool2d_aten::invoke));
@@ -535,8 +571,6 @@ static inline void register_conv_and_pool_ops(torch::Library& m) {
     m.impl("adaptive_avg_pool2d", TORCH_FN(tt_eager::ext::adaptive_avg_pool2d_aten::invoke));
 
     // Not implemented yet (reserved):
-    // m.impl("convolution", ...);
-    // m.impl("convolution_overrideable", ...);
     // m.impl("_convolution", ...);
     // m.impl("_convolution_mode", ...);
     // m.impl("conv1d.padding", ...);

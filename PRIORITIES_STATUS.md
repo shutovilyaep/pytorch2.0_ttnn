@@ -45,8 +45,8 @@
 ---
 
 ### Execution Checklist (tracking)
-- [ ] TIER 1
-  - [ ] aten.convolution.default (conv1d/conv2d/conv3d/conv_transpose2d are present)
+- [x] TIER 1
+  - [x] aten.convolution.default (dispatch via convolution/convolution_overrideable; conv1d/2d/3d + conv_transpose2d wired)
 - [ ] TIER 2
   - [ ] aten.view.default
   - [x] aten.add.Tensor
@@ -66,7 +66,7 @@
 > Note: Priorities and coverage reflect document #1215; details for specialized ops are in per-model docs.
 
 ### Status summary
-- TIER 1: 0/1 complete
+- TIER 1: 1/1 complete
 - TIER 2: 1/3 complete (done: add.Tensor)
 - Phase 1 (core ops for simple models): 1/6 complete (done: relu; pooling partially covered)
 - TIER 3: 3/5 complete (relu, mean.dim, mul.Tensor)
