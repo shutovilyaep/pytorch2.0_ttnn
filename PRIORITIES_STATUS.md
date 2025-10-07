@@ -45,9 +45,39 @@
 ---
 
 ### Execution Checklist (tracking)
-- [ ] TIER 1: aten.convolution.default
-- [ ] TIER 2: aten.view.default, aten.add.Tensor, aten.addmm.default
-- [ ] Phase 1: 16 ops (including max_pool2d_with_indices)
-- [ ] TIER 3: relu, mean.dim, cat, _native_batch_norm_*, mul.Tensor
+- [ ] TIER 1
+  - [ ] aten.convolution.default (conv1d/conv2d/conv3d/conv_transpose2d are present)
+- [ ] TIER 2
+  - [ ] aten.view.default
+  - [x] aten.add.Tensor
+  - [ ] aten.addmm.default
+- [ ] Phase 1 (simple models plan)
+  - [ ] aten.max_pool2d_with_indices.default
+  - [x] aten.max_pool2d (no indices)
+  - [x] aten.avg_pool2d
+  - [x] aten.adaptive_avg_pool2d (constraint: output [1,1])
+- [ ] TIER 3
+  - [x] aten.relu.default
+  - [x] aten.mean.dim
+  - [ ] aten.cat.default
+  - [ ] aten._native_batch_norm_legit_no_training.default
+  - [x] aten.mul.Tensor
 
 > Note: Priorities and coverage reflect document #1215; details for specialized ops are in per-model docs.
+
+### Status summary
+- TIER 1: 0/1 complete
+- TIER 2: 1/3 complete (done: add.Tensor)
+- Phase 1 (core ops for simple models): 1/6 complete (done: relu; pooling partially covered)
+- TIER 3: 3/5 complete (relu, mean.dim, mul.Tensor)
+
+### TIER 1 — short implementation plan for `aten.convolution.default`
+- Register `convolution` (and if needed `convolution_overrideable`) in `open_registration_extension.cpp` and dispatch by dimensionality and `transposed` flag:
+  - 1D → `tt_eager::ext::conv1d_aten::invoke`
+  - 2D (transposed=false) → `tt_eager::ext::conv2d_aten::invoke`
+  - 2D (transposed=true) → `tt_eager::ext::conv_transpose2d_aten::invoke`
+  - 3D → `tt_eager::ext::conv3d_aten::invoke`
+- Normalize parameters: `stride`, `padding`, `dilation`, `output_padding`; compute output shape via existing helpers (`conv_out_dim`, `conv_transpose_out_dim`).
+- Support `groups` and optional `bias`; validate TTNN device; use `tileify`/`write_from_ttnn`.
+- Phase 1 scope: NCHW, float/bfloat16; no string padding modes; expand coverage afterwards.
+- Add tests for 1D/2D/3D and transposed, checking output shapes and accuracy.
