@@ -11,7 +11,7 @@
 int main() {
     auto ttnn_device = ttnn::open_mesh_device(
         0, 16384, DEFAULT_TRACE_REGION_SIZE, tt::tt_metal::DispatchCoreConfig(tt::tt_metal::DispatchCoreType::ETH));
-    auto device = as_torch_device(ttnn_device.get());
+    auto device = as_torch_device(ttnn_device);
 
     // Use the correct device type syntax - lowercase and with index
     // auto device = c10::Device(c10::DeviceType::PrivateUse1, 0);

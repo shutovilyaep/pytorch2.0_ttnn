@@ -1,0 +1,2322 @@
+TTNN operations registered (580 matches)
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:461
+  op: "ttnn::abs"
+  var: abs
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:709
+  op: "ttnn::abs_bw"
+  var: abs_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:373
+  op: "ttnn::acos"
+  var: acos
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:580
+  op: "ttnn::acos_bw"
+  var: acos_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:379
+  op: "ttnn::acosh"
+  var: acosh
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:658
+  op: "ttnn::acosh_bw"
+  var: acosh_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:167
+  op: "ttnn::add"
+  var: add
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:168
+  op: "ttnn::add_"
+  var: add_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:352
+  op: "ttnn::add_bw"
+  var: add_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:485
+  op: "ttnn::add_sfpu"
+  var: add_sfpu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:263
+  op: "ttnn::addalpha"
+  var: addalpha
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:350
+  op: "ttnn::addalpha_bw"
+  var: addalpha_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/ternary/ternary_composite.hpp:74
+  op: "ttnn::addcdiv"
+  var: addcdiv
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/ternary_backward/ternary_backward.hpp:70
+  op: "ttnn::addcdiv_bw"
+  var: addcdiv_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/ternary/ternary_composite.hpp:71
+  op: "ttnn::addcmul"
+  var: addcmul
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/ternary_backward/ternary_backward.hpp:68
+  op: "ttnn::addcmul_bw"
+  var: addcmul_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/matmul/matmul.hpp:135
+  op: "ttnn::addmm"
+  var: addmm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/ccl/all_to_all_combine/all_to_all_combine.hpp:32
+  op: "ttnn::all_to_all_combine"
+  var: all_to_all_combine
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/ccl/all_to_all_dispatch/all_to_all_dispatch.hpp:30
+  op: "ttnn::all_to_all_dispatch"
+  var: all_to_all_dispatch
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:412
+  op: "ttnn::alt_complex_rotate90"
+  var: alt_complex_rotate90
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary/complex_unary.hpp:39
+  op: "ttnn::angle"
+  var: angle
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary_backward/complex_unary_backward.hpp:52
+  op: "ttnn::angle_bw"
+  var: angle_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/argmax/argmax.hpp:27
+  op: "ttnn::argmax"
+  var: argmax
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:374
+  op: "ttnn::asin"
+  var: asin
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:631
+  op: "ttnn::asin_bw"
+  var: asin_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:375
+  op: "ttnn::asinh"
+  var: asinh
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:633
+  op: "ttnn::asinh_bw"
+  var: asinh_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/copy/copy.hpp:36
+  op: "ttnn::assign"
+  var: assign
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:344
+  op: "ttnn::assign_bw"
+  var: assign_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:376
+  op: "ttnn::atan"
+  var: atan
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:479
+  op: "ttnn::atan2"
+  var: atan2
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:317
+  op: "ttnn::atan2_bw"
+  var: atan2_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:582
+  op: "ttnn::atan_bw"
+  var: atan_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:377
+  op: "ttnn::atanh"
+  var: atanh
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:629
+  op: "ttnn::atanh_bw"
+  var: atanh_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/pool/generic/generic_pools.hpp:68
+  op: "ttnn::avg_pool2d"
+  var: avg_pool2d
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/ccl/barrier/barrier.hpp:24
+  op: "ttnn::barrier"
+  var: barrier
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/batch_norm/batch_norm.hpp:27
+  op: "ttnn::batch_norm"
+  var: batch_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/bcast/bcast.hpp:25
+  op: "ttnn::bcast"
+  var: bcast
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/bernoulli/bernoulli.hpp:22
+  op: "ttnn::bernoulli"
+  var: bernoulli
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:497
+  op: "ttnn::bias_gelu"
+  var: bias_gelu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:260
+  op: "ttnn::bias_gelu_"
+  var: bias_gelu_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:347
+  op: "ttnn::bias_gelu_bw"
+  var: bias_gelu_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:510
+  op: "ttnn::bitwise_and"
+  var: bitwise_and
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:514
+  op: "ttnn::bitwise_left_shift"
+  var: bitwise_left_shift
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:411
+  op: "ttnn::bitwise_not"
+  var: bitwise_not
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:511
+  op: "ttnn::bitwise_or"
+  var: bitwise_or
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:518
+  op: "ttnn::bitwise_right_shift"
+  var: bitwise_right_shift
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:512
+  op: "ttnn::bitwise_xor"
+  var: bitwise_xor
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:150
+  op: "ttnn::cbrt"
+  var: cbrt
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:414
+  op: "ttnn::ceil"
+  var: ceil
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:604
+  op: "ttnn::ceil_bw"
+  var: ceil_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:448
+  op: "ttnn::celu"
+  var: celu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:689
+  op: "ttnn::celu_bw"
+  var: celu_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/chunk/chunk.hpp:17
+  op: "ttnn::chunk"
+  var: chunk
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:175
+  op: "ttnn::clamp"
+  var: clamp
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:660
+  op: "ttnn::clamp_bw"
+  var: clamp_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:470
+  op: "ttnn::clamp_tss"
+  var: clamp_tss
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:174
+  op: "ttnn::clip"
+  var: clip
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:662
+  op: "ttnn::clip_bw"
+  var: clip_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/clone/clone.hpp:20
+  op: "ttnn::clone"
+  var: clone
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex/complex.hpp:40
+  op: "ttnn::complex_tensor"
+  var: complex_tensor
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/examples/example/example.hpp:28
+  op: "ttnn::composite_example"
+  var: composite_example
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/examples/example_multiple_return/example_multiple_return.hpp:24
+  op: "ttnn::composite_example_multiple_return"
+  var: composite_example_multiple_return
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/concat/concat.hpp:29
+  op: "ttnn::concat"
+  var: concat
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:339
+  op: "ttnn::concat_bw"
+  var: concat_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary/complex_unary.hpp:49
+  op: "ttnn::conj"
+  var: conj
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary_backward/complex_unary_backward.hpp:39
+  op: "ttnn::conj_bw"
+  var: conj_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/conv/conv1d/conv1d.hpp:82
+  op: "ttnn::conv1d"
+  var: conv1d
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/conv/conv2d/conv2d.hpp:129
+  op: "ttnn::conv2d"
+  var: conv2d
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/conv/conv_transpose2d/conv_transpose2d.hpp:83
+  op: "ttnn::conv_transpose2d"
+  var: conv_transpose2d
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/copy/copy.hpp:35
+  op: "ttnn::copy"
+  var: copy
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:378
+  op: "ttnn::cos"
+  var: cos
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:656
+  op: "ttnn::cos_bw"
+  var: cos_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:380
+  op: "ttnn::cosh"
+  var: cosh
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:608
+  op: "ttnn::cosh_bw"
+  var: cosh_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/accumulation/cumprod/cumprod.hpp:28
+  op: "ttnn::cumprod"
+  var: cumprod
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/accumulation/cumsum/cumsum.hpp:29
+  op: "ttnn::cumsum"
+  var: cumsum
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:468
+  op: "ttnn::deg2rad"
+  var: deg2rad
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:623
+  op: "ttnn::deg2rad_bw"
+  var: deg2rad_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/quantization/quantization.hpp:54
+  op: "ttnn::dequantize"
+  var: dequantize
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:153
+  op: "ttnn::digamma"
+  var: digamma
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:618
+  op: "ttnn::digamma_bw"
+  var: digamma_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:490
+  op: "ttnn::div"
+  var: div
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:356
+  op: "ttnn::div_bw"
+  var: div_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:491
+  op: "ttnn::div_no_nan"
+  var: div_no_nan
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:704
+  op: "ttnn::div_no_nan_bw"
+  var: div_no_nan_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:497
+  op: "ttnn::div_sfpu"
+  var: div_sfpu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:227
+  op: "ttnn::divide_"
+  var: divide_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/prefetcher/prefetcher/dram_prefetcher.hpp:26
+  op: "ttnn::dram_prefetcher"
+  var: dram_prefetcher
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:465
+  op: "ttnn::elu"
+  var: elu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:690
+  op: "ttnn::elu_bw"
+  var: elu_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/embedding/embedding.hpp:32
+  op: "ttnn::embedding"
+  var: embedding
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/embedding_backward/embedding_backward.hpp:29
+  op: "ttnn::embedding_bw"
+  var: embedding_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:182
+  op: "ttnn::eq"
+  var: eq
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:251
+  op: "ttnn::eq_"
+  var: eq_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:445
+  op: "ttnn::eq_unary"
+  var: eq_unary
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:462
+  op: "ttnn::eqz"
+  var: eqz
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:423
+  op: "ttnn::erf"
+  var: erf
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:621
+  op: "ttnn::erf_bw"
+  var: erf_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:424
+  op: "ttnn::erfc"
+  var: erfc
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:642
+  op: "ttnn::erfc_bw"
+  var: erfc_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:382
+  op: "ttnn::erfinv"
+  var: erfinv
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:620
+  op: "ttnn::erfinv_bw"
+  var: erfinv_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/sliding_window/halo/halo.hpp:37
+  op: "ttnn::example"
+  var: example
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:422
+  op: "ttnn::exp"
+  var: exp
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:383
+  op: "ttnn::exp2"
+  var: exp2
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:614
+  op: "ttnn::exp2_bw"
+  var: exp2_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:670
+  op: "ttnn::exp_bw"
+  var: exp_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/expand/expand.hpp:20
+  op: "ttnn::expand"
+  var: expand
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/all_broadcast_async/all_broadcast_async.hpp:28
+  op: "ttnn::experimental::all_broadcast_async"
+  var: all_broadcast_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/all_gather_async/all_gather_async.hpp:128
+  op: "ttnn::experimental::all_gather_async"
+  var: all_gather_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/all_gather_async/all_gather_async.hpp:132
+  op: "ttnn::experimental::all_gather_async_reversed"
+  var: all_gather_async_reversed
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/all_gather_command_processor_async/all_gather_command_processor_async.hpp:42
+  op: "ttnn::experimental::all_gather_command_processor_async"
+  var: all_gather_command_processor_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/all_gather_concat_heads_fused/all_gather_concat.hpp:34
+  op: "ttnn::experimental::all_gather_concat"
+  var: all_gather_concat
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/all_gather_matmul_async/all_gather_matmul_async.hpp:46
+  op: "ttnn::experimental::all_gather_matmul_async"
+  var: all_gather_matmul_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/all_reduce_async/all_reduce_async.hpp:81
+  op: "ttnn::experimental::all_reduce_async"
+  var: all_reduce_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/all_reduce_create_qkv_heads/all_reduce_create_qkv_heads.hpp:50
+  op: "ttnn::experimental::all_reduce_create_qkv_heads"
+  var: all_reduce_create_qkv_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/all_to_all_async/all_to_all_async.hpp:32
+  op: "ttnn::experimental::all_to_all_async"
+  var: all_to_all_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/matmul/attn_matmul/attn_matmul.hpp:43
+  op: "ttnn::experimental::attn_matmul"
+  var: attn_matmul
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/matmul/attn_matmul/attn_matmul.hpp:47
+  op: "ttnn::experimental::attn_matmul_from_cache"
+  var: attn_matmul_from_cache
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/bcast_to/bcast_to.hpp:21
+  op: "ttnn::experimental::broadcast_to"
+  var: broadcast_to
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/concatenate_heads/concatenate_heads.hpp:36
+  op: "ttnn::experimental::concatenate_heads"
+  var: concatenate_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/conv3d/conv3d.hpp:32
+  op: "ttnn::experimental::conv3d"
+  var: conv3d
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/cnn/convert_to_chw/convert_to_chw.hpp:23
+  op: "ttnn::experimental::convert_to_chw"
+  var: convert_to_chw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/cnn/convert_to_hwc/convert_to_hwc.hpp:23
+  op: "ttnn::experimental::convert_to_hwc"
+  var: convert_to_hwc
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/create_qkv_heads/create_qkv_heads.hpp:27
+  op: "ttnn::experimental::create_qkv_heads"
+  var: create_qkv_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/create_qkv_heads_from_separate_tensors/create_qkv_heads_from_separate_tensors.hpp:28
+  op: "ttnn::experimental::create_qkv_heads_from_separate_tensors"
+  var: create_qkv_heads_from_separate_tensors
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/dropout/dropout.hpp:20
+  op: "ttnn::experimental::dropout"
+  var: dropout
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/reduction/fast_reduce_nc/fast_reduce_nc.hpp:28
+  op: "ttnn::experimental::fast_reduce_nc"
+  var: fast_reduce_nc
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/unary_backward/gelu_backward/gelu_backward.hpp:25
+  op: "ttnn::experimental::gelu_bw"
+  var: gelu_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/matmul/group_attn_matmul/group_attn_matmul.hpp:30
+  op: "ttnn::experimental::group_attn_matmul"
+  var: group_attn_matmul
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/llama_all_gather_matmul_async/llama_all_gather_matmul_async.hpp:39
+  op: "ttnn::experimental::llama_all_gather_matmul_async"
+  var: llama_all_gather_matmul_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/llama_reduce_scatter/llama_reduce_scatter.hpp:33
+  op: "ttnn::experimental::llama_reduce_scatter"
+  var: llama_reduce_scatter
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/llama_reduce_scatter_create_heads/llama_reduce_scatter_create_heads.hpp:37
+  op: "ttnn::experimental::llama_rs_create_heads"
+  var: llama_rs_create_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/llama_reduce_scatter_matmul/rs_matmul.hpp:49
+  op: "ttnn::experimental::llama_rs_matmul"
+  var: llama_rs_matmul
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/matmul_reduce_scatter_async/matmul_reduce_scatter_async.hpp:45
+  op: "ttnn::experimental::matmul_reduce_scatter_async"
+  var: matmul_reduce_scatter_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_concat_heads/nlp_concat_heads.hpp:22
+  op: "ttnn::experimental::nlp_concat_heads"
+  var: nlp_concat_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_concat_heads_boltz/nlp_concat_heads_boltz.hpp:21
+  op: "ttnn::experimental::nlp_concat_heads_boltz"
+  var: nlp_concat_heads_boltz
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_concat_heads_decode/nlp_concat_heads_decode.hpp:23
+  op: "ttnn::experimental::nlp_concat_heads_decode"
+  var: nlp_concat_heads_decode
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_create_qkv_heads/nlp_create_qkv_heads.hpp:28
+  op: "ttnn::experimental::nlp_create_qkv_heads"
+  var: nlp_create_qkv_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_create_qkv_heads_boltz/nlp_create_qkv_heads_boltz.hpp:27
+  op: "ttnn::experimental::nlp_create_qkv_heads_boltz"
+  var: nlp_create_qkv_heads_boltz
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_create_qkv_heads_decode/nlp_create_qkv_heads_decode.hpp:29
+  op: "ttnn::experimental::nlp_create_qkv_heads_decode"
+  var: nlp_create_qkv_heads_decode
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_create_qkv_heads_falcon7b/nlp_create_qkv_heads_falcon7b.hpp:24
+  op: "ttnn::experimental::nlp_create_qkv_heads_falcon7b"
+  var: nlp_create_qkv_heads_falcon7b
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_create_qkv_heads_segformer/nlp_create_qkv_heads_segformer.hpp:24
+  op: "ttnn::experimental::nlp_create_qkv_heads_segformer"
+  var: nlp_create_qkv_heads_segformer
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_create_qkv_heads_vit/nlp_create_qkv_heads_vit.hpp:24
+  op: "ttnn::experimental::nlp_create_qkv_heads_vit"
+  var: nlp_create_qkv_heads_vit
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_kv_cache_load_slice/nlp_kv_cache_load_slice.hpp:24
+  op: "ttnn::experimental::nlp_kv_cache_load_slice"
+  var: nlp_kv_cache_load_slice
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/paged_cache/paged_cache.hpp:64
+  op: "ttnn::experimental::paged_fill_cache"
+  var: paged_fill_cache
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/paged_cache/paged_cache.hpp:60
+  op: "ttnn::experimental::paged_fused_update_cache"
+  var: paged_fused_update_cache
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/paged_cache/paged_cache.hpp:56
+  op: "ttnn::experimental::paged_update_cache"
+  var: paged_update_cache
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/send_recv_async/recv_async/recv_async.hpp:25
+  op: "ttnn::experimental::recv_async"
+  var: recv_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/reduce_scatter_async/reduce_scatter.hpp:76
+  op: "ttnn::experimental::reduce_scatter_async"
+  var: reduce_scatter_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/reduce_scatter_minimal_async/reduce_scatter_minimal_async.hpp:37
+  op: "ttnn::experimental::reduce_scatter_minimal_async"
+  var: reduce_scatter_minimal_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ssm/repeat_and_interleave_eltwise_mul/repeat_and_interleave_eltwise_mul.hpp:26
+  op: "ttnn::experimental::repeat_and_interleave_eltwise_mul"
+  var: repeat_and_interleave_eltwise_mul
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/ring_attention_all_gather_async/ring_attention_all_gather_async.hpp:32
+  op: "ttnn::experimental::ring_attention_all_gather_async"
+  var: ring_attention_all_gather_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/rotary_embedding/rotary_embedding.hpp:28
+  op: "ttnn::experimental::rotary_embedding"
+  var: rotary_embedding
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/rotary_embedding_llama/rotary_embedding_llama.hpp:29
+  op: "ttnn::experimental::rotary_embedding_llama"
+  var: rotary_embedding_llama
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/rotary_embedding_llama_fused_qk/rotary_embedding_llama_fused_qk.hpp:28
+  op: "ttnn::experimental::rotary_embedding_llama_fused_qk"
+  var: rotary_embedding_llama_fused_qk
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/rotate_half/rotate_half.hpp:19
+  op: "ttnn::experimental::rotate_half"
+  var: rotate_half
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/send_recv_async/send_async/send_async.hpp:25
+  op: "ttnn::experimental::send_async"
+  var: send_async
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/split_query_key_value_and_split_heads/split_query_key_value_and_split_heads.hpp:35
+  op: "ttnn::experimental::split_query_key_value_and_split_heads"
+  var: split_query_key_value_and_split_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/copy/typecast/typecast.hpp:25
+  op: "ttnn::experimental::typecast"
+  var: typecast
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/reshape/view.hpp:24
+  op: "ttnn::experimental::view"
+  var: view
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/where/where.hpp:44
+  op: "ttnn::experimental::where"
+  var: where
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:384
+  op: "ttnn::expm1"
+  var: expm1
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:616
+  op: "ttnn::expm1_bw"
+  var: expm1_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:477
+  op: "ttnn::fill"
+  var: fill
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:646
+  op: "ttnn::fill_bw"
+  var: fill_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/kv_cache/kv_cache.hpp:51
+  op: "ttnn::fill_cache"
+  var: fill_cache
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/fill_pad/fill_pad.hpp:24
+  op: "ttnn::fill_implicit_tile_padding"
+  var: fill_implicit_tile_padding
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/fill_rm/fill_rm.hpp:44
+  op: "ttnn::fill_ones_rm"
+  var: fill_ones_rm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/fill_rm/fill_rm.hpp:42
+  op: "ttnn::fill_rm"
+  var: fill_rm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:592
+  op: "ttnn::fill_zero_bw"
+  var: fill_zero_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:413
+  op: "ttnn::floor"
+  var: floor
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:682
+  op: "ttnn::floor_bw"
+  var: floor_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:494
+  op: "ttnn::floor_div"
+  var: floor_div
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:489
+  op: "ttnn::fmod"
+  var: fmod
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:361
+  op: "ttnn::fmod_bw"
+  var: fmod_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:416
+  op: "ttnn::frac"
+  var: frac
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:586
+  op: "ttnn::frac_bw"
+  var: frac_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/gather/gather.hpp:26
+  op: "ttnn::gather"
+  var: gather
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:506
+  op: "ttnn::gcd"
+  var: gcd
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:186
+  op: "ttnn::ge"
+  var: ge
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:233
+  op: "ttnn::ge_"
+  var: ge_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:446
+  op: "ttnn::ge_unary"
+  var: ge_unary
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:182
+  op: "ttnn::geglu"
+  var: geglu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:425
+  op: "ttnn::gelu"
+  var: gelu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:666
+  op: "ttnn::gelu_bw"
+  var: gelu_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/generic/generic_op.hpp:27
+  op: "ttnn::generic_op"
+  var: generic_op
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:385
+  op: "ttnn::gez"
+  var: gez
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/pool/global_avg_pool/global_avg_pool.hpp:46
+  op: "ttnn::global_avg_pool2d"
+  var: global_avg_pool2d
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:176
+  op: "ttnn::glu"
+  var: glu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/pool/grid_sample/grid_sample.hpp:47
+  op: "ttnn::grid_sample"
+  var: grid_sample
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/groupnorm/groupnorm.hpp:40
+  op: "ttnn::group_norm"
+  var: group_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:188
+  op: "ttnn::gt"
+  var: gt
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:230
+  op: "ttnn::gt_"
+  var: gt_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:442
+  op: "ttnn::gt_unary"
+  var: gt_unary
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:386
+  op: "ttnn::gtz"
+  var: gtz
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/sliding_window/halo/halo.hpp:34
+  op: "ttnn::halo"
+  var: halo
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:464
+  op: "ttnn::hardshrink"
+  var: hardshrink
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:696
+  op: "ttnn::hardshrink_bw"
+  var: hardshrink_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:417
+  op: "ttnn::hardsigmoid"
+  var: hardsigmoid
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:655
+  op: "ttnn::hardsigmoid_bw"
+  var: hardsigmoid_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:418
+  op: "ttnn::hardswish"
+  var: hardswish
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:625
+  op: "ttnn::hardswish_bw"
+  var: hardswish_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:466
+  op: "ttnn::hardtanh"
+  var: hardtanh
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:698
+  op: "ttnn::hardtanh_bw"
+  var: hardtanh_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:437
+  op: "ttnn::heaviside"
+  var: heaviside
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:474
+  op: "ttnn::hypot"
+  var: hypot
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:321
+  op: "ttnn::hypot_bw"
+  var: hypot_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:387
+  op: "ttnn::i0"
+  var: i0
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:593
+  op: "ttnn::i0_bw"
+  var: i0_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:388
+  op: "ttnn::i1"
+  var: i1
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:460
+  op: "ttnn::identity"
+  var: identity
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary/complex_unary.hpp:36
+  op: "ttnn::imag"
+  var: imag
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary_backward/complex_unary_backward.hpp:44
+  op: "ttnn::imag_bw"
+  var: imag_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/index_fill/index_fill.hpp:21
+  op: "ttnn::index_fill"
+  var: index_fill
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/indexed_fill/indexed_fill.hpp:27
+  op: "ttnn::indexed_fill"
+  var: indexed_fill
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/sharded/interleaved_to_sharded/interleaved_to_sharded.hpp:31
+  op: "ttnn::interleaved_to_sharded"
+  var: interleaved_to_sharded
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/sharded_partial/interleaved_to_sharded_partial/interleaved_to_sharded_partial.hpp:27
+  op: "ttnn::interleaved_to_sharded_partial"
+  var: interleaved_to_sharded_partial
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary/complex_unary.hpp:42
+  op: "ttnn::is_imag"
+  var: is_imag
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary/complex_unary.hpp:45
+  op: "ttnn::is_real"
+  var: is_real
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:485
+  op: "ttnn::isclose"
+  var: isclose
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:389
+  op: "ttnn::isfinite"
+  var: isfinite
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:390
+  op: "ttnn::isinf"
+  var: isinf
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:391
+  op: "ttnn::isnan"
+  var: isnan
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:392
+  op: "ttnn::isneginf"
+  var: isneginf
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:393
+  op: "ttnn::isposinf"
+  var: isposinf
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/kv_cache/kv_cache.hpp:44
+  op: "ttnn::kv_cache::fill_cache_for_user_"
+  var: fill_cache_for_user_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/loss/loss.hpp:39
+  op: "ttnn::l1_loss"
+  var: l1_loss
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/layernorm/layernorm.hpp:30
+  op: "ttnn::layer_norm"
+  var: layer_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/layernorm_distributed/layernorm_post_all_gather.hpp:30
+  op: "ttnn::layer_norm_post_all_gather"
+  var: layer_norm_post_all_gather
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/layernorm_distributed/layernorm_pre_all_gather.hpp:27
+  op: "ttnn::layer_norm_pre_all_gather"
+  var: layer_norm_pre_all_gather
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:507
+  op: "ttnn::lcm"
+  var: lcm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:204
+  op: "ttnn::ldexp_"
+  var: ldexp_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:323
+  op: "ttnn::ldexp_bw"
+  var: ldexp_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:190
+  op: "ttnn::le"
+  var: le
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:236
+  op: "ttnn::le_"
+  var: le_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:447
+  op: "ttnn::le_unary"
+  var: le_unary
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:438
+  op: "ttnn::leaky_relu"
+  var: leaky_relu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:692
+  op: "ttnn::leaky_relu_bw"
+  var: leaky_relu_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/ternary/ternary_composite.hpp:77
+  op: "ttnn::lerp"
+  var: lerp
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/ternary_backward/ternary_backward.hpp:74
+  op: "ttnn::lerp_bw"
+  var: lerp_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:394
+  op: "ttnn::lez"
+  var: lez
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:156
+  op: "ttnn::lgamma"
+  var: lgamma
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:653
+  op: "ttnn::lgamma_bw"
+  var: lgamma_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/matmul/matmul.hpp:132
+  op: "ttnn::linear"
+  var: linear
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:428
+  op: "ttnn::log"
+  var: log
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:429
+  op: "ttnn::log10"
+  var: log10
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:638
+  op: "ttnn::log10_bw"
+  var: log10_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:431
+  op: "ttnn::log1p"
+  var: log1p
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:640
+  op: "ttnn::log1p_bw"
+  var: log1p_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:430
+  op: "ttnn::log2"
+  var: log2
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:610
+  op: "ttnn::log2_bw"
+  var: log2_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:685
+  op: "ttnn::log_bw"
+  var: log_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:482
+  op: "ttnn::log_sigmoid"
+  var: log_sigmoid
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:590
+  op: "ttnn::log_sigmoid_bw"
+  var: log_sigmoid_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:207
+  op: "ttnn::logaddexp"
+  var: logaddexp
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:213
+  op: "ttnn::logaddexp2"
+  var: logaddexp2
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:216
+  op: "ttnn::logaddexp2_"
+  var: logaddexp2_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:327
+  op: "ttnn::logaddexp2_bw"
+  var: logaddexp2_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:210
+  op: "ttnn::logaddexp_"
+  var: logaddexp_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:325
+  op: "ttnn::logaddexp_bw"
+  var: logaddexp_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:193
+  op: "ttnn::logical_and"
+  var: logical_and
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:242
+  op: "ttnn::logical_and_"
+  var: logical_and_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:516
+  op: "ttnn::logical_left_shift"
+  var: logical_left_shift
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:395
+  op: "ttnn::logical_not"
+  var: logical_not
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:188
+  op: "ttnn::logical_not_"
+  var: logical_not_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:196
+  op: "ttnn::logical_or"
+  var: logical_or
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:245
+  op: "ttnn::logical_or_"
+  var: logical_or_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:269
+  op: "ttnn::logical_right_shift"
+  var: logical_right_shift
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:199
+  op: "ttnn::logical_xor"
+  var: logical_xor
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:248
+  op: "ttnn::logical_xor_"
+  var: logical_xor_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:191
+  op: "ttnn::logit"
+  var: logit
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:680
+  op: "ttnn::logit_bw"
+  var: logit_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:687
+  op: "ttnn::logiteps_bw"
+  var: logiteps_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:192
+  op: "ttnn::lt"
+  var: lt
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:239
+  op: "ttnn::lt_"
+  var: lt_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:443
+  op: "ttnn::lt_unary"
+  var: lt_unary
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:396
+  op: "ttnn::ltz"
+  var: ltz
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/ternary/ternary_composite.hpp:80
+  op: "ttnn::mac"
+  var: mac
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/matmul/matmul.hpp:131
+  op: "ttnn::matmul"
+  var: matmul
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/matmul/matmul.hpp:134
+  op: "ttnn::matmul_batched_weights"
+  var: matmul_batched_weights
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/generic/generic_reductions.hpp:57
+  op: "ttnn::max"
+  var: max
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:331
+  op: "ttnn::max_bw"
+  var: max_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/pool/generic/generic_pools.hpp:67
+  op: "ttnn::max_pool2d"
+  var: max_pool2d
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:478
+  op: "ttnn::maximum"
+  var: maximum
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/generic/generic_reductions.hpp:53
+  op: "ttnn::mean"
+  var: mean
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/ccl/mesh_partition/mesh_partition.hpp:26
+  op: "ttnn::mesh_partition"
+  var: mesh_partition
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/generic/generic_reductions.hpp:61
+  op: "ttnn::min"
+  var: min
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:330
+  op: "ttnn::min_bw"
+  var: min_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:477
+  op: "ttnn::minimum"
+  var: minimum
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:463
+  op: "ttnn::mish"
+  var: mish
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/moe/moe.hpp:26
+  op: "ttnn::moe"
+  var: moe
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_abs_pow/moreh_abs_pow.hpp:23
+  op: "ttnn::moreh_abs_pow"
+  var: moreh_abs_pow
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_adam/moreh_adam.hpp:36
+  op: "ttnn::moreh_adam"
+  var: moreh_adam
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_adamw/moreh_adamw.hpp:41
+  op: "ttnn::moreh_adamw"
+  var: moreh_adamw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_arange/moreh_arange.hpp:25
+  op: "ttnn::moreh_arange"
+  var: moreh_arange
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_bmm/moreh_bmm.hpp:22
+  op: "ttnn::moreh_bmm"
+  var: moreh_bmm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_clip_grad_norm/moreh_clip_grad_norm.hpp:26
+  op: "ttnn::moreh_clip_grad_norm"
+  var: moreh_clip_grad_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_cumsum/moreh_cumsum.hpp:29
+  op: "ttnn::moreh_cumsum"
+  var: moreh_cumsum
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_dot/moreh_dot.hpp:23
+  op: "ttnn::moreh_dot"
+  var: moreh_dot
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_fold/fold.hpp:25
+  op: "ttnn::moreh_fold"
+  var: moreh_fold
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/full/full.hpp:22
+  op: "ttnn::moreh_full"
+  var: moreh_full
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/full_like/full_like.hpp:24
+  op: "ttnn::moreh_full_like"
+  var: moreh_full_like
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_getitem/moreh_getitem.hpp:24
+  op: "ttnn::moreh_getitem"
+  var: moreh_getitem
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_group_norm/moreh_group_norm.hpp:30
+  op: "ttnn::moreh_group_norm"
+  var: moreh_group_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_group_norm_backward/moreh_group_norm_backward.hpp:30
+  op: "ttnn::moreh_group_norm_backward"
+  var: moreh_group_norm_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_layer_norm/moreh_layer_norm.hpp:28
+  op: "ttnn::moreh_layer_norm"
+  var: moreh_layer_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_layer_norm_backward/moreh_layer_norm_backward.hpp:28
+  op: "ttnn::moreh_layer_norm_backward"
+  var: moreh_layer_norm_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_linear/moreh_linear.hpp:24
+  op: "ttnn::moreh_linear"
+  var: moreh_linear
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_linear_backward/moreh_linear_backward.hpp:32
+  op: "ttnn::moreh_linear_backward"
+  var: moreh_linear_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_softmax/moreh_softmax.hpp:37
+  op: "ttnn::moreh_logsoftmax"
+  var: moreh_logsoftmax
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_softmax_backward/moreh_softmax_backward.hpp:39
+  op: "ttnn::moreh_logsoftmax_backward"
+  var: moreh_logsoftmax_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_matmul/moreh_matmul.hpp:24
+  op: "ttnn::moreh_matmul"
+  var: moreh_matmul
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_matmul_backward/moreh_matmul_backward.hpp:23
+  op: "ttnn::moreh_matmul_backward"
+  var: moreh_matmul_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_mean/moreh_mean.hpp:23
+  op: "ttnn::moreh_mean"
+  var: moreh_mean
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_nll_loss/moreh_nll_loss.hpp:30
+  op: "ttnn::moreh_nll_loss"
+  var: moreh_nll_loss
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_nll_loss_backward/moreh_nll_loss_backward.hpp:29
+  op: "ttnn::moreh_nll_loss_backward"
+  var: moreh_nll_loss_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_nll_loss_unreduced_backward/moreh_nll_loss_unreduced_backward.hpp:27
+  op: "ttnn::moreh_nll_loss_unreduced_backward"
+  var: moreh_nll_loss_unreduced_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_norm/moreh_norm.hpp:25
+  op: "ttnn::moreh_norm"
+  var: moreh_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_sgd/moreh_sgd.hpp:31
+  op: "ttnn::moreh_sgd"
+  var: moreh_sgd
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_softmax/moreh_softmax.hpp:33
+  op: "ttnn::moreh_softmax"
+  var: moreh_softmax
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_softmax_backward/moreh_softmax_backward.hpp:33
+  op: "ttnn::moreh_softmax_backward"
+  var: moreh_softmax_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_softmax/moreh_softmax.hpp:35
+  op: "ttnn::moreh_softmin"
+  var: moreh_softmin
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_softmax_backward/moreh_softmax_backward.hpp:36
+  op: "ttnn::moreh_softmin_backward"
+  var: moreh_softmin_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_sum/moreh_sum.hpp:21
+  op: "ttnn::moreh_sum"
+  var: moreh_sum
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/move/move.hpp:20
+  op: "ttnn::move"
+  var: move
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/loss/loss.hpp:37
+  op: "ttnn::mse_loss"
+  var: mse_loss
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:341
+  op: "ttnn::mul_bw"
+  var: mul_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:488
+  op: "ttnn::mul_sfpu"
+  var: mul_sfpu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:159
+  op: "ttnn::multigammaln"
+  var: multigammaln
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:651
+  op: "ttnn::multigammaln_bw"
+  var: multigammaln_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:178
+  op: "ttnn::multiply_"
+  var: multiply_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:184
+  op: "ttnn::ne"
+  var: ne
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:254
+  op: "ttnn::ne_"
+  var: ne_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:444
+  op: "ttnn::ne_unary"
+  var: ne_unary
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:397
+  op: "ttnn::neg"
+  var: neg
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:649
+  op: "ttnn::neg_bw"
+  var: neg_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:482
+  op: "ttnn::nextafter"
+  var: nextafter
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:398
+  op: "ttnn::nez"
+  var: nez
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/non_zero_indices/non_zero_indices.hpp:22
+  op: "ttnn::nonzero"
+  var: nonzero
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:206
+  op: "ttnn::normalize_global"
+  var: normalize_global
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:171
+  op: "ttnn::normalize_hw"
+  var: normalize_hw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:324
+  op: "ttnn::operation_name"
+  var: operation_name
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:329
+  op: "ttnn::operation_name"
+  var: operation_name
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:335
+  op: "ttnn::operation_name"
+  var: operation_name
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:341
+  op: "ttnn::operation_name"
+  var: operation_name
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:347
+  op: "ttnn::operation_name"
+  var: operation_name
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:353
+  op: "ttnn::operation_name"
+  var: operation_name
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:359
+  op: "ttnn::operation_name"
+  var: operation_name
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:365
+  op: "ttnn::operation_name"
+  var: operation_name
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:500
+  op: "ttnn::outer"
+  var: outer
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/pad/pad.hpp:48
+  op: "ttnn::pad"
+  var: pad
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/padded_slice/padded_slice.hpp:50
+  op: "ttnn::padded_slice"
+  var: padded_slice
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/permute/permute.hpp:27
+  op: "ttnn::permute"
+  var: permute
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/plusone/plusone.hpp:22
+  op: "ttnn::plus_one"
+  var: plus_one
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/point_to_point/point_to_point.hpp:27
+  op: "ttnn::point_to_point"
+  var: point_to_point
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary/complex_unary.hpp:52
+  op: "ttnn::polar"
+  var: polar
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary_backward/complex_unary_backward.hpp:35
+  op: "ttnn::polar_bw"
+  var: polar_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:200
+  op: "ttnn::polygamma"
+  var: polygamma
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:706
+  op: "ttnn::polygamma_bw"
+  var: polygamma_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:503
+  op: "ttnn::polyval"
+  var: polyval
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:519
+  op: "ttnn::pow"
+  var: pow
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:669
+  op: "ttnn::pow_bw"
+  var: pow_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:454
+  op: "ttnn::power"
+  var: power
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:508
+  op: "ttnn::prelu"
+  var: prelu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:474
+  op: "ttnn::prelu_sfpu"
+  var: prelu_sfpu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/accumulation/device/accumulation_device_operation.hpp:60
+  op: "ttnn::prim::accumulation"
+  var: accumulation
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/ccl/all_to_all_combine/device/all_to_all_combine_device_operation.hpp:116
+  op: "ttnn::prim::all_to_all_combine"
+  var: all_to_all_combine
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/batch_norm/device/batch_norm_device_operation.hpp:82
+  op: "ttnn::prim::batch_norm"
+  var: batch_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/bcast_to/device/bcast_to_device_operation.hpp:78
+  op: "ttnn::prim::bcast_to"
+  var: bcast_to
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/bernoulli/device/bernoulli_device_operation.hpp:74
+  op: "ttnn::prim::bernoulli"
+  var: bernoulli
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/device/binary_device_operation.hpp:270
+  op: "ttnn::prim::binary"
+  var: binary
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_ng/device/binary_ng_device_operation.hpp:120
+  op: "ttnn::prim::binary_ng"
+  var: binary_ng
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/clone/device/clone_device_operation.hpp:69
+  op: "ttnn::prim::clone"
+  var: clone
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/dropout/device/dropout_device_operation.hpp:55
+  op: "ttnn::prim::dropout"
+  var: dropout
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/examples/example/device/example_device_operation.hpp:154
+  op: "ttnn::prim::example"
+  var: example
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/examples/example_multiple_return/device/example_multiple_return_device_operation.hpp:135
+  op: "ttnn::prim::example_multiple_return"
+  var: example_multiple_return
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/fold/device/fold_device_op.hpp:114
+  op: "ttnn::prim::fold"
+  var: fold
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_fold/device/fold_device_operation.hpp:74
+  op: "ttnn::prim::fold"
+  var: moreh_fold
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/full/device/full_device_operation.hpp:72
+  op: "ttnn::prim::full"
+  var: full
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/gather/device/gather_device_operation.hpp:48
+  op: "ttnn::prim::gather"
+  var: gather
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/unary_backward/gelu_backward/device/gelu_backward_device_operation.hpp:51
+  op: "ttnn::prim::gelu_bw"
+  var: gelu_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/generic/device/generic_op_device_operation.hpp:74
+  op: "ttnn::prim::generic_op"
+  var: generic_op
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/index_fill/device/index_fill_device_operation.hpp:61
+  op: "ttnn::prim::index_fill"
+  var: index_fill
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/llama_reduce_scatter/device/llama_reduce_scatter_device_operation.hpp:134
+  op: "ttnn::prim::llama_reduce_scatter"
+  var: llama_reduce_scatter
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/llama_reduce_scatter_create_heads/device/llama_reduce_scatter_create_heads_device_op.hpp:122
+  op: "ttnn::prim::llama_reduce_scatter_create_heads"
+  var: llama_reduce_scatter_create_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/ccl/llama_reduce_scatter_matmul/device/rs_matmul_op.hpp:114
+  op: "ttnn::prim::llama_rs_matmul"
+  var: llama_rs_matmul
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/ccl/mesh_partition/device/mesh_partition_device_operation.hpp:102
+  op: "ttnn::prim::mesh_partition"
+  var: mesh_partition
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/moe_expert_token_remap/device/moe_expert_token_remap_device_operation.hpp:101
+  op: "ttnn::prim::moe_expert_token_remap"
+  var: moe_expert_token_remap
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_adam/device/moreh_adam_device_operation.hpp:106
+  op: "ttnn::prim::moreh_adam"
+  var: moreh_adam
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_arange/device/moreh_arange_device_operation.hpp:74
+  op: "ttnn::prim::moreh_arange"
+  var: moreh_arange
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_linear_backward/device/moreh_linear_backward_device_operation.hpp:91
+  op: "ttnn::prim::moreh_bias_add_backward"
+  var: moreh_bias_add_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_clip_grad_norm/moreh_clip_grad_norm_step1/device/moreh_clip_grad_norm_step1_device_operation.hpp:75
+  op: "ttnn::prim::moreh_clip_grad_norm_step1"
+  var: moreh_clip_grad_norm_step1
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_clip_grad_norm/moreh_clip_grad_norm_step2/device/moreh_clip_grad_norm_step2_device_operation.hpp:74
+  op: "ttnn::prim::moreh_clip_grad_norm_step2"
+  var: moreh_clip_grad_norm_step2
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_clip_grad_norm/moreh_clip_grad_norm_step3/device/moreh_clip_grad_norm_step3_device_operation.hpp:72
+  op: "ttnn::prim::moreh_clip_grad_norm_step3"
+  var: moreh_clip_grad_norm_step3
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_dot/device/moreh_dot_device_operation.hpp:71
+  op: "ttnn::prim::moreh_dot"
+  var: moreh_dot
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_dot_backward/device/moreh_dot_backward_device_operation.hpp:72
+  op: "ttnn::prim::moreh_dot_backward"
+  var: moreh_dot_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/full_like/device/full_like_device_operation.hpp:72
+  op: "ttnn::prim::moreh_full_like"
+  var: moreh_full_like
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_group_norm/device/moreh_group_norm_device_operation.hpp:83
+  op: "ttnn::prim::moreh_group_norm"
+  var: moreh_group_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_group_norm_backward/device/gamma_beta_grad/moreh_group_norm_backward_gamma_beta_grad_device_operation.hpp:84
+  op: "ttnn::prim::moreh_group_norm_backward_gamma_beta"
+  var: moreh_group_norm_backward_gamma_beta_grad
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_group_norm_backward/device/input_grad/moreh_group_norm_backward_input_grad_device_operation.hpp:73
+  op: "ttnn::prim::moreh_group_norm_backward_input_grad"
+  var: moreh_group_norm_backward_input_grad
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_layer_norm_backward/device/moreh_layer_norm_backward_gamma_beta_grad_device_operation.hpp:77
+  op: "ttnn::prim::moreh_layer_norm_backward_gamma_beta_grad"
+  var: moreh_layer_norm_backward_gamma_beta_grad
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_layer_norm_backward/device/moreh_layer_norm_backward_input_grad_device_operation.hpp:76
+  op: "ttnn::prim::moreh_layer_norm_backward_input_grad"
+  var: moreh_layer_norm_backward_input_grad
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_matmul/device/moreh_matmul_device_operation.hpp:85
+  op: "ttnn::prim::moreh_matmul"
+  var: moreh_matmul
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_mean/device/moreh_mean_device_operation.hpp:122
+  op: "ttnn::prim::moreh_mean"
+  var: moreh_mean
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_mean_backward/device/moreh_mean_backward_device_operation.hpp:77
+  op: "ttnn::prim::moreh_mean_backward"
+  var: moreh_mean_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_nll_loss_backward/device/moreh_nll_loss_backward_device_operation.hpp:88
+  op: "ttnn::prim::moreh_nll_loss_backward"
+  var: moreh_nll_loss_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_nll_loss/moreh_nll_loss_step1/device/moreh_nll_loss_step1_device_operation.hpp:82
+  op: "ttnn::prim::moreh_nll_loss_step1"
+  var: moreh_nll_loss_step1
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_nll_loss/moreh_nll_loss_step2/device/moreh_nll_loss_step2_device_operation.hpp:84
+  op: "ttnn::prim::moreh_nll_loss_step2"
+  var: moreh_nll_loss_step2
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_nll_loss_unreduced_backward/device/moreh_nll_loss_unreduced_backward_device_operation.hpp:83
+  op: "ttnn::prim::moreh_nll_loss_unreduced_backward"
+  var: moreh_nll_loss_unreduced_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_norm/device/moreh_norm_device_operation.hpp:78
+  op: "ttnn::prim::moreh_norm"
+  var: moreh_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_norm_backward/device/moreh_norm_backward_device_operation.hpp:82
+  op: "ttnn::prim::moreh_norm_backward"
+  var: moreh_norm_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_sgd/device/moreh_sgd_device_operation.hpp:88
+  op: "ttnn::prim::moreh_sgd"
+  var: moreh_sgd
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_softmax_backward/device/moreh_softmax_backward_device_operation.hpp:107
+  op: "ttnn::prim::moreh_softmax_backward"
+  var: moreh_softmax_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_sum/device/moreh_sum_device_operation.hpp:87
+  op: "ttnn::prim::moreh_sum"
+  var: moreh_sum
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/moreh/moreh_sum_backward/device/moreh_sum_backward_device_operation.hpp:71
+  op: "ttnn::prim::moreh_sum_backward"
+  var: moreh_sum_backward
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_create_qkv_heads/device/nlp_create_qkv_heads_device_operation.hpp:128
+  op: "ttnn::prim::nlp_create_qkv_heads"
+  var: nlp_create_qkv_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/transformer/nlp_create_qkv_heads_boltz/device/nlp_create_qkv_heads_boltz_device_operation.hpp:127
+  op: "ttnn::prim::nlp_create_qkv_heads_boltz"
+  var: nlp_create_qkv_heads_boltz
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/permute/device/permute_device_operation.hpp:191
+  op: "ttnn::prim::permute"
+  var: permute
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/point_to_point/device/host/point_to_point_device_op.hpp:160
+  op: "ttnn::prim::point_to_point"
+  var: point_to_point
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/pool/generic/device/pool_op.hpp:98
+  op: "ttnn::prim::pool2d"
+  var: pool2d
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/rand/device/rand_device_operation.hpp:75
+  op: "ttnn::prim::rand"
+  var: uniform
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/batch_norm/device/running_statistics_device_operation.hpp:76
+  op: "ttnn::prim::running_statistics"
+  var: running_statistics
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/scatter/device/scatter_device_operation.hpp:57
+  op: "ttnn::prim::scatter"
+  var: scatter
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/softmax/device/softmax_device_operation.hpp:99
+  op: "ttnn::prim::softmax"
+  var: softmax
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/sort/device/sort_device_operation.hpp:48
+  op: "ttnn::prim::sort"
+  var: sort
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/tanh_accurate/device/tanh_accurate_device_operation.hpp:58
+  op: "ttnn::prim::tanh_accurate"
+  var: tanh_accurate
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/test/hang_device/hang_device_operation.hpp:53
+  op: "ttnn::prim::test_hang_device_operation"
+  var: hang_device_operation
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/copy/typecast/device/typecast_device_op.hpp:60
+  op: "ttnn::prim::typecast"
+  var: typecast
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/device/unary_device_operation.hpp:58
+  op: "ttnn::prim::unary"
+  var: unary
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/uniform/device/uniform_device_operation.hpp:73
+  op: "ttnn::prim::uniform"
+  var: uniform
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/ternary/where/device/where_device_operation.hpp:122
+  op: "ttnn::prim::where"
+  var: where
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/prod/prod.hpp:32
+  op: "ttnn::prod"
+  var: prod
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:711
+  op: "ttnn::prod_bw"
+  var: prod_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/quantization/quantization.hpp:52
+  op: "ttnn::quantize"
+  var: quantize
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:469
+  op: "ttnn::rad2deg"
+  var: rad2deg
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:584
+  op: "ttnn::rad2deg_bw"
+  var: rad2deg_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/rand/rand.hpp:23
+  op: "ttnn::rand"
+  var: rand
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:149
+  op: "ttnn::rdiv"
+  var: rdiv
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:664
+  op: "ttnn::rdiv_bw"
+  var: rdiv_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary/complex_unary.hpp:33
+  op: "ttnn::real"
+  var: real
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/complex_unary_backward/complex_unary_backward.hpp:48
+  op: "ttnn::real_bw"
+  var: real_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:399
+  op: "ttnn::reciprocal"
+  var: reciprocal
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:708
+  op: "ttnn::reciprocal_bw"
+  var: reciprocal_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:179
+  op: "ttnn::reglu"
+  var: reglu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:400
+  op: "ttnn::relu"
+  var: relu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:401
+  op: "ttnn::relu6"
+  var: relu6
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:595
+  op: "ttnn::relu6_bw"
+  var: relu6_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:678
+  op: "ttnn::relu_bw"
+  var: relu_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:439
+  op: "ttnn::relu_max"
+  var: relu_max
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:440
+  op: "ttnn::relu_min"
+  var: relu_min
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:488
+  op: "ttnn::remainder"
+  var: remainder
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:359
+  op: "ttnn::remainder_bw"
+  var: remainder_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/repeat/repeat.hpp:23
+  op: "ttnn::repeat"
+  var: repeat
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:668
+  op: "ttnn::repeat_bw"
+  var: repeat_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/repeat_interleave/repeat_interleave.hpp:34
+  op: "ttnn::repeat_interleave"
+  var: repeat_interleave
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/quantization/quantization.hpp:53
+  op: "ttnn::requantize"
+  var: requantize
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/reshape_view/reshape.hpp:46
+  op: "ttnn::reshape"
+  var: reshape
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/reshape_on_device/reshape.hpp:34
+  op: "ttnn::reshape_on_device"
+  var: reshape_on_device
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/sharded/reshard/reshard.hpp:22
+  op: "ttnn::reshard"
+  var: reshard
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/rmsnorm/rmsnorm.hpp:30
+  op: "ttnn::rms_norm"
+  var: rms_norm
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/rmsnorm_distributed/rmsnorm_post_all_gather.hpp:31
+  op: "ttnn::rms_norm_post_all_gather"
+  var: rms_norm_post_all_gather
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/roll/roll.hpp:20
+  op: "ttnn::roll"
+  var: roll
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:457
+  op: "ttnn::round"
+  var: round
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:684
+  op: "ttnn::round_bw"
+  var: round_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:203
+  op: "ttnn::rpow"
+  var: rpow
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:702
+  op: "ttnn::rpow_bw"
+  var: rpow_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:407
+  op: "ttnn::rsqrt"
+  var: rsqrt
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:648
+  op: "ttnn::rsqrt_bw"
+  var: rsqrt_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary_composite.hpp:509
+  op: "ttnn::rsub"
+  var: rsub
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:257
+  op: "ttnn::rsub_"
+  var: rsub_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:336
+  op: "ttnn::rsub_bw"
+  var: rsub_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/sampling/sampling.hpp:28
+  op: "ttnn::sampling"
+  var: sampling
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/softmax/softmax.hpp:126
+  op: "ttnn::scale_causal_mask_hw_dims_softmax_in_place"
+  var: scale_causal_mask_hw_dims_softmax_in_place
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/softmax/softmax.hpp:120
+  op: "ttnn::scale_mask_softmax"
+  var: scale_mask_softmax
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/softmax/softmax.hpp:123
+  op: "ttnn::scale_mask_softmax_in_place"
+  var: scale_mask_softmax_in_place
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/scatter/scatter.hpp:29
+  op: "ttnn::scatter"
+  var: scatter
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:476
+  op: "ttnn::selu"
+  var: selu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:597
+  op: "ttnn::selu_bw"
+  var: selu_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/sharded/sharded_to_interleaved/sharded_to_interleaved.hpp:22
+  op: "ttnn::sharded_to_interleaved"
+  var: sharded_to_interleaved
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/sharded_partial/sharded_to_interleaved_partial/sharded_to_interleaved_partial.hpp:24
+  op: "ttnn::sharded_to_interleaved_partial"
+  var: sharded_to_interleaved_partial
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:434
+  op: "ttnn::sigmoid"
+  var: sigmoid
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:481
+  op: "ttnn::sigmoid_accurate"
+  var: sigmoid_accurate
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:602
+  op: "ttnn::sigmoid_bw"
+  var: sigmoid_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:402
+  op: "ttnn::sign"
+  var: sign
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:612
+  op: "ttnn::sign_bw"
+  var: sign_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:403
+  op: "ttnn::signbit"
+  var: signbit
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:404
+  op: "ttnn::silu"
+  var: silu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:676
+  op: "ttnn::silu_bw"
+  var: silu_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:405
+  op: "ttnn::sin"
+  var: sin
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:634
+  op: "ttnn::sin_bw"
+  var: sin_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:381
+  op: "ttnn::sinh"
+  var: sinh
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:636
+  op: "ttnn::sinh_bw"
+  var: sinh_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/slice/slice.hpp:67
+  op: "ttnn::slice"
+  var: slice
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/experimental/slice_write/slice_write.hpp:28
+  op: "ttnn::slice_write"
+  var: slice_write
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/softmax/softmax.hpp:118
+  op: "ttnn::softmax"
+  var: softmax
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/normalization/softmax/softmax.hpp:122
+  op: "ttnn::softmax_in_place"
+  var: softmax_in_place
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:471
+  op: "ttnn::softplus"
+  var: softplus
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:700
+  op: "ttnn::softplus_bw"
+  var: softplus_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:467
+  op: "ttnn::softshrink"
+  var: softshrink
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:694
+  op: "ttnn::softshrink_bw"
+  var: softshrink_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:419
+  op: "ttnn::softsign"
+  var: softsign
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:606
+  op: "ttnn::softsign_bw"
+  var: softsign_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/sort/sort.hpp:27
+  op: "ttnn::sort"
+  var: sort
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/matmul/matmul.hpp:137
+  op: "ttnn::sparse_matmul"
+  var: sparse_matmul
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/split/split.hpp:28
+  op: "ttnn::split"
+  var: split
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:406
+  op: "ttnn::sqrt"
+  var: sqrt
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:674
+  op: "ttnn::sqrt_bw"
+  var: sqrt_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:408
+  op: "ttnn::square"
+  var: square
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:599
+  op: "ttnn::square_bw"
+  var: square_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:219
+  op: "ttnn::squared_difference"
+  var: squared_difference
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:222
+  op: "ttnn::squared_difference_"
+  var: squared_difference_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/squeeze/squeeze.hpp:22
+  op: "ttnn::squeeze"
+  var: squeeze
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/stack/stack.hpp:18
+  op: "ttnn::stack"
+  var: stack
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/generic/generic_reductions.hpp:65
+  op: "ttnn::std"
+  var: std
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:168
+  op: "ttnn::std_hw"
+  var: std_hw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:354
+  op: "ttnn::sub_bw"
+  var: sub_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:492
+  op: "ttnn::sub_sfpu"
+  var: sub_sfpu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:266
+  op: "ttnn::subalpha"
+  var: subalpha
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:334
+  op: "ttnn::subalpha_bw"
+  var: subalpha_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary/binary.hpp:173
+  op: "ttnn::subtract_"
+  var: subtract_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/generic/generic_reductions.hpp:49
+  op: "ttnn::sum"
+  var: sum
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:185
+  op: "ttnn::swiglu"
+  var: swiglu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:162
+  op: "ttnn::swish"
+  var: swish
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:409
+  op: "ttnn::tan"
+  var: tan
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:600
+  op: "ttnn::tan_bw"
+  var: tan_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:472
+  op: "ttnn::tanh"
+  var: tanh
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/tanh_accurate/tanh_accurate.hpp:33
+  op: "ttnn::tanh_accurate"
+  var: tanh_accurate
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:672
+  op: "ttnn::tanh_bw"
+  var: tanh_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:473
+  op: "ttnn::tanhshrink"
+  var: tanhshrink
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/tanh_accurate/tanh_accurate.hpp:36
+  op: "ttnn::tanhshrink_accurate"
+  var: tanhshrink_accurate
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:627
+  op: "ttnn::tanhshrink_bw"
+  var: tanhshrink_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:451
+  op: "ttnn::threshold"
+  var: threshold
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:644
+  op: "ttnn::threshold_bw"
+  var: threshold_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:410
+  op: "ttnn::tiled_prod"
+  var: tiled_prod
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/tilize/tilize.hpp:22
+  op: "ttnn::tilize"
+  var: tilize
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/tilize_with_val_padding/tilize_with_val_padding.hpp:47
+  op: "ttnn::tilize_with_zero_padding"
+  var: tilize_with_zero_padding
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/core/core.hpp:52
+  op: "ttnn::to_dtype"
+  var: to_dtype
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/core/core.hpp:55
+  op: "ttnn::to_layout"
+  var: to_layout
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/core/core.hpp:54
+  op: "ttnn::to_memory_config"
+  var: to_memory_config
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/topk/topk.hpp:31
+  op: "ttnn::topk"
+  var: topk
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/gather/tosa/gather_tosa.hpp:23
+  op: "ttnn::tosa_gather"
+  var: gather
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/scatter/tosa_scatter.hpp:26
+  op: "ttnn::tosa_scatter"
+  var: tosa_scatter
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/attention_softmax/attention_softmax.hpp:30
+  op: "ttnn::transformer::attention_softmax"
+  var: attention_softmax
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/attention_softmax/attention_softmax.hpp:34
+  op: "ttnn::transformer::attention_softmax_"
+  var: attention_softmax_
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa/sdpa.hpp:143
+  op: "ttnn::transformer::chunked_flash_mla_prefill"
+  var: chunked_flash_mla_prefill
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa/sdpa.hpp:128
+  op: "ttnn::transformer::chunked_scaled_dot_product_attention"
+  var: chunked_scaled_dot_product_attention
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/concatenate_heads/concatenate_heads.hpp:18
+  op: "ttnn::transformer::concatenate_heads"
+  var: concatenate_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa_decode/sdpa_decode.hpp:90
+  op: "ttnn::transformer::flash_multi_latent_attention_decode"
+  var: flash_multi_latent_attention_decode
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa/sdpa.hpp:132
+  op: "ttnn::transformer::joint_scaled_dot_product_attention"
+  var: joint_scaled_dot_product_attention
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa_decode/sdpa_decode.hpp:94
+  op: "ttnn::transformer::paged_flash_multi_latent_attention_decode"
+  var: paged_flash_multi_latent_attention_decode
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa_decode/sdpa_decode.hpp:86
+  op: "ttnn::transformer::paged_scaled_dot_product_attention_decode"
+  var: paged_scaled_dot_product_attention_decode
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa/sdpa.hpp:147
+  op: "ttnn::transformer::ring_distributed_scaled_dot_product_attention"
+  var: ring_distributed_scaled_dot_product_attention
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa/sdpa.hpp:136
+  op: "ttnn::transformer::ring_joint_scaled_dot_product_attention"
+  var: ring_joint_scaled_dot_product_attention
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa/sdpa.hpp:124
+  op: "ttnn::transformer::scaled_dot_product_attention"
+  var: scaled_dot_product_attention
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa_decode/sdpa_decode.hpp:82
+  op: "ttnn::transformer::scaled_dot_product_attention_decode"
+  var: scaled_dot_product_attention_decode
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/split_query_key_value_and_split_heads/split_query_key_value_and_split_heads.hpp:25
+  op: "ttnn::transformer::split_query_key_value_and_split_heads"
+  var: split_query_key_value_and_split_heads
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/transformer/sdpa_windowed/sdpa_windowed.hpp:30
+  op: "ttnn::transformer::windowed_scaled_dot_product_attention"
+  var: windowed_scaled_dot_product_attention
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/transpose/transpose.hpp:30
+  op: "ttnn::transpose"
+  var: transpose
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:194
+  op: "ttnn::tril"
+  var: tril
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:197
+  op: "ttnn::triu"
+  var: triu
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:415
+  op: "ttnn::trunc"
+  var: trunc
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary_backward/unary_backward.hpp:588
+  op: "ttnn::trunc_bw"
+  var: trunc_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/copy/typecast/typecast.hpp:32
+  op: "ttnn::typecast"
+  var: typecast
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:483
+  op: "ttnn::unary_chain"
+  var: unary_chain
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary.hpp:441
+  op: "ttnn::unary_remainder"
+  var: unary_remainder
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/uniform/uniform.hpp:22
+  op: "ttnn::uniform"
+  var: uniform
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/unsqueeze/unsqueeze.hpp:19
+  op: "ttnn::unsqueeze"
+  var: unsqueeze
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/untilize/untilize.hpp:25
+  op: "ttnn::untilize"
+  var: untilize
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/untilize_with_unpadding/untilize_with_unpadding.hpp:23
+  op: "ttnn::untilize_with_unpadding"
+  var: untilize_with_unpadding
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/kv_cache/kv_cache.hpp:49
+  op: "ttnn::update_cache"
+  var: update_cache
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/pool/upsample/upsample.hpp:25
+  op: "ttnn::upsample"
+  var: upsample
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/reduction/generic/generic_reductions.hpp:69
+  op: "ttnn::var"
+  var: var
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/unary/unary_composite.hpp:165
+  op: "ttnn::var_hw"
+  var: var_hw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/data_movement/view/view.hpp:18
+  op: "ttnn::view"
+  var: view
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/ternary/where/where.hpp:30
+  op: "ttnn::where"
+  var: where
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/ternary_backward/ternary_backward.hpp:72
+  op: "ttnn::where_bw"
+  var: where_bw
+
+torch_ttnn/cpp_extension/third-party/tt-metal/ttnn/cpp/ttnn/operations/eltwise/binary_backward/binary_backward.hpp:319
+  op: "ttnn::xlogy_bw"
+  var: xlogy_bw
+
