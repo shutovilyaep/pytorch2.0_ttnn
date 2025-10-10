@@ -13,8 +13,14 @@ list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(utils)
 
 # Prepare tt-metal build
-# TODO: Add debian integration with ttnn once ready
-include(find_prebuilt_ttnn)
+# Select tt-metal integration mode
+if (ENABLE_SUBMODULE_TT_METAL_BUILD)
+    add_subdirectory(third-party)
+elseif(ENABLE_LOCAL_TT_METAL_BUILD)
+    include(find_prebuilt_ttnn)
+else()
+    add_subdirectory(third-party)
+endif()
 
 check_ubuntu_version_at_least(24 IS_UBUNTU_GE_24)
 message(STATUS "Ubuntu version > 24: ${IS_UBUNTU_GE_24}")
@@ -85,6 +91,8 @@ set_target_properties(ttnn_device_extension PROPERTIES
     PREFIX ""
     SUFFIX ""
     OUTPUT_NAME ${OUTPUT_NAME}
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN"
 )
 
 if (BUILD_EXAMPLES)

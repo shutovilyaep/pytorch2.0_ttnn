@@ -41,7 +41,15 @@ if [[ "$FLAVOR" == "ubuntu" && "$VERSION" == "20.04" ]]; then
 fi
 echo "> Using toolchain file: $TT_METAL_HOME/$TOOLCHAIN_PATH"
 
-# Build cpp extension using pip editable install with the same toolchain
-echo "> Building cpp extension"
-CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE};-DCMAKE_C_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER_LAUNCHER=ccache;-DCMAKE_TOOLCHAIN_FILE=$TT_METAL_HOME/$TOOLCHAIN_PATH" \
+# Ensure CMake can locate Torch package config from current Python
+TORCH_CMAKE_PREFIX=$(python3 - <<'PY'
+import torch
+print(torch.utils.cmake_prefix_path)
+PY
+)
+export CMAKE_PREFIX_PATH="${TORCH_CMAKE_PREFIX}${CMAKE_PREFIX_PATH:+:${CMAKE_PREFIX_PATH}}"
+
+# Build cpp extension using pip editable install with the same toolchain, forcing submodule tt-metal
+echo "> Building cpp extension (submodule tt-metal)"
+CMAKE_FLAGS="-DCMAKE_BUILD_TYPE=${BUILD_TYPE};-DCMAKE_C_COMPILER_LAUNCHER=ccache;-DCMAKE_CXX_COMPILER_LAUNCHER=ccache;-DCMAKE_TOOLCHAIN_FILE=$TT_METAL_HOME/$TOOLCHAIN_PATH;-DENABLE_SUBMODULE_TT_METAL_BUILD=ON;-DWITH_PYTHON_BINDINGS=ON" \
     pip install -e "$CUR_DIR" --use-pep517 --no-build-isolation
