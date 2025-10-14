@@ -73,8 +73,8 @@ target_include_directories(ttnn_device_extension PRIVATE
 target_link_directories(ttnn_device_extension PRIVATE "${TORCH_INSTALL_PREFIX}/lib")
 
 target_link_libraries(ttnn_device_extension PUBLIC
-    Metalium::Metal
-    Metalium::TTNN
+    TT::Metalium
+    TTNN::CPP
 )
 
 target_link_libraries(ttnn_device_extension PUBLIC 
