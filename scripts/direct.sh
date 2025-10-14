@@ -3,9 +3,13 @@
 set -euo pipefail
 
 # Workspace directory
-WORKSPACE_DIR="/home/ilia_shutov/pytorch2.0_ttnn"
+WORKSPACE_DIR="/home/ilia_shutov/pytorch2.0_ttnn.dev"
 # Previous container path for reference:
 # WORKSPACE_DIR="/workspace/pytorch2.0_ttnn"
+
+# Clean
+rm -rf $WORKSPACE_DIR/torch_ttnn/cpp_extension/build
+rm -rf $WORKSPACE_DIR/torch_ttnn/cpp_extension/third-party/tt-metal/build
 
 # Added pre-build steps with venv recreation for clean build
 pushd "${WORKSPACE_DIR}/" >/dev/null
