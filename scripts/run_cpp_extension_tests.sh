@@ -70,11 +70,11 @@ PY
 export LD_LIBRARY_PATH="$TORCH_LIB_DIR:${LD_LIBRARY_PATH:-}"
 echo "> LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
 
-# 4) Rebuild the C++ extension to match the active torch (always, to avoid ABI drift)
-pushd "$REPO_ROOT/torch_ttnn/cpp_extension" >/dev/null
-  BUILD_TYPE=${1:-RelWithDebInfo}
-  ./build_cpp_extension.sh "$BUILD_TYPE"
-popd >/dev/null
+# # 4) Rebuild the C++ extension to match the active torch (always, to avoid ABI drift)
+# pushd "$REPO_ROOT/torch_ttnn/cpp_extension" >/dev/null
+#   BUILD_TYPE=${1:-RelWithDebInfo}
+#   ./build_cpp_extension.sh "$BUILD_TYPE"
+# popd >/dev/null
 
 # Diagnose linkage without importing (in case import crashes)
 EXT_SO_PATH=$(ls -1 "$REPO_ROOT/torch_ttnn/cpp_extension"/ttnn_device_extension*.so 2>/dev/null | head -n1 || true)
