@@ -11,6 +11,6 @@ popd
 # Ensure modern build tooling in the active venv for editable installs
 python -m pip install --upgrade pip setuptools wheel setuptools_scm build
 
-pip3 install -e . --use-pep517
+pip3 install -e . --use-pep517 --no-build-isolation
 
 python scripts/test_script.py
