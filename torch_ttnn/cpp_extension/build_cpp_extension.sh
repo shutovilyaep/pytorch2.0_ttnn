@@ -39,7 +39,7 @@ cmake -B $CUR_DIR/third-party/tt-metal/build \
 echo "> Building ttnn"
 ninja -C $CUR_DIR/third-party/tt-metal/build install
 
-pip3 install -e $CUR_DIR/third-party/tt-metal/
+pip3 install -e $CUR_DIR/third-party/tt-metal/ --no-build-isolation
 
 export TT_METAL_HOME=$CUR_DIR/third-party/tt-metal
 echo "> TT_METAL_HOME: $TT_METAL_HOME"
