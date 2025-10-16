@@ -42,7 +42,8 @@ class CMakeBuild(build_ext):
             f"Ninja",
         ]
         extra_cmake_flags = os.environ.get("CMAKE_FLAGS", "")
-        extra_cmake_flags = extra_cmake_flags.split(";")
+        # Support semicolon-separated flags from environment
+        extra_cmake_flags = [f for f in extra_cmake_flags.split(";") if f]
         if "-DENABLE_SUBMODULE_TT_METAL_BUILD=ON" in extra_cmake_flags:
             extra_cmake_flags.append("-DENABLE_LOCAL_TT_METAL_BUILD=OFF")
 
@@ -61,6 +62,11 @@ class CMakeBuild(build_ext):
         if torch_cxx_flags:
             flags_str = " ".join(torch_cxx_flags)
             extra_cmake_flags.append(f"-DCMAKE_CXX_FLAGS={flags_str}")
+
+        # Propagate TT_METAL_HOME to cmake if provided
+        tt_metal_home = os.environ.get("TT_METAL_HOME")
+        if tt_metal_home:
+            cmake_args.append(f"-DTT_METAL_HOME={tt_metal_home}")
 
         if extra_cmake_flags:
             cmake_args.extend(extra_cmake_flags)
