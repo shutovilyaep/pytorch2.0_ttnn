@@ -42,8 +42,8 @@ except ImportError as e:
         raise
     print(
         "\nError: ttnn is not installed or not compatible with your system.\n"
-        "To install ttnn, run:\n"
-        "  pip install torch-ttnn[ttnn]\n\n"
+        "To reinstall ttnn, run:\n"
+        "  pip install torch-ttnn\n\n"
         "Note: ttnn is only supported on Linux with Python 3.10.\n"
         "Current system: {}\n"
         "Current Python: {}.{}\n".format(platform.platform(), sys.version_info.major, sys.version_info.minor)
