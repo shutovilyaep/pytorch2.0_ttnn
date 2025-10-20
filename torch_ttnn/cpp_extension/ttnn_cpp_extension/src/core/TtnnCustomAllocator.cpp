@@ -1,8 +1,9 @@
 #include "ttnn_cpp_extension/core/TtnnCustomAllocator.hpp"
 
 #include "ttnn_cpp_extension/utils/extension_utils.hpp"
+#include <cstring>
 
-at::DataPtr TtnnCustomAllocator::allocate(size_t nbytes) const {
+c10::DataPtr TtnnCustomAllocator::allocate(size_t nbytes) const {
     LOGGING("");
     // Do not allocate any cpu space here
     void* data = nullptr;
@@ -14,7 +15,7 @@ void TtnnCustomAllocator::ReportAndDelete(void* ptr) {
     TORCH_CHECK(ptr == nullptr)
 }
 
-at::DeleterFnPtr TtnnCustomAllocator::raw_deleter() const { return &ReportAndDelete; }
+c10::DeleterFnPtr TtnnCustomAllocator::raw_deleter() const { return &ReportAndDelete; }
 
 TtnnCustomAllocator& get_ttnn_custom_allocator() {
     static TtnnCustomAllocator allocator;
