@@ -5,16 +5,13 @@ set(CMAKE_CXX_STANDARD 20)
 project(ttnn_device_extension CXX)
 
 # Options
-option(ENABLE_LOCAL_TT_METAL_BUILD "Enable local TT_Metal build" OFF)
-option(ENABLE_SUBMODULE_TT_METAL_BUILD "Enable submodule TT_Metal build" OFF)
 option(BUILD_EXAMPLES "Build examples" OFF)
 
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(utils)
 
 # Prepare tt-metal build
-# TODO: Add debian integration with ttnn once ready
-include(find_prebuilt_ttnn)
+add_subdirectory(third-party)
 
 check_ubuntu_version_at_least(24 IS_UBUNTU_GE_24)
 message(STATUS "Ubuntu version > 24: ${IS_UBUNTU_GE_24}")
@@ -54,6 +51,7 @@ target_compile_options(ttnn_device_extension PRIVATE
     -DTORCH_EXTENSION_NAME=ttnn_device_extension
     -DTORCH_API_INCLUDE_EXTENSION_H
 )
+target_compile_definitions(ttnn_device_extension PRIVATE NTEST)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
     target_compile_definitions(ttnn_device_extension PRIVATE DISABLE_NAMESPACE_STATIC_ASSERT)
 endif()
@@ -66,8 +64,8 @@ target_include_directories(ttnn_device_extension PRIVATE
 target_link_directories(ttnn_device_extension PRIVATE "${TORCH_INSTALL_PREFIX}/lib")
 
 target_link_libraries(ttnn_device_extension PUBLIC
-    Metalium::Metal
-    Metalium::TTNN
+    TT::Metalium
+    TTNN::CPP
 )
 
 target_link_libraries(ttnn_device_extension PUBLIC 
@@ -84,6 +82,8 @@ set_target_properties(ttnn_device_extension PROPERTIES
     PREFIX ""
     SUFFIX ""
     OUTPUT_NAME ${OUTPUT_NAME}
+    BUILD_RPATH "$ORIGIN"
+    INSTALL_RPATH "$ORIGIN"
 )
 
 if (BUILD_EXAMPLES)
