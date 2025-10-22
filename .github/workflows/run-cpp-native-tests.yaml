@@ -75,7 +75,7 @@ jobs:
 
           pip install --force-reinstall pip==21.2.4
           python3 -m pip install numpy setuptools wheel
-          python3 -m pip install -e .
+          python3 -m pip install -e . --use-pep517 --no-cache-dir --no-build-isolation
 
       - name: Setup submodules
         run: |
