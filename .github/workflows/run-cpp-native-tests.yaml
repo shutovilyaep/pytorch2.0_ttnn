@@ -30,6 +30,9 @@ jobs:
         -v /mnt/tt-metal-pytorch-cache/.cache:/root/.cache
     env:
       CACHE_DIR: /root/.cache/cpp-extension-cache
+    defaults:
+      run:
+        shell: bash
     steps:
       - name: Install git-lfs for checkout
         run: |
@@ -48,12 +51,54 @@ jobs:
           apt install -y curl jq
       - name: Update .gitsubmodules
         run: |
-          # Fetch the latest pre-release tag from the target repository
-          latest_pre_release=$(curl -s https://api.github.com/repos/tenstorrent/tt-metal/releases | jq -r '[.[] | select(.prerelease == true)][0].tag_name')
-          # Strip leading 'v' from the tag (e.g., v0.51.0 -> 0.51.0)
-          latest_version="${latest_pre_release#v}"
-          sed -i "/\[submodule \"torch_ttnn\/cpp_extension\/third-party\/tt-metal\"\]/,/^\[/{s/^\s*branch\s*=.*/\tbranch = $latest_version/}" .gitmodules
-          echo "Updated .gitmodules with the latest version: $latest_version"
+          # Set pinned tt-metal ref here. Leave empty to auto-detect latest prerelease.
+          # Should be set manually with each PR required to make it work with new tt-metal version
+          TT_METAL_REF="releases/v0.60.1"
+
+          if [ -z "$TT_METAL_REF" ]; then
+            # Auto-detect latest prerelease tag (e.g., v0.64.0-rc8)
+            latest_pre_release=$(curl -s https://api.github.com/repos/tenstorrent/tt-metal/releases | jq -r '[.[] | select(.prerelease == true)][0].tag_name')
+            RESOLVED_TT_METAL_REF="$latest_pre_release"
+            echo "Auto-detected latest prerelease tag: $RESOLVED_TT_METAL_REF"
+          else
+            RESOLVED_TT_METAL_REF="$TT_METAL_REF"
+            echo "Using pinned tt-metal ref: $RESOLVED_TT_METAL_REF"
+          fi
+
+          # Export for later steps
+          echo "TT_METAL_REF=$RESOLVED_TT_METAL_REF" >> $GITHUB_ENV
+
+      - name: Setup submodules
+        run: |
+          # Allow git operations in runner workspace paths
+          git config --global --add safe.directory /__w/pytorch2.0_ttnn/pytorch2.0_ttnn || true
+          git config --global --add safe.directory "${{ github.workspace }}" || true
+          git config --global --add safe.directory "$(pwd)" || true
+
+          git submodule sync --recursive
+          git submodule update --init --recursive
+
+          # Check out the requested tt-metal ref inside the submodule without editing .gitmodules
+          pushd torch_ttnn/cpp_extension/third-party/tt-metal
+          git fetch --all --tags --prune
+          if echo "$TT_METAL_REF" | grep -q '^releases/'; then
+            # Treat as branch on origin
+            if git rev-parse --verify "$TT_METAL_REF" >/dev/null 2>&1; then
+              git checkout -f "$TT_METAL_REF"
+            else
+              git checkout -B "$TT_METAL_REF" "origin/$TT_METAL_REF" || git checkout -f "origin/$TT_METAL_REF"
+            fi
+          else
+            # Treat as tag or plain ref
+            git -c advice.detachedHead=false checkout -f "tags/$TT_METAL_REF" || git checkout -f "$TT_METAL_REF"
+          fi
+          # Update nested submodules to the versions recorded by the checked-out ref
+          git submodule sync --recursive
+          git submodule update --init --recursive
+          # LFS for all nested submodules
+          git submodule foreach --recursive 'git lfs fetch --all || true'
+          git submodule foreach --recursive 'git lfs pull || true'
+          popd
 
       - name: Install dependencies
         run: |
@@ -76,12 +121,6 @@ jobs:
           pip install --force-reinstall pip==21.2.4
           python3 -m pip install numpy setuptools wheel
           python3 -m pip install -e . --use-pep517 --no-cache-dir --no-build-isolation
-
-      - name: Setup submodules
-        run: |
-          git submodule sync
-          git submodule update --init --recursive
-          git submodule foreach 'git lfs fetch --all && git lfs pull'
 
       - name: Build/Fetch C++ Extensions
         run: |
