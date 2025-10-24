@@ -132,23 +132,23 @@ jobs:
 
           # Check if cache exists with required components
           CACHE_FOUND=0
-          if [ -d "$CACHE_DIR/build" ] && [ -f "$CACHE_DIR/ttnn_device_extension${PYTHON_LIB_SUFFIX}" ]; then
-            CACHE_FOUND=1
-            echo "Cache found with all required components. Using cached build."
+          # if [ -d "$CACHE_DIR/build" ] && [ -f "$CACHE_DIR/ttnn_device_extension${PYTHON_LIB_SUFFIX}" ]; then
+          #   CACHE_FOUND=1
+          #   echo "Cache found with all required components. Using cached build."
 
-            # cpp-extension cache
-            cp -r $CACHE_DIR/build .
-            cp -r $CACHE_DIR/ttnn_device_extension${PYTHON_LIB_SUFFIX} .
+          #   # cpp-extension cache
+          #   cp -r $CACHE_DIR/build .
+          #   cp -r $CACHE_DIR/ttnn_device_extension${PYTHON_LIB_SUFFIX} .
 
-            # tt-metal cache
-            cp -r $CACHE_DIR/tt-metal/build third-party/tt-metal/
-            cp -r $CACHE_DIR/tt-metal/.cpmcache third-party/tt-metal/
+          #   # tt-metal cache
+          #   cp -r $CACHE_DIR/tt-metal/build third-party/tt-metal/
+          #   cp -r $CACHE_DIR/tt-metal/.cpmcache third-party/tt-metal/
 
-            # ccache
-            cp -r $CACHE_DIR/ccache/* $CCACHE_DIR
-          else
-            echo "Cache not found or incomplete. Building C++ extensions"
-          fi
+          #   # ccache
+          #   cp -r $CACHE_DIR/ccache/* $CCACHE_DIR
+          # else
+          #   echo "Cache not found or incomplete. Building C++ extensions"
+          # fi
           ./build_cpp_extension.sh
           
           # Update cache with new build if not was not present before
