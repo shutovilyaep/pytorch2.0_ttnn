@@ -1,8 +1,31 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "torch"]
-build-backend = "setuptools.build_meta"
+requires = [
+    "scikit-build-core>=0.9",
+    "cmake>=3.25",
+    "ninja",
+    "torch>=2.2",
+    "wheel",
+]
+build-backend = "scikit_build_core.build"
 
 [project]
 name = "torch_ttnn_cpp_extension"
 version = "0.1.0"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
+description = "PyTorch TTNN C++ Extension with TT-Metal backend"
+keywords = ["pytorch", "ttnn", "tt-metal", "c++", "extension"]
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Tenstorrent", email = "info@tenstorrent.com"}
+]
+
+[project.urls]
+Repository = "https://github.com/tenstorrent/pytorch2.0_ttnn"
+
+[tool.scikit-build]
+generator = "Ninja"
+cmake.args = [
+    "-DWITH_PYTHON_BINDINGS=ON",
+    "-DCMAKE_BUILD_TYPE=Release",
+]
+cmake.verbose = true

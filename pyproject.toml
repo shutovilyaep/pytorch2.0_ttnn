@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torch-ttnn"
-dynamic = ["version", "dependencies"]
+dynamic = ["version"]
 description = "PyTorch 2.0 TTNN Compiler"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,16 +22,43 @@ classifiers = [
     "Operating System :: POSIX :: Linux",
 ]
 keywords = ["pytorch", "ttnn", "tenstorrent", "compiler", "machine-learning", "deep-learning"]
+dependencies = [
+    "torch==2.2.1+cpu",
+    "torchvision==0.17.1+cpu",
+    "tabulate==0.9.0",
+    "networkx==3.1",
+    "graphviz",
+    "matplotlib==3.7.1",
+    "paramiko==3.5.1",
+    "ttnn==0.60.1",
+]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
+    "pytest-timeout==2.2.0",
+    "pytest-split==0.8.2",
     "black>=23.7.0",
     "isort>=5.12.0",
     "flake8>=6.1.0",
     "mypy>=1.5.0",
     "pre-commit>=3.3.3",
+    "transformers==4.38.0",
+    "huggingface_hub[cli]>=0.25.2",
+    "pandas==2.0.3",
+    "Pillow==10.3.0",
+    "pydantic>=2.9.2",
+    "requests>=2.31",
+    "sentencepiece==0.2.0",
+    "protobuf==5.27.3",
+    "mlp-mixer-pytorch==0.1.1",
+    "datasets>=2.9.0",
+    "diffusers==0.32.2",
+    "pytorchcv",
+    "librosa>=0.10.0",
+    "soundfile",
+    "numpy>=1.24.4,<2",
 ]
 
 [project.urls]

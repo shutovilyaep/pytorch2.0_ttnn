@@ -135,64 +135,25 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
-          python3 -m pip install -r requirements-dev.txt
           python3 -m pip install pytest-github-report
 
-          pip install --force-reinstall pip==21.2.4
-          python3 -m pip install numpy setuptools wheel
-          python3 -m pip install -e . --use-pep517 --no-cache-dir --no-build-isolation
-
-      - name: Build/Fetch C++ Extensions
+      - name: Install root package
         run: |
+          python3 -m pip install -e .[dev] --no-build-isolation
+
+      - name: Build C++ Extension
+        run: |
+          export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
           cd torch_ttnn/cpp_extension
-          PYTHON_LIB_SUFFIX=$(python3 -c "import importlib.machinery; print(importlib.machinery.EXTENSION_SUFFIXES[0])")
-
-          CCACHE_DIR=$(ccache --get-config cache_dir)
-          mkdir -p $CCACHE_DIR
-
-          # Check if cache exists with required components
-          CACHE_FOUND=0
-          # if [ -d "$CACHE_DIR/build" ] && [ -f "$CACHE_DIR/ttnn_device_extension${PYTHON_LIB_SUFFIX}" ]; then
-          #   CACHE_FOUND=1
-          #   echo "Cache found with all required components. Using cached build."
-
-          #   # cpp-extension cache
-          #   cp -r $CACHE_DIR/build .
-          #   cp -r $CACHE_DIR/ttnn_device_extension${PYTHON_LIB_SUFFIX} .
-
-          #   # tt-metal cache
-          #   cp -r $CACHE_DIR/tt-metal/build third-party/tt-metal/
-          #   cp -r $CACHE_DIR/tt-metal/.cpmcache third-party/tt-metal/
-
-          #   # ccache
-          #   cp -r $CACHE_DIR/ccache/* $CCACHE_DIR
-          # else
-          #   echo "Cache not found or incomplete. Building C++ extensions"
-          # fi
-          ./build_cpp_extension.sh
-          
-          # # Update cache with new build if not was not present before
-          # if [ $CACHE_FOUND -eq 0 ]; then
-          #   mkdir -p $CACHE_DIR
-            
-          #   # cpp-extension cache
-          #   cp -r build $CACHE_DIR 
-          #   cp -r ttnn_device_extension${PYTHON_LIB_SUFFIX} $CACHE_DIR 
-
-          #   # tt-metal cache
-          #   mkdir -p $CACHE_DIR/tt-metal
-          #   cp -r third-party/tt-metal/build $CACHE_DIR/tt-metal/
-          #   cp -r third-party/tt-metal/.cpmcache $CACHE_DIR/tt-metal/
-
-          #   # ccache
-          #   cp -r $CCACHE_DIR $CACHE_DIR 
-          # fi
+          python3 -m pip install -e . --no-build-isolation
           cd ${{ github.workspace }}
 
       - name: Run C++ Extension Tests
+        env:
+          TT_METAL_HOME: ${{ github.workspace }}/torch_ttnn/cpp_extension/third-party/tt-metal
         run: |
           export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
-          # Print status, somehere here is is Aborted
+
           echo "Running C++ extension tests"
           pytest tests/cpp_extension/test_cpp_extension_functionality.py -v
 

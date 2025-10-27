@@ -246,7 +246,12 @@ To get started with development, you'll need a Wormhole or Blackhole Tenstorrent
 
 Install the development dependencies:
 ```shell
-pip install -r requirements-dev.txt
+pip install -e .[dev]
+```
+
+To build and install the C++ extension separately:
+```shell
+cd torch_ttnn/cpp_extension
 pip install -e .
 ```
 

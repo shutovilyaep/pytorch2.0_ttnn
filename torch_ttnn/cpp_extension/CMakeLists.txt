@@ -7,6 +7,28 @@ project(ttnn_device_extension CXX)
 # Options
 option(BUILD_EXAMPLES "Build examples" OFF)
 
+# Set up Python and Torch paths from environment if available
+if(DEFINED ENV{TORCH_INSTALL_PREFIX})
+    set(TORCH_INSTALL_PREFIX $ENV{TORCH_INSTALL_PREFIX})
+endif()
+
+if(DEFINED ENV{CMAKE_PREFIX_PATH})
+    set(CMAKE_PREFIX_PATH $ENV{CMAKE_PREFIX_PATH})
+endif()
+
+if(DEFINED ENV{CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY $ENV{CMAKE_LIBRARY_OUTPUT_DIRECTORY})
+endif()
+
+if(DEFINED ENV{OUTPUT_NAME})
+    set(OUTPUT_NAME $ENV{OUTPUT_NAME})
+endif()
+
+# Propagate TT_METAL_HOME to cmake if provided
+if(DEFINED ENV{TT_METAL_HOME})
+    set(TT_METAL_HOME $ENV{TT_METAL_HOME})
+endif()
+
 list(PREPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 include(utils)
 
@@ -27,6 +49,24 @@ else()
 endif()
 
 find_package(Torch REQUIRED)
+
+# Detect Torch ABI flags after Torch is found
+if(DEFINED ENV{TORCH_ABI_FLAGS})
+    set(TORCH_ABI_FLAGS $ENV{TORCH_ABI_FLAGS})
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_ABI_FLAGS}")
+else()
+    # Try to detect from Python/Torch config
+    execute_process(
+        COMMAND ${Python_EXECUTABLE} -c "import torch; print(torch.__config__.show())"
+        OUTPUT_VARIABLE TORCH_CONFIG
+        ERROR_QUIET
+    )
+    if(TORCH_CONFIG MATCHES "-D_GLIBCXX_USE_CXX11_ABI=([01])")
+        set(TORCH_ABI_FLAGS "-D_GLIBCXX_USE_CXX11_ABI=${CMAKE_MATCH_1}")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_ABI_FLAGS}")
+        message(STATUS "Detected Torch ABI flag: ${TORCH_ABI_FLAGS}")
+    endif()
+endif()
 
 set(TTNN_CPP_EXTENSION_SOURCES 
     ${CMAKE_CURRENT_SOURCE_DIR}/ttnn_cpp_extension/src/open_registration_extension.cpp
@@ -90,3 +130,8 @@ if (BUILD_EXAMPLES)
     message(STATUS "Building examples")
     add_subdirectory(ttnn_cpp_extension/examples)
 endif()
+
+# Install the extension library so it's included in the wheel
+install(TARGETS ttnn_device_extension
+        LIBRARY DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
+)
