@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "scikit-build-core>=0.9",
+    "scikit-build-core>=0.10",
     "cmake>=3.25",
     "ninja",
     "torch>=2.2",
@@ -23,9 +23,8 @@ authors = [
 Repository = "https://github.com/tenstorrent/pytorch2.0_ttnn"
 
 [tool.scikit-build]
-generator = "Ninja"
 cmake.args = [
     "-DWITH_PYTHON_BINDINGS=ON",
     "-DCMAKE_BUILD_TYPE=Release",
 ]
-cmake.verbose = true
+build.verbose = true
