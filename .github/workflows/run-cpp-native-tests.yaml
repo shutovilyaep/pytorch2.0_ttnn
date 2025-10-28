@@ -172,9 +172,17 @@ jobs:
       - name: Run C++ Extension Tests
         run: |
           export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
+          # Print status, somehere here is is Aborted
+          echo "Running C++ extension tests"
           pytest tests/cpp_extension/test_cpp_extension_functionality.py -v
+
+          echo "Running BERT C++ extension tests"
           pytest tests/cpp_extension/test_bert_cpp_extension.py -v
+
+          echo "Running models C++ extension tests"
           pytest tests/models/ --native_integration -v
+
+          echo "Running tests passed"
 
   tests-passed:
     if: ${{ always() }}
