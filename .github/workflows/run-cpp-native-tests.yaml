@@ -139,13 +139,13 @@ jobs:
 
       - name: Install root package
         run: |
-          python3 -m pip install -e .[dev] --no-build-isolation
+          python3 -m pip install -e .[dev]
 
       - name: Build C++ Extension
         run: |
           export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
           cd torch_ttnn/cpp_extension
-          python3 -m pip install -e . --no-build-isolation
+          python3 -m pip install -e .
           cd ${{ github.workspace }}
 
       - name: Run C++ Extension Tests
