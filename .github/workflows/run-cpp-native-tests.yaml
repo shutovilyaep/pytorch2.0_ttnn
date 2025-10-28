@@ -151,22 +151,22 @@ jobs:
           # fi
           ./build_cpp_extension.sh
           
-          # Update cache with new build if not was not present before
-          if [ $CACHE_FOUND -eq 0 ]; then
-            mkdir -p $CACHE_DIR
+          # # Update cache with new build if not was not present before
+          # if [ $CACHE_FOUND -eq 0 ]; then
+          #   mkdir -p $CACHE_DIR
             
-            # cpp-extension cache
-            cp -r build $CACHE_DIR 
-            cp -r ttnn_device_extension${PYTHON_LIB_SUFFIX} $CACHE_DIR 
+          #   # cpp-extension cache
+          #   cp -r build $CACHE_DIR 
+          #   cp -r ttnn_device_extension${PYTHON_LIB_SUFFIX} $CACHE_DIR 
 
-            # tt-metal cache
-            mkdir -p $CACHE_DIR/tt-metal
-            cp -r third-party/tt-metal/build $CACHE_DIR/tt-metal/
-            cp -r third-party/tt-metal/.cpmcache $CACHE_DIR/tt-metal/
+          #   # tt-metal cache
+          #   mkdir -p $CACHE_DIR/tt-metal
+          #   cp -r third-party/tt-metal/build $CACHE_DIR/tt-metal/
+          #   cp -r third-party/tt-metal/.cpmcache $CACHE_DIR/tt-metal/
 
-            # ccache
-            cp -r $CCACHE_DIR $CACHE_DIR 
-          fi
+          #   # ccache
+          #   cp -r $CCACHE_DIR $CACHE_DIR 
+          # fi
           cd ${{ github.workspace }}
 
       - name: Run C++ Extension Tests
