@@ -96,7 +96,11 @@ jobs:
 
           # Check out the requested tt-metal ref inside the submodule without editing .gitmodules
           pushd torch_ttnn/cpp_extension/third-party/tt-metal
-          retry 5 git fetch --all --tags --prune
+          # Avoid tag clobber issues if upstream moved tags; clean local tags and fetch with force
+          git config fetch.prune true || true
+          git config fetch.pruneTags true || true
+          git tag -l | xargs -r -n 1 git tag -d || true
+          retry 5 git -c protocol.version=2 fetch --all --tags --force --prune --prune-tags
           if echo "$TT_METAL_REF" | grep -q '^releases/'; then
             # Treat as branch on origin
             if git rev-parse --verify "$TT_METAL_REF" >/dev/null 2>&1; then
