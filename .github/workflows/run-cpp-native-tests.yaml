@@ -75,26 +75,42 @@ jobs:
           git config --global --add safe.directory "${{ github.workspace }}" || true
           git config --global --add safe.directory "$(pwd)" || true
 
-          git submodule sync --recursive
-          git submodule update --init --recursive
+          # Retry helper with exponential backoff
+          retry() {
+            local max_attempts=${1:-5}; shift
+            local attempt=1
+            until "$@"; do
+              if (( attempt >= max_attempts )); then
+                echo "Command failed after ${attempt} attempts: $*"
+                return 1
+              fi
+              echo "Command failed (attempt ${attempt}/${max_attempts}): $*"
+              sleep $(( 2 ** attempt ))
+              ((attempt++))
+            done
+          }
+
+          # Be tolerant to network hiccups for submodule operations
+          retry 5 git submodule sync --recursive
+          retry 5 git submodule update --init --recursive
 
           # Check out the requested tt-metal ref inside the submodule without editing .gitmodules
           pushd torch_ttnn/cpp_extension/third-party/tt-metal
-          git fetch --all --tags --prune
+          retry 5 git fetch --all --tags --prune
           if echo "$TT_METAL_REF" | grep -q '^releases/'; then
             # Treat as branch on origin
             if git rev-parse --verify "$TT_METAL_REF" >/dev/null 2>&1; then
-              git checkout -f "$TT_METAL_REF"
+              retry 5 git checkout -f "$TT_METAL_REF"
             else
-              git checkout -B "$TT_METAL_REF" "origin/$TT_METAL_REF" || git checkout -f "origin/$TT_METAL_REF"
+              retry 5 git checkout -B "$TT_METAL_REF" "origin/$TT_METAL_REF" || retry 5 git checkout -f "origin/$TT_METAL_REF"
             fi
           else
             # Treat as tag or plain ref
-            git -c advice.detachedHead=false checkout -f "tags/$TT_METAL_REF" || git checkout -f "$TT_METAL_REF"
+            retry 5 git -c advice.detachedHead=false checkout -f "tags/$TT_METAL_REF" || retry 5 git checkout -f "$TT_METAL_REF"
           fi
           # Update nested submodules to the versions recorded by the checked-out ref
-          git submodule sync --recursive
-          git submodule update --init --recursive
+          retry 5 git submodule sync --recursive
+          retry 5 git submodule update --init --recursive
           # LFS for all nested submodules
           git submodule foreach --recursive 'git lfs fetch --all || true'
           git submodule foreach --recursive 'git lfs pull || true'
