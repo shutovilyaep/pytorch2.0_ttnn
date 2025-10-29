@@ -157,6 +157,11 @@ PY
           # Prefer clang-17 explicitly in case the toolchain file is not picked up early
           export CC=clang-17
           export CXX=clang++-17
+          # Ensure tt-metal's Python package (ttnn) is built so _ttnncpp.so is present
+          export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${LD_LIBRARY_PATH:-}"
+          # Ensure PEP517 backend & native build tools are available for pyproject builds
+          python3 -m pip install --upgrade scikit-build-core cmake ninja
+          python3 -m pip install -e "${TT_METAL_HOME}/ttnn"
 
           cd torch_ttnn/cpp_extension
           python3 -m pip install -e .
