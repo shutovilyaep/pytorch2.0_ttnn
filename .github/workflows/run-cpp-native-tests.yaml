@@ -144,6 +144,20 @@ jobs:
       - name: Build C++ Extension
         run: |
           export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
+          # Select clang-17 toolchain used by tt-metal to avoid default GCC-11
+          TOOLCHAIN_PATH="cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake"
+          # Ensure CMake can locate Torch package config from current Python
+          export CMAKE_PREFIX_PATH=$(python3 - <<'PY'
+import torch
+print(torch.utils.cmake_prefix_path)
+PY
+)
+          # Forward toolchain and common flags to scikit-build-core/CMake
+          export CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=${TT_METAL_HOME}/${TOOLCHAIN_PATH} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DWITH_PYTHON_BINDINGS=ON"
+          # Prefer clang-17 explicitly in case the toolchain file is not picked up early
+          export CC=clang-17
+          export CXX=clang++-17
+
           cd torch_ttnn/cpp_extension
           python3 -m pip install -e .
           cd ${{ github.workspace }}
