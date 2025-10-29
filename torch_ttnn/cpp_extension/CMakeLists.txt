@@ -1,5 +1,15 @@
 cmake_minimum_required(VERSION 3.18)
 
+# If no toolchain file is provided, try to select a sensible default early,
+# before the first project()/compiler detection happens.
+if(NOT DEFINED CMAKE_TOOLCHAIN_FILE OR CMAKE_TOOLCHAIN_FILE STREQUAL "")
+    if(DEFINED ENV{TT_METAL_HOME} AND EXISTS "$ENV{TT_METAL_HOME}/cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake")
+        set(CMAKE_TOOLCHAIN_FILE "$ENV{TT_METAL_HOME}/cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake" CACHE FILEPATH "Toolchain file" FORCE)
+    elseif(EXISTS "${CMAKE_CURRENT_LIST_DIR}/cmake/x86_64-linux-torch-toolchain.cmake")
+        set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_LIST_DIR}/cmake/x86_64-linux-torch-toolchain.cmake" CACHE FILEPATH "Toolchain file" FORCE)
+    endif()
+endif()
+
 set(CMAKE_CXX_STANDARD 20)
 
 project(ttnn_device_extension CXX)
