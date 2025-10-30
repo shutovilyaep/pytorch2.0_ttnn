@@ -603,6 +603,7 @@ def _save_to_disk(model_name, forward_codes, call_forwards_in_main, all_inputs, 
 
     # Lazy import to avoid circular imports
     from tests import conftest as tests_conftest
+
     get_dispatch_core_type = tests_conftest.get_dispatch_core_type
     get_dispatch_core_axis = tests_conftest.get_dispatch_core_axis
     get_dispatch_core_config = tests_conftest.get_dispatch_core_config
