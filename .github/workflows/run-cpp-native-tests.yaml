@@ -135,10 +135,13 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
+          # Tooling for testing/build; no project packages are installed here
           python3 -m pip install pytest-github-report
 
       - name: Install root package
         run: |
+          # Installs top-level Python package 'torch-ttnn' (pure Python only).
+          # This does NOT build the native C++ extension and does NOT install tt-metal's 'ttnn'.
           python3 -m pip install -e .[dev]
 
       - name: Build C++ Extension
@@ -161,9 +164,13 @@ jobs:
           export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${LD_LIBRARY_PATH:-}"
           # Ensure PEP517 backend & native build tools are available for pyproject builds
           python3 -m pip install --upgrade scikit-build-core cmake ninja
+          # Builds and installs tt-metal's Python package 'ttnn' from the submodule root
+          # (produces '_ttnncpp.so' and installs tt-metal shared libraries)
           python3 -m pip install -e "${TT_METAL_HOME}"
 
           cd torch_ttnn/cpp_extension
+          # Builds and installs our project C++ extension package 'torch_ttnn_cpp_extension'
+          # using scikit-build-core/CMake, linking against tt-metal libraries
           python3 -m pip install -e .
           cd ${{ github.workspace }}
 
@@ -172,6 +179,7 @@ jobs:
           TT_METAL_HOME: ${{ github.workspace }}/torch_ttnn/cpp_extension/third-party/tt-metal
         run: |
           export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
+          # Test phase: imports 'ttnn' (from tt-metal) and our 'torch_ttnn_cpp_extension'.
           # Ensure runtime can locate tt-metal shared libraries when importing ttnn/_ttnn
           export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${LD_LIBRARY_PATH:-}"
 
