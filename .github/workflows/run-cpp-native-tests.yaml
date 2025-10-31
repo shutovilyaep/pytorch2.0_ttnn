@@ -166,7 +166,12 @@ jobs:
           python3 -m pip install --upgrade scikit-build-core cmake ninja
           # Builds and installs tt-metal's Python package 'ttnn' from the submodule root
           # (produces '_ttnncpp.so' and installs tt-metal shared libraries)
+          # Guard against preinstalled PyPI wheels creating ABI/runtime mismatches
+          python3 -m pip uninstall -y ttnn || true
           python3 -m pip install -e "${TT_METAL_HOME}"
+
+          # Early sanity check: ensure 'ttnn' and its pybind module resolve
+          python3 -c "import importlib, os; print('TT_METAL_HOME=', os.environ.get('TT_METAL_HOME')); import ttnn; importlib.import_module('ttnn._ttnn'); print('import ttnn OK')"
 
           cd torch_ttnn/cpp_extension
           # Builds and installs our project C++ extension package 'torch_ttnn_cpp_extension'
