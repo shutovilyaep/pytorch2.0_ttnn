@@ -161,7 +161,7 @@ jobs:
           export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${LD_LIBRARY_PATH:-}"
           # Ensure PEP517 backend & native build tools are available for pyproject builds
           python3 -m pip install --upgrade scikit-build-core cmake ninja
-          python3 -m pip install -e "${TT_METAL_HOME}/ttnn"
+          python3 -m pip install -e "${TT_METAL_HOME}"
 
           cd torch_ttnn/cpp_extension
           python3 -m pip install -e .
