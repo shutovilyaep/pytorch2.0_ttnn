@@ -148,10 +148,10 @@ jobs:
           TOOLCHAIN_PATH="cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake"
           # Ensure CMake can locate Torch package config from current Python
           export CMAKE_PREFIX_PATH=$(python3 - <<'PY'
-import torch
-print(torch.utils.cmake_prefix_path)
-PY
-)
+          import torch
+          print(torch.utils.cmake_prefix_path)
+          PY
+          )
           # Forward toolchain and common flags to scikit-build-core/CMake
           export CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=${TT_METAL_HOME}/${TOOLCHAIN_PATH} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DWITH_PYTHON_BINDINGS=ON"
           # Prefer clang-17 explicitly in case the toolchain file is not picked up early
