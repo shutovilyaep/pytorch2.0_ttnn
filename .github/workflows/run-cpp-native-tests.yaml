@@ -222,29 +222,6 @@ jobs:
           print("Patched build_metal.sh to set CMAKE_INSTALL_LIBDIR=lib64")
           PYTHON_PATCH
           fi
-          # Patch ttnn/CMakeLists.txt to build ttnncpp as static when BUILD_SHARED_LIBS=OFF
-          python3 << 'PYTHON_PATCH'
-          import os
-          cmake_file = os.path.join(os.environ['TT_METAL_HOME'], 'ttnn', 'CMakeLists.txt')
-          with open(cmake_file, 'r') as f:
-              lines = f.readlines()
-
-          # Find the line with add_library(ttnncpp SHARED)
-          for i, line in enumerate(lines):
-              if 'add_library(ttnncpp SHARED)' in line:
-                  # Replace with conditional build
-                  indent = ' ' * (len(line) - len(line.lstrip()))
-                  lines[i] = f'{indent}if(BUILD_SHARED_LIBS)\n'
-                  lines.insert(i + 1, f'{indent}    add_library(ttnncpp SHARED)\n')
-                  lines.insert(i + 2, f'{indent}else()\n')
-                  lines.insert(i + 3, f'{indent}    add_library(ttnncpp STATIC)\n')
-                  lines.insert(i + 4, f'{indent}endif()\n')
-                  break
-
-          with open(cmake_file, 'w') as f:
-              f.writelines(lines)
-          print("Patched ttnn/CMakeLists.txt for conditional ttnncpp build")
-          PYTHON_PATCH
           # Install from source (non-editable) to build and bundle native libs into the package
           # Note: --no-build-isolation requires build dependencies to be installed manually
           # setup.py will call build_metal.sh with --build-static-libs --release, which handles everything correctly
@@ -276,8 +253,8 @@ jobs:
 
       - name: Run C++ Extension Tests
         run: |
-          # Test phase: C++ extension is fully statically linked (embeds tt-metal + ttnn code)
-          # Only needs PyPI TTNN Python API libraries at runtime
+          # Test phase: C++ extension with shared libraries bundled in wheel
+          # All tt-metal dependencies are included in the wheel
 
           # Find TTNN package library directories (for _ttnn.so, _ttnncpp.so)
           export TTNN_LIB_PATHS=$(python3 - <<'PY'

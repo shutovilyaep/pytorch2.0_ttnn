@@ -145,3 +145,23 @@ endif()
 install(TARGETS ttnn_device_extension
         LIBRARY DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
 )
+
+# For shared library builds, also install the tt-metal dependencies
+# This ensures they are bundled in the Python wheel
+if(BUILD_SHARED_LIBS)
+    # Install tt_metal library if it's a shared library
+    if(TARGET tt_metal)
+        install(TARGETS tt_metal
+                LIBRARY DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
+                RUNTIME DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
+        )
+    endif()
+
+    # Install ttnncpp library if it's a shared library
+    if(TARGET ttnncpp)
+        install(TARGETS ttnncpp
+                LIBRARY DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
+                RUNTIME DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
+        )
+    endif()
+endif()
