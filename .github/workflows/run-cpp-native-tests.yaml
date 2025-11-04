@@ -321,6 +321,40 @@ jobs:
             fi
           fi
           
+          # Ensure libtt_metal.so is discoverable: scan ttnn & tt-metal
+          METAL_LIB_DIR=$(python3 - <<'PY'
+          import pathlib, site
+          def find_in_ttnn():
+              try:
+                  import ttnn
+                  p = pathlib.Path(ttnn.__file__).parent
+                  for d in [p/'build'/'lib', p/'.libs', p]:
+                      f = d/'libtt_metal.so'
+                      if f.exists():
+                          print(str(d)); return
+              except Exception:
+                  pass
+              # site-packages fallback
+              for sp in set(site.getsitepackages()+[site.getusersitepackages()]):
+                  d = pathlib.Path(sp)/'ttnn'/'build'/'lib'
+                  if (d/'libtt_metal.so').exists():
+                      print(str(d)); return
+                  d2 = pathlib.Path(sp)/'ttnn'
+                  if (d2/'libtt_metal.so').exists():
+                      print(str(d2)); return
+          find_in_ttnn()
+          PY
+          )
+          if [ -n "${METAL_LIB_DIR}" ]; then
+            export LD_LIBRARY_PATH="${METAL_LIB_DIR}:${LD_LIBRARY_PATH}"
+          else
+            # search in tt-metal tree as a last resort
+            METAL_FROM_TTM=$(find "${TT_METAL_HOME}" -maxdepth 8 -type f -name 'libtt_metal.so' 2>/dev/null | head -n1 || true)
+            if [ -n "${METAL_FROM_TTM}" ]; then
+              export LD_LIBRARY_PATH="$(dirname "${METAL_FROM_TTM}"):${LD_LIBRARY_PATH}"
+            fi
+          fi
+          
           echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 
           echo "Running C++ extension tests"
