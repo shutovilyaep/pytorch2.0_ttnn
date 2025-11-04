@@ -149,6 +149,10 @@ jobs:
       - name: Build C++ Extension
         run: |
           export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
+          # Configure git safe.directory for entire workspace (covers all subdirectories including CPM cache)
+          # This prevents race conditions when CPM creates new cache directories during CMake execution
+          git config --global --add safe.directory "${{ github.workspace }}" || true
+          git config --global --add safe.directory "${TT_METAL_HOME}" || true
           # Determine tt-metal version for CMake
           TT_METAL_VERSION=""
           if [ -d "$TT_METAL_HOME/.git" ]; then
@@ -196,8 +200,7 @@ jobs:
           # Do NOT set CIBUILDWHEEL=1 - this would bypass build_metal.sh
           # Instead, let setup.py use build_metal.sh which properly handles toolchain and all CMake args
           # build_metal.sh will automatically use the correct toolchain and handle VERSION_NUMERIC via git describe
-          # Ensure git is available and configured (needed for version detection and CPM)
-          git config --global --add safe.directory "${TT_METAL_HOME}" || true
+          # Git safe.directory already configured above for workspace and TT_METAL_HOME
           # CPM performs git operations in cache directories - configure git before CMake runs
           # CPM cache directory location (set in third-party/CMakeLists.txt)
           CPM_CACHE_DIR="${TT_METAL_HOME}/.cpmcache"
