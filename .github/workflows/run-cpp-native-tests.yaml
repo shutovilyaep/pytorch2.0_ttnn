@@ -178,7 +178,8 @@ jobs:
           export CC=clang-17
           export CXX=clang++-17
           # Ensure tt-metal's Python package (ttnn) is built so _ttnncpp.so is present
-          export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${LD_LIBRARY_PATH:-}"
+          # Set up LD_LIBRARY_PATH for tt-metal build directories
+          export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/tt_stl:${TT_METAL_HOME}/build/tt_stl:${LD_LIBRARY_PATH:-}"
           # Ensure PEP517 backend & native build tools are available for pyproject builds
           python3 -m pip install --upgrade scikit-build-core cmake ninja
           # Builds and installs tt-metal's Python package 'ttnn' from the submodule root
@@ -193,11 +194,14 @@ jobs:
           python3 -m pip install --no-build-isolation "${TT_METAL_HOME}"
 
           # Compute installed ttnn build lib dir for runtime
-          export TTNN_LIB_DIR=$(python3 -c 'import ttnn, pathlib; print(pathlib.Path(ttnn.__file__).parent.joinpath("build","lib"))')
+          export TTNN_LIB_DIR=$(python3 -c 'import ttnn, pathlib; print(pathlib.Path(ttnn.__file__).parent.joinpath("build","lib"))' 2>/dev/null || echo "")
           echo "TTNN_LIB_DIR=${TTNN_LIB_DIR}"
 
           # Early sanity check: ensure 'ttnn' and its pybind module resolve
-          export LD_LIBRARY_PATH="${TTNN_LIB_DIR}:${LD_LIBRARY_PATH:-}"
+          # Add ttnn lib dir to LD_LIBRARY_PATH if found
+          if [ -n "${TTNN_LIB_DIR}" ]; then
+            export LD_LIBRARY_PATH="${TTNN_LIB_DIR}:${LD_LIBRARY_PATH}"
+          fi
           python3 -c "import importlib, os; print('TT_METAL_HOME=', os.environ.get('TT_METAL_HOME')); import ttnn; importlib.import_module('ttnn._ttnn'); print('import ttnn OK')"
 
           cd torch_ttnn/cpp_extension
@@ -214,10 +218,66 @@ jobs:
         run: |
           export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
           # Test phase: imports 'ttnn' (from tt-metal) and our 'torch_ttnn_cpp_extension'.
-          # Ensure runtime can locate shared libraries when importing ttnn/_ttnn
-          export TTNN_LIB_DIR=$(python3 -c 'import ttnn, pathlib; print(pathlib.Path(ttnn.__file__).parent.joinpath("build","lib"))')
-          # Set up LD_LIBRARY_PATH to include tt-metal build directories and ttnn lib directories
-          export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TTNN_LIB_DIR}:${LD_LIBRARY_PATH:-}"
+          # Ensure runtime can locate shared libraries (libtt_metal.so, libtt_stl.so, etc.)
+          
+          # Get ttnn library directories
+          export TTNN_LIB_DIR=$(python3 -c 'import ttnn, pathlib; print(pathlib.Path(ttnn.__file__).parent.joinpath("build","lib"))' 2>/dev/null || echo "")
+          export TTNN_LIB_PATHS=$(python3 - <<'PY'
+          import pathlib
+          try:
+              import ttnn
+              p = pathlib.Path(ttnn.__file__).parent
+              candidates = []
+              for d in [p / 'build' / 'lib', p / '.libs', p]:
+                  if d.exists():
+                      candidates.append(str(d))
+              print(':'.join(candidates))
+          except Exception:
+              print('')
+          PY
+          )
+          
+          # Set up base LD_LIBRARY_PATH with tt-metal and ttnn directories
+          if [ -n "${TTNN_LIB_PATHS}" ]; then
+            export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TTNN_LIB_PATHS}:${LD_LIBRARY_PATH:-}"
+          else
+            export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/tt_stl:${TT_METAL_HOME}/build/tt_stl:${LD_LIBRARY_PATH:-}"
+          fi
+          
+          # Ensure libtt_stl.so and libtt_metal.so are discoverable: scan ttnn & tt-metal
+          STL_LIB_DIR=$(python3 - <<'PY'
+          import pathlib, site
+          def find_in_ttnn():
+              try:
+                  import ttnn
+                  p = pathlib.Path(ttnn.__file__).parent
+                  for d in [p/'build'/'lib', p/'.libs', p]:
+                      f = d/'libtt_stl.so'
+                      if f.exists():
+                          print(str(d)); return
+              except Exception:
+                  pass
+              # site-packages fallback
+              for sp in set(site.getsitepackages()+[site.getusersitepackages()]):
+                  d = pathlib.Path(sp)/'ttnn'/'build'/'lib'
+                  if (d/'libtt_stl.so').exists():
+                      print(str(d)); return
+                  d2 = pathlib.Path(sp)/'ttnn'
+                  if (d2/'libtt_stl.so').exists():
+                      print(str(d2)); return
+          find_in_ttnn()
+          PY
+          )
+          if [ -n "${STL_LIB_DIR}" ]; then
+            export LD_LIBRARY_PATH="${STL_LIB_DIR}:${LD_LIBRARY_PATH}"
+          else
+            # search in tt-metal tree as a last resort
+            STL_FROM_TTM=$(find "${TT_METAL_HOME}" -maxdepth 8 -type f -name 'libtt_stl.so' 2>/dev/null | head -n1 || true)
+            if [ -n "${STL_FROM_TTM}" ]; then
+              export LD_LIBRARY_PATH="$(dirname "${STL_FROM_TTM}"):${LD_LIBRARY_PATH}"
+            fi
+          fi
+          
           echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 
           echo "Running C++ extension tests"
