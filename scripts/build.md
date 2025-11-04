@@ -269,11 +269,12 @@ When `ttnn_device_extension.so` loads, it needs:
    - Located via `INSTALL_RPATH "$ORIGIN"` (same directory as extension)
    - **No LD_LIBRARY_PATH needed**
 
-2. **MPI libraries** (if distributed functionality used):
+2. **MPI libraries** (required by ttnn package):
    - `/opt/openmpi-v5.0.7-ulfm/lib/libmpi.so.40`
    - ULFM MPI extensions
-   - Only needed if distributed tests/features are enabled
-   - Would require `LD_LIBRARY_PATH` if used (currently not needed for basic tests)
+   - Required because `ttnn` package's `_ttnncpp.so` links against MPI
+   - Must be in `LD_LIBRARY_PATH` when importing `ttnn` (even if distributed features not used)
+   - Note: `torch_ttnn_cpp_extension` bundles its own libraries, but `ttnn` package needs MPI
 
 3. **PyTorch libraries**:
    - `libtorch.so`, `libtorch_python.so`
@@ -445,16 +446,18 @@ In GitHub Actions (`run-cpp-native-tests.yaml`):
 
 **Build Step:**
 - Uses `/opt/venv` as Python environment
-- Sets `LD_LIBRARY_PATH` only during build (for linking against tt-metal libraries)
+- Sets `LD_LIBRARY_PATH` during build (for linking against tt-metal libraries)
+- Adds MPI library path to `LD_LIBRARY_PATH` before importing `ttnn` (required by `_ttnncpp.so`)
 - Patches `build_metal.sh` to set `CMAKE_INSTALL_LIBDIR=lib64` if `/usr/lib64` exists
+- Configures git safe.directory for CPM cache directories
 - Installs `ttnn` package from source using `build_metal.sh`
 - Builds `torch_ttnn_cpp_extension` with editable install
 
 **Test Step:**
-- **No LD_LIBRARY_PATH setup needed** - all libraries bundled in package
-- Libraries found via `INSTALL_RPATH "$ORIGIN"` automatically
+- Minimal `LD_LIBRARY_PATH` setup - only MPI libraries needed
+- Extension libraries (`libtt_metal.so`, `libtt_stl.so`) found via `INSTALL_RPATH "$ORIGIN"` automatically
 - TTNN Python modules found via standard Python import mechanism
-- Self-contained package requires no manual library path configuration
+- MPI libraries must be in `LD_LIBRARY_PATH` because `ttnn` package's `_ttnncpp.so` links against MPI
 
 ## Summary
 
@@ -465,8 +468,8 @@ The build process consists of three phases:
 
 Key points:
 - **Self-contained package**: Shared libraries (`libtt_metal.so`, `libtt_stl.so`) are bundled in the package
-- **RPATH-based resolution**: Libraries found via `INSTALL_RPATH "$ORIGIN"` - no `LD_LIBRARY_PATH` needed
+- **RPATH-based resolution**: Libraries found via `INSTALL_RPATH "$ORIGIN"` - no `LD_LIBRARY_PATH` needed for extension
+- **MPI requirement**: `ttnn` package's `_ttnncpp.so` requires MPI libraries in `LD_LIBRARY_PATH` (even if distributed not used)
 - **Editable installs**: Use `site-packages` for `.so` files
-- **CI simplification**: Test scripts require no library path configuration
-- **MPI libraries**: Only needed if distributed functionality is used (not required for basic tests)
+- **CI simplification**: Test scripts require minimal library path configuration (only MPI for ttnn package)
 
