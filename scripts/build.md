@@ -407,7 +407,27 @@ find "${TT_METAL_HOME}/.cpmcache" -type d -name ".git" | while read git_dir; do
 done
 ```
 
-### Issue 5: Wrong library directory (lib vs lib64)
+### Issue 5: Warning in install_dependencies.sh (non-critical)
+
+**Symptoms:**
+```
+./install_dependencies.sh: line 377: [: 22.04.5 LTS (Jammy Jellyfish): integer expression expected
+```
+
+**Cause:**
+- Bug in tt-metal's `install_dependencies.sh`: uses `$VERSION` instead of `$OS_VERSION` in version comparison
+- `$VERSION` contains full string, not just version number
+
+**Impact:**
+- **Non-critical**: Warning only, installation continues successfully
+- No action needed - can be safely ignored
+
+**Note:**
+- This is a bug in tt-metal submodule, not our code
+- Fixing requires patching tt-metal (which we avoid)
+- Warning does not affect functionality
+
+### Issue 6: Wrong library directory (lib vs lib64)
 
 **Symptoms:**
 ```
