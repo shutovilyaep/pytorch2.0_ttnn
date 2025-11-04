@@ -198,6 +198,23 @@ jobs:
           # build_metal.sh will automatically use the correct toolchain and handle VERSION_NUMERIC via git describe
           # Ensure git is available and configured (needed for version detection and CPM)
           git config --global --add safe.directory "${TT_METAL_HOME}" || true
+          # CPM performs git operations in cache directories - configure git before CMake runs
+          # CPM cache directory location (set in third-party/CMakeLists.txt)
+          CPM_CACHE_DIR="${TT_METAL_HOME}/.cpmcache"
+          # Ensure cache directory exists (CMake will create it, but we need git config first)
+          mkdir -p "${CPM_CACHE_DIR}" || true
+          # Add CPM cache root directory to git safe.directory
+          git config --global --add safe.directory "${CPM_CACHE_DIR}" || true
+          # Add any existing git repositories in CPM cache (CPM checks git status in cached packages)
+          # Each package in cache has its own .git directory
+          if [ -d "${CPM_CACHE_DIR}" ]; then
+            find "${CPM_CACHE_DIR}" -type d -name ".git" 2>/dev/null | while read git_dir; do
+              cache_dir=$(dirname "$git_dir")
+              git config --global --add safe.directory "$cache_dir" || true
+            done
+          fi
+          # Also set CPM_SOURCE_CACHE environment variable to ensure consistent cache location
+          export CPM_SOURCE_CACHE="${CPM_CACHE_DIR}"
           # Force CMake to install to lib64/ instead of lib/ to match setup.py expectations
           # setup.py's get_lib_dir() returns lib64 if /usr/lib64 exists
           # GNUInstallDirs must read CMAKE_INSTALL_LIBDIR before include(), so we pass it via CMake cache

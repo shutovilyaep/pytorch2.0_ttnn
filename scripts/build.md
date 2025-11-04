@@ -383,7 +383,30 @@ OSError: libtt_metal.so: cannot open shared object file: No such file or directo
    pip install -e .
    ```
 
-### Issue 4: Wrong library directory (lib vs lib64)
+### Issue 4: CPM git operations fail in cache directories
+
+**Symptoms:**
+```
+CMake Warning: CPM: Calling git status on folder .../.cpmcache/nlohmann_json/... failed
+CMake Error: Target "tt_metal" links to: nlohmann_json::nlohmann_json but the target was not found
+```
+
+**Cause:**
+- CPM performs `git status` checks on cached packages
+- Git refuses operations on directories not in `safe.directory` list
+- CPM cache directories (`.cpmcache/`) not configured as safe
+
+**Solution:**
+Add CPM cache directories to git's safe.directory before CMake runs:
+```bash
+git config --global --add safe.directory "${TT_METAL_HOME}/.cpmcache" || true
+# Add all nested git repositories in cache
+find "${TT_METAL_HOME}/.cpmcache" -type d -name ".git" | while read git_dir; do
+  git config --global --add safe.directory "$(dirname "$git_dir")" || true
+done
+```
+
+### Issue 5: Wrong library directory (lib vs lib64)
 
 **Symptoms:**
 ```
