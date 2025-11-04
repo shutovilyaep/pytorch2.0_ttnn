@@ -236,6 +236,11 @@ jobs:
           if [ -n "${TTNN_LIB_DIR}" ]; then
             export LD_LIBRARY_PATH="${TTNN_LIB_DIR}:${LD_LIBRARY_PATH}"
           fi
+          # Add ULFM MPI library path if it exists (required for distributed support)
+          # tt-metal links against OpenMPI with ULFM extensions, and _ttnncpp.so needs MPI symbols
+          if [ -d "/opt/openmpi-v5.0.7-ulfm/lib" ]; then
+            export LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH}"
+          fi
           python3 -c "import importlib, os; print('TT_METAL_HOME=', os.environ.get('TT_METAL_HOME')); import ttnn; importlib.import_module('ttnn._ttnn'); print('import ttnn OK')"
 
           cd torch_ttnn/cpp_extension
@@ -276,6 +281,10 @@ jobs:
             export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TTNN_LIB_PATHS}:${LD_LIBRARY_PATH:-}"
           else
             export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/tt_stl:${TT_METAL_HOME}/build/tt_stl:${LD_LIBRARY_PATH:-}"
+          fi
+          # Add ULFM MPI library path if it exists (required for distributed support)
+          if [ -d "/opt/openmpi-v5.0.7-ulfm/lib" ]; then
+            export LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH}"
           fi
           
           # Ensure libtt_stl.so and libtt_metal.so are discoverable: scan ttnn & tt-metal
