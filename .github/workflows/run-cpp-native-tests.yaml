@@ -182,6 +182,8 @@ jobs:
           export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/tt_stl:${TT_METAL_HOME}/build/tt_stl:${LD_LIBRARY_PATH:-}"
           # Ensure PEP517 backend & native build tools are available for pyproject builds
           python3 -m pip install --upgrade scikit-build-core cmake ninja
+          # Install build dependencies required by tt-metal (setuptools-scm for use_scm_version)
+          python3 -m pip install --upgrade "setuptools==70.1.0" "setuptools-scm==8.1.0"
           # Builds and installs tt-metal's Python package 'ttnn' from the submodule root
           # (produces '_ttnncpp.so' and installs tt-metal shared libraries)
           # Guard against preinstalled PyPI wheels creating ABI/runtime mismatches
@@ -191,6 +193,7 @@ jobs:
           USER_SCRIPTS_DIR=$(python3 -c 'import sysconfig; print(sysconfig.get_path("scripts"))')
           export PATH="${USER_SCRIPTS_DIR}:${PATH}"
           # Install from source (non-editable) to build and bundle native libs into the package
+          # Note: --no-build-isolation requires build dependencies to be installed manually
           python3 -m pip install --no-build-isolation "${TT_METAL_HOME}"
 
           # Compute installed ttnn build lib dir for runtime
