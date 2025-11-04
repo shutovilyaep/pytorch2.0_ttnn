@@ -164,7 +164,8 @@ jobs:
             echo "Detected tt-metal version: $TT_METAL_VERSION"
           fi
           # Select clang-17 toolchain used by tt-metal to avoid default GCC-11
-          TOOLCHAIN_PATH="cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake"
+          export TOOLCHAIN_PATH="cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake"
+          export TT_METAL_VERSION
           # Ensure CMake can locate Torch package config from current Python
           export CMAKE_PREFIX_PATH=$(python3 - <<'PY'
           import torch
@@ -192,6 +193,36 @@ jobs:
           unset VIRTUAL_ENV || true
           USER_SCRIPTS_DIR=$(python3 -c 'import sysconfig; print(sysconfig.get_path("scripts"))')
           export PATH="${USER_SCRIPTS_DIR}:${PATH}"
+          # Enable CIBUILDWHEEL path in setup.py to use direct CMake instead of build_metal.sh
+          # This ensures consistent build behavior and allows passing CMake args
+          export CIBUILDWHEEL=1
+          # Patch setup.py to include CMAKE_TOOLCHAIN_FILE and VERSION_NUMERIC in CMake args
+          # This is needed because setup.py's CIBUILDWHEEL path doesn't include these by default
+          python3 << 'PYTHON_PATCH'
+          import os
+          import re
+          setup_py_path = os.path.join(os.environ['TT_METAL_HOME'], 'setup.py')
+          with open(setup_py_path, 'r') as f:
+              content = f.read()
+          
+          # Find the cmake_args list and add missing arguments
+          # Look for the line with "-DENABLE_CCACHE=TRUE" and add our args after it
+          toolchain_file = os.path.join(os.environ['TT_METAL_HOME'], os.environ.get('TOOLCHAIN_PATH', 'cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake'))
+          version_numeric = os.environ.get('TT_METAL_VERSION', '0.60.1')
+          
+          # Escape the toolchain_file path for regex (escape backslashes)
+          toolchain_file_escaped = toolchain_file.replace('\\', '\\\\')
+          
+          # Add CMAKE_TOOLCHAIN_FILE and VERSION_NUMERIC after -DENABLE_CCACHE=TRUE
+          # Match the line with "-DENABLE_CCACHE=TRUE", and optionally closing bracket
+          pattern = r'("-DENABLE_CCACHE=TRUE",)\s*(\n\s*)\]'
+          replacement = f'\\1\n                    "-DCMAKE_TOOLCHAIN_FILE={toolchain_file_escaped}",\n                    "-DVERSION_NUMERIC={version_numeric}",\\2'
+          content = re.sub(pattern, replacement, content)
+          
+          with open(setup_py_path, 'w') as f:
+              f.write(content)
+          print(f"Patched setup.py to include CMAKE_TOOLCHAIN_FILE and VERSION_NUMERIC")
+          PYTHON_PATCH
           # Install from source (non-editable) to build and bundle native libs into the package
           # Note: --no-build-isolation requires build dependencies to be installed manually
           python3 -m pip install --no-build-isolation "${TT_METAL_HOME}"
