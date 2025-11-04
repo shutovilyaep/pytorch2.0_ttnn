@@ -200,28 +200,40 @@ jobs:
           # This is needed because setup.py's CIBUILDWHEEL path doesn't include these by default
           python3 << 'PYTHON_PATCH'
           import os
-          import re
           setup_py_path = os.path.join(os.environ['TT_METAL_HOME'], 'setup.py')
           with open(setup_py_path, 'r') as f:
-              content = f.read()
+              lines = f.readlines()
           
-          # Find the cmake_args list and add missing arguments
-          # Look for the line with "-DENABLE_CCACHE=TRUE" and add our args after it
+          # Find the line with "-DENABLE_CCACHE=TRUE" and insert our args after it
           toolchain_file = os.path.join(os.environ['TT_METAL_HOME'], os.environ.get('TOOLCHAIN_PATH', 'cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake'))
           version_numeric = os.environ.get('TT_METAL_VERSION', '0.60.1')
           
-          # Escape the toolchain_file path for regex (escape backslashes)
-          toolchain_file_escaped = toolchain_file.replace('\\', '\\\\')
+          # Find the line index with "-DENABLE_CCACHE=TRUE"
+          insert_idx = None
+          for i, line in enumerate(lines):
+              if '"-DENABLE_CCACHE=TRUE"' in line:
+                  insert_idx = i + 1
+                  break
           
-          # Add CMAKE_TOOLCHAIN_FILE and VERSION_NUMERIC after -DENABLE_CCACHE=TRUE
-          # Match the line with "-DENABLE_CCACHE=TRUE", and optionally closing bracket
-          pattern = r'("-DENABLE_CCACHE=TRUE",)\s*(\n\s*)\]'
-          replacement = f'\\1\n                    "-DCMAKE_TOOLCHAIN_FILE={toolchain_file_escaped}",\n                    "-DVERSION_NUMERIC={version_numeric}",\\2'
-          content = re.sub(pattern, replacement, content)
-          
-          with open(setup_py_path, 'w') as f:
-              f.write(content)
-          print(f"Patched setup.py to include CMAKE_TOOLCHAIN_FILE and VERSION_NUMERIC")
+          if insert_idx is not None:
+              # Get the indentation from the previous line
+              prev_line = lines[insert_idx - 1]
+              indent = len(prev_line) - len(prev_line.lstrip())
+              indent_str = ' ' * indent
+              
+              # Insert the new lines before the closing bracket
+              new_lines = [
+                  f'{indent_str}"-DCMAKE_TOOLCHAIN_FILE={toolchain_file}",\n',
+                  f'{indent_str}"-DVERSION_NUMERIC={version_numeric}",\n'
+              ]
+              lines[insert_idx:insert_idx] = new_lines
+              
+              with open(setup_py_path, 'w') as f:
+                  f.writelines(lines)
+              print(f"Patched setup.py to include CMAKE_TOOLCHAIN_FILE and VERSION_NUMERIC")
+          else:
+              print("Warning: Could not find '-DENABLE_CCACHE=TRUE' line in setup.py")
+              exit(1)
           PYTHON_PATCH
           # Install from source (non-editable) to build and bundle native libs into the package
           # Note: --no-build-isolation requires build dependencies to be installed manually
