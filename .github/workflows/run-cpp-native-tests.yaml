@@ -227,20 +227,9 @@ jobs:
           # setup.py will call build_metal.sh with --build-static-libs --release, which handles everything correctly
           python3 -m pip install --no-build-isolation "${TT_METAL_HOME}"
 
-          # Compute installed ttnn build lib dir for runtime
-          export TTNN_LIB_DIR=$(python3 -c 'import ttnn, pathlib; print(pathlib.Path(ttnn.__file__).parent.joinpath("build","lib"))' 2>/dev/null || echo "")
-          echo "TTNN_LIB_DIR=${TTNN_LIB_DIR}"
-
           # Early sanity check: ensure 'ttnn' and its pybind module resolve
-          # Add ttnn lib dir to LD_LIBRARY_PATH if found
-          if [ -n "${TTNN_LIB_DIR}" ]; then
-            export LD_LIBRARY_PATH="${TTNN_LIB_DIR}:${LD_LIBRARY_PATH}"
-          fi
-          # Add ULFM MPI library path if it exists (required for distributed support)
-          # tt-metal links against OpenMPI with ULFM extensions, and _ttnncpp.so needs MPI symbols
-          if [ -d "/opt/openmpi-v5.0.7-ulfm/lib" ]; then
-            export LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH}"
-          fi
+          # Note: tt-metal libraries are now bundled in torch_ttnn_cpp_extension package
+          # via CMake install, so LD_LIBRARY_PATH setup is minimal here
           python3 -c "import importlib, os; print('TT_METAL_HOME=', os.environ.get('TT_METAL_HOME')); import ttnn; importlib.import_module('ttnn._ttnn'); print('import ttnn OK')"
 
           cd torch_ttnn/cpp_extension
@@ -252,37 +241,15 @@ jobs:
           cd ${{ github.workspace }}
 
       - name: Run C++ Extension Tests
+        env:
+          TT_METAL_HOME: ${{ github.workspace }}/torch_ttnn/cpp_extension/third-party/tt-metal
         run: |
-          # Test phase: C++ extension with shared libraries bundled in wheel
-          # All tt-metal dependencies are included in the wheel
-
-          # Find TTNN package library directories (for _ttnn.so, _ttnncpp.so)
-          export TTNN_LIB_PATHS=$(python3 - <<'PY'
-          import pathlib
-          try:
-              import ttnn
-              p = pathlib.Path(ttnn.__file__).parent
-              candidates = []
-              for d in [p / 'build' / 'lib', p / '.libs', p]:
-                  if d.exists():
-                      candidates.append(str(d))
-              print(':'.join(candidates))
-          except Exception:
-              print('')
-          PY
-          )
-
-          # Set minimal LD_LIBRARY_PATH
-          if [ -n "${TTNN_LIB_PATHS}" ]; then
-            export LD_LIBRARY_PATH="${TTNN_LIB_PATHS}:${LD_LIBRARY_PATH:-}"
-          fi
-
-          # Add ULFM MPI library path if it exists (required for distributed support)
-          if [ -d "/opt/openmpi-v5.0.7-ulfm/lib" ]; then
-            export LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH}"
-          fi
-
-          echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
+          # Test phase: C++ extension with shared libraries bundled in package
+          # libtt_metal.so and libtt_stl.so are copied to site-packages/torch_ttnn_cpp_extension/
+          # via CMake install rules, and found via INSTALL_RPATH "$ORIGIN"
+          # TTNN Python modules (_ttnn.so, _ttnncpp.so) are found via standard Python import
+          # No LD_LIBRARY_PATH setup needed - all dependencies are bundled or found automatically
+          export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
 
           echo "Running C++ extension tests"
           pytest tests/cpp_extension/test_cpp_extension_functionality.py -v

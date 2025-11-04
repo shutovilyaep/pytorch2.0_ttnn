@@ -146,19 +146,50 @@ install(TARGETS ttnn_device_extension
         LIBRARY DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
 )
 
-# For shared library builds, also install the tt-metal dependencies
-# This ensures they are bundled in the Python wheel
-if(BUILD_SHARED_LIBS)
-    # Install tt_metal library if it's a shared library
-    if(TARGET tt_metal)
+# Always install tt-metal shared libraries if they exist (even with static linking)
+# This ensures runtime dependencies are available via INSTALL_RPATH "$ORIGIN"
+# Libraries are copied from tt-metal build directory to the package directory
+if(TARGET tt_metal)
+    get_target_property(tt_metal_type tt_metal TYPE)
+    if(tt_metal_type STREQUAL "SHARED_LIBRARY")
         install(TARGETS tt_metal
                 LIBRARY DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
                 RUNTIME DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
         )
+    else()
+        # For static builds, copy shared libraries from tt-metal build directory if they exist
+        # This handles cases where tt-metal was built with shared libs but extension links statically
+        # Check both build_Release/lib and build/lib directories
+        set(TT_METAL_LIB_DIRS
+            "${TT_METAL_HOME}/build_Release/lib"
+            "${TT_METAL_HOME}/build/lib"
+            "${TT_METAL_HOME}/build_Release/tt_stl"
+            "${TT_METAL_HOME}/build/tt_stl"
+        )
+        
+        foreach(LIB_DIR ${TT_METAL_LIB_DIRS})
+            if(EXISTS "${LIB_DIR}/libtt_metal.so")
+                install(FILES "${LIB_DIR}/libtt_metal.so"
+                        DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
+                        OPTIONAL
+                )
+                message(STATUS "Will copy libtt_metal.so from ${LIB_DIR}")
+            endif()
+            if(EXISTS "${LIB_DIR}/libtt_stl.so")
+                install(FILES "${LIB_DIR}/libtt_stl.so"
+                        DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
+                        OPTIONAL
+                )
+                message(STATUS "Will copy libtt_stl.so from ${LIB_DIR}")
+            endif()
+        endforeach()
     endif()
+endif()
 
-    # Install ttnncpp library if it's a shared library
-    if(TARGET ttnncpp)
+# Install ttnncpp library if it's a shared library
+if(TARGET ttnncpp)
+    get_target_property(ttnncpp_type ttnncpp TYPE)
+    if(ttnncpp_type STREQUAL "SHARED_LIBRARY")
         install(TARGETS ttnncpp
                 LIBRARY DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
                 RUNTIME DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
