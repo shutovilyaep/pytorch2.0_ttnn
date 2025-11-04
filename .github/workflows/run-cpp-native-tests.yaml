@@ -140,6 +140,8 @@ jobs:
 
       - name: Install root package
         run: |
+          # Upgrade pip to support editable installs with pyproject.toml
+          python3 -m pip install --upgrade pip setuptools wheel
           # Installs top-level Python package 'torch-ttnn' (pure Python only).
           # This does NOT build the native C++ extension and does NOT install tt-metal's 'ttnn'.
           python3 -m pip install -e .[dev]
@@ -147,6 +149,20 @@ jobs:
       - name: Build C++ Extension
         run: |
           export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
+          # Determine tt-metal version for CMake
+          TT_METAL_VERSION=""
+          if [ -d "$TT_METAL_HOME/.git" ]; then
+            TT_METAL_VERSION=$(cd "$TT_METAL_HOME" && git describe --abbrev=0 --tags 2>/dev/null | sed 's/^v//' || echo "")
+          fi
+          if [ -z "$TT_METAL_VERSION" ] && [ -n "${TT_METAL_REF:-}" ]; then
+            TT_METAL_VERSION="${TT_METAL_REF#v}"
+          fi
+          if [ -z "$TT_METAL_VERSION" ]; then
+            TT_METAL_VERSION="0.60.1"
+            echo "Warning: Could not determine tt-metal version, using fallback: $TT_METAL_VERSION"
+          else
+            echo "Detected tt-metal version: $TT_METAL_VERSION"
+          fi
           # Select clang-17 toolchain used by tt-metal to avoid default GCC-11
           TOOLCHAIN_PATH="cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake"
           # Ensure CMake can locate Torch package config from current Python
@@ -156,7 +172,8 @@ jobs:
           PY
           )
           # Forward toolchain and common flags to scikit-build-core/CMake
-          export CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=${TT_METAL_HOME}/${TOOLCHAIN_PATH} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DWITH_PYTHON_BINDINGS=ON"
+          # Pass VERSION_NUMERIC to tt-metal CMake to avoid fallback warnings
+          export CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=${TT_METAL_HOME}/${TOOLCHAIN_PATH} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DWITH_PYTHON_BINDINGS=ON -DVERSION_NUMERIC=${TT_METAL_VERSION}"
           # Prefer clang-17 explicitly in case the toolchain file is not picked up early
           export CC=clang-17
           export CXX=clang++-17
@@ -184,6 +201,8 @@ jobs:
           python3 -c "import importlib, os; print('TT_METAL_HOME=', os.environ.get('TT_METAL_HOME')); import ttnn; importlib.import_module('ttnn._ttnn'); print('import ttnn OK')"
 
           cd torch_ttnn/cpp_extension
+          # Ensure pip is up to date for editable installs
+          python3 -m pip install --upgrade pip setuptools wheel
           # Builds and installs our project C++ extension package 'torch_ttnn_cpp_extension'
           # using scikit-build-core/CMake, linking against tt-metal libraries
           python3 -m pip install -e .
@@ -197,7 +216,9 @@ jobs:
           # Test phase: imports 'ttnn' (from tt-metal) and our 'torch_ttnn_cpp_extension'.
           # Ensure runtime can locate shared libraries when importing ttnn/_ttnn
           export TTNN_LIB_DIR=$(python3 -c 'import ttnn, pathlib; print(pathlib.Path(ttnn.__file__).parent.joinpath("build","lib"))')
-          export LD_LIBRARY_PATH="${TTNN_LIB_DIR}:${LD_LIBRARY_PATH:-}"
+          # Set up LD_LIBRARY_PATH to include tt-metal build directories and ttnn lib directories
+          export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TTNN_LIB_DIR}:${LD_LIBRARY_PATH:-}"
+          echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 
           echo "Running C++ extension tests"
           pytest tests/cpp_extension/test_cpp_extension_functionality.py -v
