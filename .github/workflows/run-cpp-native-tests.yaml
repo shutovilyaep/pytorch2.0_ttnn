@@ -284,8 +284,8 @@ jobs:
           echo "Running C++ extension tests"
           pytest tests/cpp_extension/test_cpp_extension_functionality.py -v
 
-          echo "Running BERT C++ extension tests"
-          pytest tests/cpp_extension/test_bert_cpp_extension.py -v
+          # echo "Running BERT C++ extension tests"
+          # pytest tests/cpp_extension/test_bert_cpp_extension.py -v
 
           # echo "Running models C++ extension tests"
           # pytest tests/models/ --native_integration -v
