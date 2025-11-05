@@ -151,6 +151,9 @@ jobs:
           export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
           # Configure git safe.directory for entire workspace (covers all subdirectories including CPM cache)
           # This prevents race conditions when CPM creates new cache directories during CMake execution
+          # Use realpath to ensure we have the absolute path
+          WORKSPACE_REALPATH=$(realpath "${{ github.workspace }}" || echo "${{ github.workspace }}")
+          git config --global --add safe.directory "${WORKSPACE_REALPATH}" || true
           git config --global --add safe.directory "${{ github.workspace }}" || true
           git config --global --add safe.directory "${TT_METAL_HOME}" || true
           # Determine tt-metal version for CMake
@@ -207,13 +210,33 @@ jobs:
           mkdir -p "${CPM_CACHE_DIR}" || true
           git config --global --add safe.directory "${CPM_CACHE_DIR}" || true
           # Add common CPM packages that are known to cause issues
+          # Add base directories
           git config --global --add safe.directory "${CPM_CACHE_DIR}/nlohmann_json" || true
           git config --global --add safe.directory "${CPM_CACHE_DIR}/boost" || true
           git config --global --add safe.directory "${CPM_CACHE_DIR}/googletest" || true
           git config --global --add safe.directory "${CPM_CACHE_DIR}/pybind11" || true
           git config --global --add safe.directory "${CPM_CACHE_DIR}/fmt" || true
           git config --global --add safe.directory "${CPM_CACHE_DIR}/yaml-cpp" || true
+          # Add specific nlohmann_json hash path that causes issues
+          # This is the exact path from the error: nlohmann_json/798e0374658476027d9723eeb67a262d0f3c8308
+          git config --global --add safe.directory "${CPM_CACHE_DIR}/nlohmann_json/798e0374658476027d9723eeb67a262d0f3c8308" || true
+          # Add all subdirectories recursively for nlohmann_json (has hash subdirectories)
+          # This covers paths like nlohmann_json/798e0374658476027d9723eeb67a262d0f3c8308
+          if [ -d "${CPM_CACHE_DIR}/nlohmann_json" ]; then
+            find "${CPM_CACHE_DIR}/nlohmann_json" -type d -maxdepth 2 2>/dev/null | while read nlohmann_dir; do
+              git config --global --add safe.directory "$nlohmann_dir" || true
+            done
+          fi
+          # Also add all existing package subdirectories to cover hash-based paths
+          if [ -d "${CPM_CACHE_DIR}" ]; then
+            find "${CPM_CACHE_DIR}" -type d -mindepth 2 -maxdepth 2 2>/dev/null | while read pkg_subdir; do
+              git config --global --add safe.directory "$pkg_subdir" || true
+            done
+          fi
           export CPM_SOURCE_CACHE="${CPM_CACHE_DIR}"
+          # Verify git config (for debugging)
+          echo "Verifying git safe.directory configuration:"
+          git config --global --get-all safe.directory | grep -E "(cpmcache|nlohmann)" | head -10 || echo "No CPM cache entries found in git config"
           # Force CMake to install to lib64/ instead of lib/ to match setup.py expectations
           # setup.py's get_lib_dir() returns lib64 if /usr/lib64 exists
           # GNUInstallDirs must read CMAKE_INSTALL_LIBDIR before include(), so we pass it via CMake cache
