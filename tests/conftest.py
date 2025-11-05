@@ -85,6 +85,13 @@ def device(request):
 
         yield device
 
+        # Explicit cleanup to avoid double free issues in tt-metal 0.60.1
+        # The static pointer in TtnnGuard holds a reference to the device,
+        # and closing it while references still exist can cause double free errors
+        import gc
+
+        gc.collect()  # Force Python garbage collection to clear tensor references
+
         ttnn.synchronize_device(device)
         ttnn.close_mesh_device(device)
     else:
@@ -99,6 +106,13 @@ def device(request):
         ttnn.SetDefaultDevice(device)
 
         yield device
+
+        # Explicit cleanup to avoid double free issues in tt-metal 0.60.1
+        # The static pointer in TtnnGuard holds a reference to the device,
+        # and closing it while references still exist can cause double free errors
+        import gc
+
+        gc.collect()  # Force Python garbage collection to clear tensor references
 
         ttnn.synchronize_device(device)
         ttnn.close_device(device)
