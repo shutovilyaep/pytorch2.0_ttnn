@@ -201,22 +201,18 @@ jobs:
           # Instead, let setup.py use build_metal.sh which properly handles toolchain and all CMake args
           # build_metal.sh will automatically use the correct toolchain and handle VERSION_NUMERIC via git describe
           # Git safe.directory already configured above for workspace and TT_METAL_HOME
-          # CPM performs git operations in cache directories - configure git before CMake runs
-          # CPM cache directory location (set in third-party/CMakeLists.txt)
+          # CPM performs git operations in cache directories - add all relevant paths statically
+          # The workspace already covers most paths, but we add CPM cache explicitly to be safe
           CPM_CACHE_DIR="${TT_METAL_HOME}/.cpmcache"
-          # Ensure cache directory exists (CMake will create it, but we need git config first)
           mkdir -p "${CPM_CACHE_DIR}" || true
-          # Add CPM cache root directory to git safe.directory
           git config --global --add safe.directory "${CPM_CACHE_DIR}" || true
-          # Add any existing git repositories in CPM cache (CPM checks git status in cached packages)
-          # Each package in cache has its own .git directory
-          if [ -d "${CPM_CACHE_DIR}" ]; then
-            find "${CPM_CACHE_DIR}" -type d -name ".git" 2>/dev/null | while read git_dir; do
-              cache_dir=$(dirname "$git_dir")
-              git config --global --add safe.directory "$cache_dir" || true
-            done
-          fi
-          # Also set CPM_SOURCE_CACHE environment variable to ensure consistent cache location
+          # Add common CPM packages that are known to cause issues
+          git config --global --add safe.directory "${CPM_CACHE_DIR}/nlohmann_json" || true
+          git config --global --add safe.directory "${CPM_CACHE_DIR}/boost" || true
+          git config --global --add safe.directory "${CPM_CACHE_DIR}/googletest" || true
+          git config --global --add safe.directory "${CPM_CACHE_DIR}/pybind11" || true
+          git config --global --add safe.directory "${CPM_CACHE_DIR}/fmt" || true
+          git config --global --add safe.directory "${CPM_CACHE_DIR}/yaml-cpp" || true
           export CPM_SOURCE_CACHE="${CPM_CACHE_DIR}"
           # Force CMake to install to lib64/ instead of lib/ to match setup.py expectations
           # setup.py's get_lib_dir() returns lib64 if /usr/lib64 exists
