@@ -398,14 +398,17 @@ CMake Error: Target "tt_metal" links to: nlohmann_json::nlohmann_json but the ta
 - CPM cache directories (`.cpmcache/`) not configured as safe
 
 **Solution:**
-Add CPM cache directories to git's safe.directory before CMake runs:
+Add workspace and CPM cache directories to git's safe.directory before CMake runs:
 ```bash
+git config --global --add safe.directory "${{ github.workspace }}" || true
 git config --global --add safe.directory "${TT_METAL_HOME}/.cpmcache" || true
 # Add all nested git repositories in cache
 find "${TT_METAL_HOME}/.cpmcache" -type d -name ".git" | while read git_dir; do
   git config --global --add safe.directory "$(dirname "$git_dir")" || true
 done
 ```
+
+**Note**: Even with this configuration, you may still see the CPM warning. This is **non-critical** - the warning appears but the build succeeds. CPM can function without successful git status checks, it just can't verify package integrity via git. The warning does not affect build success or functionality.
 
 ### Issue 5: Warning in install_dependencies.sh (non-critical)
 
