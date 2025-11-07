@@ -45,13 +45,15 @@ export GITHUB_ENV="${REPO_ROOT}/.github_env"
 
 # Step: actions/checkout@v4 (эквивалентно: LFS + полная история + сабмодули)
 # Прямого аналога нет, используем наиболее близкие команды
-git lfs fetch --all || true
-git lfs pull || true
-if git rev-parse --is-shallow-repository >/dev/null 2>&1; then
-  git fetch --unshallow || true
-fi
-git submodule sync --recursive
-git submodule update --init --recursive
+
+# TODO: NOW: Temp disable sync not to overwrite build_metal.sh
+# git lfs fetch --all || true
+# git lfs pull || true
+# if git rev-parse --is-shallow-repository >/dev/null 2>&1; then
+#   git fetch --unshallow || true
+# fi
+# git submodule sync --recursive
+# git submodule update --init --recursive
 
 ###############################################################################
 # Step: Update system
@@ -106,35 +108,36 @@ retry() {
   done
 }
 
-# Be tolerant to network hiccups for submodule operations
-retry 5 git submodule sync --recursive
-retry 5 git submodule update --init --recursive
+# TODO: NOW: Temp disable sync not to overwrite build_metal.sh
+# # Be tolerant to network hiccups for submodule operations
+# retry 5 git submodule sync --recursive
+# retry 5 git submodule update --init --recursive
 
-# Check out the requested tt-metal ref inside the submodule without editing .gitmodules
-pushd torch_ttnn/cpp_extension/third-party/tt-metal >/dev/null
-# Avoid tag clobber issues if upstream moved tags; clean local tags and fetch with force
-git config fetch.prune true || true
-git config fetch.pruneTags true || true
-git tag -l | xargs -r -n 1 git tag -d || true
-retry 5 git -c protocol.version=2 fetch --all --tags --force --prune --prune-tags
-if echo "$TT_METAL_REF" | grep -q '^releases/'; then
-  # Treat as branch on origin
-  if git rev-parse --verify "$TT_METAL_REF" >/dev/null 2>&1; then
-    retry 5 git checkout -f "$TT_METAL_REF"
-  else
-    retry 5 git checkout -B "$TT_METAL_REF" "origin/$TT_METAL_REF" || retry 5 git checkout -f "origin/$TT_METAL_REF"
-  fi
-else
-  # Treat as tag or plain ref
-  retry 5 git -c advice.detachedHead=false checkout -f "tags/$TT_METAL_REF" || retry 5 git checkout -f "$TT_METAL_REF"
-fi
-# Update nested submodules to the versions recorded by the checked-out ref
-retry 5 git submodule sync --recursive
-retry 5 git submodule update --init --recursive
-# LFS for all nested submodules
-git submodule foreach --recursive 'git lfs fetch --all || true'
-git submodule foreach --recursive 'git lfs pull || true'
-popd >/dev/null
+# # Check out the requested tt-metal ref inside the submodule without editing .gitmodules
+# pushd torch_ttnn/cpp_extension/third-party/tt-metal >/dev/null
+# # Avoid tag clobber issues if upstream moved tags; clean local tags and fetch with force
+# git config fetch.prune true || true
+# git config fetch.pruneTags true || true
+# git tag -l | xargs -r -n 1 git tag -d || true
+# retry 5 git -c protocol.version=2 fetch --all --tags --force --prune --prune-tags
+# if echo "$TT_METAL_REF" | grep -q '^releases/'; then
+#   # Treat as branch on origin
+#   if git rev-parse --verify "$TT_METAL_REF" >/dev/null 2>&1; then
+#     retry 5 git checkout -f "$TT_METAL_REF"
+#   else
+#     retry 5 git checkout -B "$TT_METAL_REF" "origin/$TT_METAL_REF" || retry 5 git checkout -f "origin/$TT_METAL_REF"
+#   fi
+# else
+#   # Treat as tag or plain ref
+#   retry 5 git -c advice.detachedHead=false checkout -f "tags/$TT_METAL_REF" || retry 5 git checkout -f "$TT_METAL_REF"
+# fi
+# # Update nested submodules to the versions recorded by the checked-out ref
+# retry 5 git submodule sync --recursive
+# retry 5 git submodule update --init --recursive
+# # LFS for all nested submodules
+# git submodule foreach --recursive 'git lfs fetch --all || true'
+# git submodule foreach --recursive 'git lfs pull || true'
+# popd >/dev/null
 
 ###############################################################################
 # Step: Install dependencies
@@ -166,18 +169,12 @@ popd >/dev/null
 
 ###############################################################################
 # Step: Build C++ Extension
-# NOTE: In CI, tt-metal is built via pip install from source (see YAML workflow)
-# For local testing, we use PyPI ttnn package which is pre-built
+# NOTE: For local testing, use PyPI ttnn package (pre-built) to avoid build issues
+# In CI, tt-metal is built from source via pip install (see YAML workflow)
 ###############################################################################
 export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
 
-# Configure git safe.directory for workspace (required for CPM cache)
-WORKSPACE_REALPATH=$(realpath "${GITHUB_WORKSPACE}" || echo "${GITHUB_WORKSPACE}")
-git config --global --add safe.directory "${WORKSPACE_REALPATH}" || true
-git config --global --add safe.directory "${GITHUB_WORKSPACE}" || true
-git config --global --add safe.directory "${TT_METAL_HOME}" || true
-
-# Determine tt-metal version for CMake
+# Determine tt-metal version for PyPI package
 TT_METAL_VERSION=""
 if [ -d "${TT_METAL_HOME}/.git" ]; then
   TT_METAL_VERSION=$(cd "${TT_METAL_HOME}" && git describe --abbrev=0 --tags 2>/dev/null | sed 's/^v//' || echo "")
@@ -194,12 +191,50 @@ fi
 
 # Ensure PEP517 backend & native build tools are available for pyproject builds
 "${PYTHON}" -m pip install --upgrade scikit-build-core cmake ninja
-# Install build dependencies required by tt-metal
-"${PYTHON}" -m pip install --upgrade "setuptools==70.1.0" "setuptools-scm==8.1.0"
 
-# Select clang-17 toolchain used by tt-metal to avoid default GCC-11
-export TOOLCHAIN_PATH="cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake"
-export TT_METAL_VERSION
+# Install clang-format system package (required by tt-metal codegen during CMake build)
+# Even though we use PyPI ttnn, CMake still builds tt-metal from submodule
+# Note: Python clang-format package conflicts with system clang-format, so we need system version
+if ! command -v clang-format >/dev/null 2>&1; then
+  echo "Warning: clang-format not found in PATH. Attempting to install..."
+  # Try to install via apt if available (requires sudo, may fail)
+  if command -v apt-get >/dev/null 2>&1; then
+    sudo apt-get update -qq && sudo apt-get install -y clang-format || {
+      echo "Warning: Failed to install clang-format via apt-get"
+    }
+  else
+    echo "Warning: apt-get not available, cannot install clang-format automatically"
+  fi
+fi
+# Ensure clang-format is in PATH (venv may have wrong clang-format script)
+if command -v clang-format >/dev/null 2>&1; then
+  CLANG_FORMAT_PATH=$(which clang-format)
+  # Check if it's a Python script (wrong one) or binary (correct one)
+  if head -1 "${CLANG_FORMAT_PATH}" | grep -q "python"; then
+    echo "Warning: Found Python clang-format script instead of binary, may cause issues"
+    # Try to find system clang-format
+    if [ -f "/usr/bin/clang-format" ]; then
+      export PATH="/usr/bin:${PATH}"
+    elif [ -f "/usr/local/bin/clang-format" ]; then
+      export PATH="/usr/local/bin:${PATH}"
+    fi
+  fi
+fi
+
+# Install ttnn from PyPI pinned to TT_METAL_REF (e.g., v0.63.0 -> 0.63.0)
+# This avoids build issues with tt-metal v0.63.0 (CMake export errors, example linking issues)
+# CI uses source build, but for local testing PyPI is more reliable
+# NOTE: CMakeLists.txt still builds tt-metal from submodule, so we need clang-format above
+"${PYTHON}" -m pip uninstall -y ttnn || true
+if [[ -n "${TT_METAL_REF:-}" ]]; then
+  TTNN_PYPI_VER="${TT_METAL_REF#v}"
+  "${PYTHON}" -m pip install --upgrade --no-build-isolation "ttnn==${TTNN_PYPI_VER}" || {
+    echo "Не удалось установить ttnn==${TTNN_PYPI_VER}, пробую без пина";
+    "${PYTHON}" -m pip install --upgrade --no-build-isolation ttnn;
+  }
+else
+  "${PYTHON}" -m pip install --upgrade --no-build-isolation ttnn==0.63.0
+fi
 
 # Ensure CMake can locate Torch package config from current Python
 set +e
@@ -214,78 +249,12 @@ PY
 set -e
 export CMAKE_PREFIX_PATH="${_CMAKE_PREFIX_PATH}"
 
-# Forward toolchain and common flags to scikit-build-core/CMake
-# Pass VERSION_NUMERIC to tt-metal CMake to avoid fallback warnings
-export CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=${TT_METAL_HOME}/${TOOLCHAIN_PATH} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DWITH_PYTHON_BINDINGS=ON -DVERSION_NUMERIC=${TT_METAL_VERSION}"
-
-# Prefer clang-17 explicitly in case the toolchain file is not picked up early
+# Minimal CMake args for our extension (no tt-metal toolchain needed when using PyPI)
 if command -v clang-17 >/dev/null 2>&1; then
   export CC=clang-17
   export CXX=clang++-17
 fi
-
-# Set up LD_LIBRARY_PATH for tt-metal build directories (will be populated after pip install)
-export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/tt_stl:${TT_METAL_HOME}/build/tt_stl:${LD_LIBRARY_PATH:-}"
-
-# Configure git safe.directory for CPM cache directories
-CPM_CACHE_DIR="${TT_METAL_HOME}/.cpmcache"
-mkdir -p "${CPM_CACHE_DIR}" || true
-git config --global --add safe.directory "${CPM_CACHE_DIR}" || true
-# Add common CPM packages that are known to cause issues
-git config --global --add safe.directory "${CPM_CACHE_DIR}/nlohmann_json" || true
-git config --global --add safe.directory "${CPM_CACHE_DIR}/boost" || true
-git config --global --add safe.directory "${CPM_CACHE_DIR}/googletest" || true
-git config --global --add safe.directory "${CPM_CACHE_DIR}/pybind11" || true
-git config --global --add safe.directory "${CPM_CACHE_DIR}/fmt" || true
-git config --global --add safe.directory "${CPM_CACHE_DIR}/yaml-cpp" || true
-# Add all existing package subdirectories to cover hash-based paths
-if [ -d "${CPM_CACHE_DIR}" ]; then
-  find "${CPM_CACHE_DIR}" -type d -mindepth 2 -maxdepth 2 2>/dev/null | while read pkg_subdir; do
-    git config --global --add safe.directory "$pkg_subdir" || true
-  done
-fi
-export CPM_SOURCE_CACHE="${CPM_CACHE_DIR}"
-
-# Force CMake to install to lib64/ instead of lib/ to match setup.py expectations
-# Patch build_metal.sh to add -DCMAKE_INSTALL_LIBDIR=lib64 to cmake_args
-if [ -d "/usr/lib64" ]; then
-  "${PYTHON}" << 'PYTHON_PATCH'
-import os
-build_metal_sh = os.path.join(os.environ['TT_METAL_HOME'], 'build_metal.sh')
-with open(build_metal_sh, 'r') as f:
-    lines = f.readlines()
-
-# Find where cmake_args are prepared and add CMAKE_INSTALL_LIBDIR
-for i, line in enumerate(lines):
-    if 'cmake_args+=("-DCMAKE_INSTALL_PREFIX=' in line:
-        # Insert CMAKE_INSTALL_LIBDIR right after CMAKE_INSTALL_PREFIX
-        indent = ' ' * (len(line) - len(line.lstrip()))
-        lines.insert(i + 1, f'{indent}cmake_args+=("-DCMAKE_INSTALL_LIBDIR=lib64")\n')
-        break
-
-with open(build_metal_sh, 'w') as f:
-    f.writelines(lines)
-print("Patched build_metal.sh to set CMAKE_INSTALL_LIBDIR=lib64")
-PYTHON_PATCH
-fi
-
-# Install tt-metal from source (non-editable) to build and bundle native libs
-# This matches CI workflow: pip install calls build_metal.sh internally
-# Guard against preinstalled PyPI wheels creating ABI/runtime mismatches
-"${PYTHON}" -m pip uninstall -y ttnn || true
-# Ensure we use the runner Python's cmake/ninja instead of any stale virtualenv
-unset VIRTUAL_ENV || true
-USER_SCRIPTS_DIR=$("${PYTHON}" -c 'import sysconfig; print(sysconfig.get_path("scripts"))')
-export PATH="${USER_SCRIPTS_DIR}:${PATH}"
-# Install from source (non-editable) - setup.py will call build_metal.sh
-"${PYTHON}" -m pip install --no-build-isolation "${TT_METAL_HOME}"
-
-# Early sanity check: ensure 'ttnn' and its pybind module resolve
-# Add MPI library path temporarily for this check (required by ttnn package's _ttnncpp.so)
-if [ -d "/opt/openmpi-v5.0.7-ulfm/lib" ]; then
-  export LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH:-}"
-fi
-"${PYTHON}" -c "import importlib, os; print('TT_METAL_HOME=', os.environ.get('TT_METAL_HOME')); import ttnn; importlib.import_module('ttnn._ttnn'); print('import ttnn OK')" || echo "Warning: ttnn import check failed, continuing anyway"
+export CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
 
 # Make sure runtime can locate ttnn shared libs (manylinux wheels may already embed rpaths)
 set +e
@@ -306,6 +275,13 @@ PY
 )
 set -e
 [ -n "${TTNN_LIB_DIR:-}" ] && export LD_LIBRARY_PATH="${TTNN_LIB_DIR}:${LD_LIBRARY_PATH:-}"
+
+# Early sanity check: ensure 'ttnn' and its pybind module resolve
+# Add MPI library path temporarily for this check (required by ttnn package's _ttnncpp.so)
+if [ -d "/opt/openmpi-v5.0.7-ulfm/lib" ]; then
+  export LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH:-}"
+fi
+"${PYTHON}" -c "import importlib, os; print('TT_METAL_HOME=', os.environ.get('TT_METAL_HOME')); import ttnn; importlib.import_module('ttnn._ttnn'); print('import ttnn OK')" || echo "Warning: ttnn import check failed, continuing anyway"
 
 cd torch_ttnn/cpp_extension
 # Ensure pip is up to date for editable installs
