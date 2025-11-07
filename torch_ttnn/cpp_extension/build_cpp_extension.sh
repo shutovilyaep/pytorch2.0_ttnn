@@ -39,7 +39,7 @@ if [ -z "$TT_METAL_VERSION" ] && [ -n "${TT_METAL_REF:-}" ]; then
 fi
 if [ -z "$TT_METAL_VERSION" ]; then
     # Fallback to default version
-    TT_METAL_VERSION="0.60.1"
+    TT_METAL_VERSION="0.63.0"
     echo "> Warning: Could not determine tt-metal version, using fallback: $TT_METAL_VERSION"
 else
     echo "> Detected tt-metal version: $TT_METAL_VERSION"

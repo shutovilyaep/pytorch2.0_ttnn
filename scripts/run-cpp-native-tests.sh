@@ -12,19 +12,24 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd "${REPO_ROOT}"
 
-# Activate tt-metal venv if it exists
+# Activate tt-metal venv if it exists and set Python executable
 TT_METAL_VENV="${REPO_ROOT}/torch_ttnn/cpp_extension/third-party/tt-metal/python_env"
 if [ -f "${TT_METAL_VENV}/bin/activate" ]; then
     echo "> Activating tt-metal venv: ${TT_METAL_VENV}"
     source "${TT_METAL_VENV}/bin/activate"
-    echo "> Python: $(which python3)"
+    PYTHON="${TT_METAL_VENV}/bin/python3"
+    echo "> Python: ${PYTHON}"
     # Upgrade pip to support modern pyproject.toml editable installs
     echo "> Upgrading pip in venv for editable install support"
-    python3 -m pip install --upgrade pip setuptools wheel --quiet || true
+    "${PYTHON}" -m pip install --upgrade pip setuptools wheel --quiet || true
 else
     echo "> Warning: tt-metal venv not found at ${TT_METAL_VENV}"
-    echo "> Continuing with system Python: $(which python3)"
+    PYTHON="$(which python3)"
+    echo "> Using system Python: ${PYTHON}"
 fi
+
+# Ensure PYTHON is set
+PYTHON="${PYTHON:-python3}"
 
 # Эмуляция переменных окружения GitHub Actions
 export GITHUB_WORKSPACE="${REPO_ROOT}"
@@ -60,7 +65,7 @@ git submodule update --init --recursive
 (
   # Set pinned tt-metal ref here. Leave empty to auto-detect latest prerelease.
   # Should be set manually with each PR required to make it work with new tt-metal version
-  TT_METAL_REF="v0.60.1"
+  TT_METAL_REF="v0.63.0"
 
   if [ -z "${TT_METAL_REF}" ]; then
     # Auto-detect latest prerelease tag (e.g., v0.64.0-rc8)
@@ -147,76 +152,58 @@ popd >/dev/null
 # Step: Install python dependencies
 ###############################################################################
 # python3 -m pip install --upgrade pip
-python3 -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
-python3 -m pip install pytest-github-report
-
-###############################################################################
-# Step: Build tt-metal native libs (pre-req for libtt_metal.so at runtime)
-# NOTE: Если это требуется в CI, перенесите этот блок в YAML.
-###############################################################################
-export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
-if [ -d "${TT_METAL_HOME}" ]; then
-  echo "Building tt-metal native libraries at ${TT_METAL_HOME}"
-  pushd "${TT_METAL_HOME}" >/dev/null
-  # Используем clang-17 если доступен
-  if command -v clang-17 >/dev/null 2>&1; then
-    export CC=clang-17
-    export CXX=clang++-17
-  fi
-  # Сборка релизной конфигурации и включение shared sub-libs для TTNN (нужно libtt_stl.so)
-  ./build_metal.sh --build-type Release --ttnn-shared-sub-libs --enable-ccache | tee build-metal.log
-  popd >/dev/null
-  # Экспортируем пути для рантайма
-  export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/tt_stl:${TT_METAL_HOME}/build/tt_stl:${LD_LIBRARY_PATH:-}"
-
-  # Если libtt_stl.so отсутствует, попытаться дособрать целевую библиотеку и добавить её директорию
-  if ! find "${TT_METAL_HOME}/build_Release" "${TT_METAL_HOME}/build" -type f -name 'libtt_stl.so' -print -quit >/dev/null 2>&1; then
-    if [ -d "${TT_METAL_HOME}/build_Release" ]; then
-      pushd "${TT_METAL_HOME}/build_Release" >/dev/null || true
-      cmake --build . --target tt_stl -j"$(nproc)" || true
-      popd >/dev/null || true
-    elif [ -d "${TT_METAL_HOME}/build" ]; then
-      pushd "${TT_METAL_HOME}/build" >/dev/null || true
-      cmake --build . --target tt_stl -j"$(nproc)" || true
-      popd >/dev/null || true
-    fi
-  fi
-
-  STL_FROM_TTM=$(find "${TT_METAL_HOME}/build_Release" "${TT_METAL_HOME}/build" -type f -name 'libtt_stl.so' 2>/dev/null | head -n1 || true)
-  if [ -n "${STL_FROM_TTM}" ]; then
-    export LD_LIBRARY_PATH="$(dirname "${STL_FROM_TTM}"):${LD_LIBRARY_PATH}"
-  fi
-else
-  echo "WARN: TT_METAL_HOME not found at ${TT_METAL_HOME}; libtt_metal.so может быть недоступен"
-fi
+"${PYTHON}" -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
+"${PYTHON}" -m pip install pytest-github-report
 
 ###############################################################################
 # Step: Install root package
+# NOTE: tt-metal will be built and installed via pip install in the next step
+# (similar to CI workflow - no separate build step needed)
 ###############################################################################
 # Upgrade pip to support editable installs with pyproject.toml
-python3 -m pip install --upgrade pip setuptools wheel
-python3 -m pip install -e .[dev]
+"${PYTHON}" -m pip install --upgrade pip setuptools wheel
+"${PYTHON}" -m pip install -e .[dev]
 
 ###############################################################################
-# Step: Build C++ Extension (use PyPI ttnn, do NOT build tt-metal from source)
+# Step: Build C++ Extension
+# NOTE: In CI, tt-metal is built via pip install from source (see YAML workflow)
+# For local testing, we use PyPI ttnn package which is pre-built
 ###############################################################################
-# Ensure PEP517 backend & native build tools are available for pyproject builds
-python3 -m pip install --upgrade scikit-build-core cmake ninja
+export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
 
-# Install ttnn from PyPI pinned to TT_METAL_REF (e.g., v0.60.1 -> 0.60.1)
-if [[ -n "${TT_METAL_REF:-}" ]]; then
-  TTNN_PYPI_VER="${TT_METAL_REF#v}"
-  python3 -m pip install --upgrade --no-build-isolation "ttnn==${TTNN_PYPI_VER}" || {
-    echo "Не удалось установить ttnn==${TTNN_PYPI_VER}, пробую без пина";
-    python3 -m pip install --upgrade --no-build-isolation ttnn;
-  }
-else
-  python3 -m pip install --upgrade --no-build-isolation ttnn==0.60.1
+# Configure git safe.directory for workspace (required for CPM cache)
+WORKSPACE_REALPATH=$(realpath "${GITHUB_WORKSPACE}" || echo "${GITHUB_WORKSPACE}")
+git config --global --add safe.directory "${WORKSPACE_REALPATH}" || true
+git config --global --add safe.directory "${GITHUB_WORKSPACE}" || true
+git config --global --add safe.directory "${TT_METAL_HOME}" || true
+
+# Determine tt-metal version for CMake
+TT_METAL_VERSION=""
+if [ -d "${TT_METAL_HOME}/.git" ]; then
+  TT_METAL_VERSION=$(cd "${TT_METAL_HOME}" && git describe --abbrev=0 --tags 2>/dev/null | sed 's/^v//' || echo "")
 fi
+if [ -z "${TT_METAL_VERSION}" ] && [ -n "${TT_METAL_REF:-}" ]; then
+  TT_METAL_VERSION="${TT_METAL_REF#v}"
+fi
+if [ -z "${TT_METAL_VERSION}" ]; then
+  TT_METAL_VERSION="0.63.0"
+  echo "Warning: Could not determine tt-metal version, using fallback: ${TT_METAL_VERSION}"
+else
+  echo "Detected tt-metal version: ${TT_METAL_VERSION}"
+fi
+
+# Ensure PEP517 backend & native build tools are available for pyproject builds
+"${PYTHON}" -m pip install --upgrade scikit-build-core cmake ninja
+# Install build dependencies required by tt-metal
+"${PYTHON}" -m pip install --upgrade "setuptools==70.1.0" "setuptools-scm==8.1.0"
+
+# Select clang-17 toolchain used by tt-metal to avoid default GCC-11
+export TOOLCHAIN_PATH="cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake"
+export TT_METAL_VERSION
 
 # Ensure CMake can locate Torch package config from current Python
 set +e
-_CMAKE_PREFIX_PATH=$(python3 - <<'PY'
+_CMAKE_PREFIX_PATH=$("${PYTHON}" - <<'PY'
 try:
     import torch
     print(torch.utils.cmake_prefix_path)
@@ -227,18 +214,82 @@ PY
 set -e
 export CMAKE_PREFIX_PATH="${_CMAKE_PREFIX_PATH}"
 
-# Prefer clang-17 if available; otherwise fall back to system compilers
+# Forward toolchain and common flags to scikit-build-core/CMake
+# Pass VERSION_NUMERIC to tt-metal CMake to avoid fallback warnings
+export CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=${TT_METAL_HOME}/${TOOLCHAIN_PATH} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DWITH_PYTHON_BINDINGS=ON -DVERSION_NUMERIC=${TT_METAL_VERSION}"
+
+# Prefer clang-17 explicitly in case the toolchain file is not picked up early
 if command -v clang-17 >/dev/null 2>&1; then
   export CC=clang-17
   export CXX=clang++-17
 fi
 
-# Minimal CMake args for our extension
-export CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache"
+# Set up LD_LIBRARY_PATH for tt-metal build directories (will be populated after pip install)
+export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/tt_stl:${TT_METAL_HOME}/build/tt_stl:${LD_LIBRARY_PATH:-}"
+
+# Configure git safe.directory for CPM cache directories
+CPM_CACHE_DIR="${TT_METAL_HOME}/.cpmcache"
+mkdir -p "${CPM_CACHE_DIR}" || true
+git config --global --add safe.directory "${CPM_CACHE_DIR}" || true
+# Add common CPM packages that are known to cause issues
+git config --global --add safe.directory "${CPM_CACHE_DIR}/nlohmann_json" || true
+git config --global --add safe.directory "${CPM_CACHE_DIR}/boost" || true
+git config --global --add safe.directory "${CPM_CACHE_DIR}/googletest" || true
+git config --global --add safe.directory "${CPM_CACHE_DIR}/pybind11" || true
+git config --global --add safe.directory "${CPM_CACHE_DIR}/fmt" || true
+git config --global --add safe.directory "${CPM_CACHE_DIR}/yaml-cpp" || true
+# Add all existing package subdirectories to cover hash-based paths
+if [ -d "${CPM_CACHE_DIR}" ]; then
+  find "${CPM_CACHE_DIR}" -type d -mindepth 2 -maxdepth 2 2>/dev/null | while read pkg_subdir; do
+    git config --global --add safe.directory "$pkg_subdir" || true
+  done
+fi
+export CPM_SOURCE_CACHE="${CPM_CACHE_DIR}"
+
+# Force CMake to install to lib64/ instead of lib/ to match setup.py expectations
+# Patch build_metal.sh to add -DCMAKE_INSTALL_LIBDIR=lib64 to cmake_args
+if [ -d "/usr/lib64" ]; then
+  "${PYTHON}" << 'PYTHON_PATCH'
+import os
+build_metal_sh = os.path.join(os.environ['TT_METAL_HOME'], 'build_metal.sh')
+with open(build_metal_sh, 'r') as f:
+    lines = f.readlines()
+
+# Find where cmake_args are prepared and add CMAKE_INSTALL_LIBDIR
+for i, line in enumerate(lines):
+    if 'cmake_args+=("-DCMAKE_INSTALL_PREFIX=' in line:
+        # Insert CMAKE_INSTALL_LIBDIR right after CMAKE_INSTALL_PREFIX
+        indent = ' ' * (len(line) - len(line.lstrip()))
+        lines.insert(i + 1, f'{indent}cmake_args+=("-DCMAKE_INSTALL_LIBDIR=lib64")\n')
+        break
+
+with open(build_metal_sh, 'w') as f:
+    f.writelines(lines)
+print("Patched build_metal.sh to set CMAKE_INSTALL_LIBDIR=lib64")
+PYTHON_PATCH
+fi
+
+# Install tt-metal from source (non-editable) to build and bundle native libs
+# This matches CI workflow: pip install calls build_metal.sh internally
+# Guard against preinstalled PyPI wheels creating ABI/runtime mismatches
+"${PYTHON}" -m pip uninstall -y ttnn || true
+# Ensure we use the runner Python's cmake/ninja instead of any stale virtualenv
+unset VIRTUAL_ENV || true
+USER_SCRIPTS_DIR=$("${PYTHON}" -c 'import sysconfig; print(sysconfig.get_path("scripts"))')
+export PATH="${USER_SCRIPTS_DIR}:${PATH}"
+# Install from source (non-editable) - setup.py will call build_metal.sh
+"${PYTHON}" -m pip install --no-build-isolation "${TT_METAL_HOME}"
+
+# Early sanity check: ensure 'ttnn' and its pybind module resolve
+# Add MPI library path temporarily for this check (required by ttnn package's _ttnncpp.so)
+if [ -d "/opt/openmpi-v5.0.7-ulfm/lib" ]; then
+  export LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH:-}"
+fi
+"${PYTHON}" -c "import importlib, os; print('TT_METAL_HOME=', os.environ.get('TT_METAL_HOME')); import ttnn; importlib.import_module('ttnn._ttnn'); print('import ttnn OK')" || echo "Warning: ttnn import check failed, continuing anyway"
 
 # Make sure runtime can locate ttnn shared libs (manylinux wheels may already embed rpaths)
 set +e
-export TTNN_LIB_DIR=$(python3 - <<'PY'
+export TTNN_LIB_DIR=$("${PYTHON}" - <<'PY'
 import pathlib, sys
 try:
     import ttnn
@@ -258,9 +309,9 @@ set -e
 
 cd torch_ttnn/cpp_extension
 # Ensure pip is up to date for editable installs
-python3 -m pip install --upgrade pip setuptools wheel
+"${PYTHON}" -m pip install --upgrade pip setuptools wheel
 # Builds and installs our project C++ extension package 'torch_ttnn_cpp_extension'
-python3 -m pip install -e .
+"${PYTHON}" -m pip install -e .
 cd "${GITHUB_WORKSPACE}"
 
 ###############################################################################
@@ -269,7 +320,7 @@ cd "${GITHUB_WORKSPACE}"
 # Test phase: imports 'ttnn' (from PyPI) and our 'torch_ttnn_cpp_extension'.
 # Ensure runtime can locate shared libraries (libtt_metal.so, libtt_stl.so, etc.)
 export TT_METAL_HOME="${GITHUB_WORKSPACE}/torch_ttnn/cpp_extension/third-party/tt-metal"
-export TTNN_LIB_PATHS=$(python3 - <<'PY'
+export TTNN_LIB_PATHS=$("${PYTHON}" - <<'PY'
 import pathlib
 try:
     import ttnn
@@ -291,7 +342,7 @@ fi
 echo "LD_LIBRARY_PATH=${LD_LIBRARY_PATH}"
 
 # Ensure libtt_stl.so and libtt_metal.so are discoverable: scan ttnn & tt-metal and append their dirs
-STL_LIB_DIR=$(python3 - <<'PY'
+STL_LIB_DIR=$("${PYTHON}" - <<'PY'
 import pathlib, site
 def find_in_ttnn():
     try:
@@ -325,10 +376,10 @@ else
 fi
 
 echo "Running C++ extension tests"
-pytest tests/cpp_extension/test_cpp_extension_functionality.py -v
+"${PYTHON}" -m pytest tests/cpp_extension/test_cpp_extension_functionality.py -v
 
 echo "Running BERT C++ extension tests"
-pytest tests/cpp_extension/test_bert_cpp_extension.py -v
+"${PYTHON}" -m pytest tests/cpp_extension/test_bert_cpp_extension.py -v
 
 # echo "Running models C++ extension tests"
 # pytest tests/models/ --native_integration -v

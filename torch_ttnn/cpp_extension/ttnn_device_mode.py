@@ -19,20 +19,30 @@ except ImportError:
 
     for site_dir in site.getsitepackages():
         ext_dir = Path(site_dir) / "torch_ttnn_cpp_extension"
-        ext_file = ext_dir / "ttnn_device_extension"
 
-        if ext_file.exists():
-            # Try direct import by adding to sys.path first
+        # Try to find the extension file (with or without .so extension)
+        ext_file = None
+        for possible_name in ["ttnn_device_extension.so", "ttnn_device_extension"]:
+            candidate = ext_dir / possible_name
+            if candidate.exists() and candidate.is_file():
+                ext_file = candidate
+                break
+
+        if ext_file and ext_file.exists():
+            # Add directory to sys.path for import
             if str(ext_dir) not in sys.path:
                 sys.path.insert(0, str(ext_dir))
             try:
+                # Try direct import first
                 import ttnn_device_extension as ttnn_module
 
                 _imported = True
                 break
             except ImportError:
-                # Direct import failed, use ExtensionFileLoader to load the .so file
+                # Direct import failed, use ExtensionFileLoader to load the file
                 try:
+                    # ExtensionFileLoader can handle files with or without .so extension
+                    # Python will automatically add the extension if needed
                     loader = ExtensionFileLoader("ttnn_device_extension", str(ext_file))
                     spec = importlib.util.spec_from_loader("ttnn_device_extension", loader)
                     if spec and spec.loader:
@@ -41,7 +51,27 @@ except ImportError:
                         _imported = True
                         break
                 except Exception as e:
-                    logging.debug(f"Failed to load via ExtensionFileLoader: {e}")
+                    # Log the error for debugging
+                    error_msg = str(e)
+                    logging.debug(f"Failed to load via ExtensionFileLoader from {ext_file}: {error_msg}")
+                    # If it's a library loading error, it might be LD_LIBRARY_PATH issue
+                    if "cannot open shared object file" in error_msg or "undefined symbol" in error_msg:
+                        logging.warning(f"Library loading error: {error_msg}")
+                        logging.warning("This might be due to missing libraries in LD_LIBRARY_PATH")
+                    # Try with explicit .so extension if file doesn't have it
+                    if not str(ext_file).endswith(".so"):
+                        try:
+                            so_candidate = ext_dir / "ttnn_device_extension.so"
+                            if so_candidate.exists():
+                                loader = ExtensionFileLoader("ttnn_device_extension", str(so_candidate))
+                                spec = importlib.util.spec_from_loader("ttnn_device_extension", loader)
+                                if spec and spec.loader:
+                                    ttnn_module = importlib.util.module_from_spec(spec)
+                                    spec.loader.exec_module(ttnn_module)
+                                    _imported = True
+                                    break
+                        except Exception as e2:
+                            logging.debug(f"Failed to load with .so extension: {e2}")
                     pass
                 # Remove from path if import failed
                 if str(ext_dir) in sys.path:

@@ -444,6 +444,65 @@ error: can't copy 'build/lib.linux-x86_64-cpython-310/ttnn/build/lib/_ttnn.so': 
 - Patch `build_metal.sh` to add `-DCMAKE_INSTALL_LIBDIR=lib64`
 - Or create symlink: `ln -s lib lib64` in `build_Release/`
 
+### Issue 7: Module import failure in test scripts
+
+**Symptoms:**
+```
+[error] Failed to import ttnn_device_extension: No module named 'ttnn_device_extension'
+```
+
+**Root Cause:**
+
+The problem occurs due to two main issues:
+
+1. **Wrong Python executable**: Scripts were using system `python3` instead of Python from the virtual environment (`tt-metal/python_env/bin/python3`). This caused imports to fail because:
+   - The extension module is installed in the venv's `site-packages` directory
+   - System Python doesn't have access to venv's packages
+   - Different Python versions may have incompatible ABI
+
+2. **Direct import attempt**: Scripts attempted to import `ttnn_device_extension` directly using `import ttnn_device_extension`, but:
+   - The compiled extension file may not have `.so` extension (scikit-build-core may install it without extension)
+   - Python's standard import mechanism cannot load extension modules without `.so` extension directly
+   - The proper way is to use the wrapper module `torch_ttnn.cpp_extension.ttnn_device_mode`, which uses `ExtensionFileLoader` to load the module correctly
+
+**Expected Behavior:**
+- Scripts should use Python from the activated virtual environment
+- Module import should go through `torch_ttnn.cpp_extension.ttnn_device_mode`, which handles loading correctly
+- Extension file location: `site-packages/torch_ttnn_cpp_extension/ttnn_device_extension` (with or without `.so` extension)
+
+**What Happens Instead:**
+- Scripts use system `python3` which doesn't have access to venv packages
+- Direct import fails because Python cannot find the module in its search path
+- Even if file exists, Python's import mechanism cannot load extension modules without proper extension or loader
+
+**Solution Applied:**
+
+1. **Set PYTHON variable**: Scripts now explicitly set `PYTHON` variable to point to venv's Python:
+   ```bash
+   PYTHON="${TT_METAL_VENV}/bin/python3"
+   ```
+
+2. **Use PYTHON consistently**: All Python invocations use `${PYTHON}` instead of `python3`:
+   - Python script execution: `"${PYTHON}" -c "..."` 
+   - pip commands: `"${PYTHON}" -m pip install ...`
+   - pytest: `"${PYTHON}" -m pytest ...`
+
+3. **Proper import mechanism**: Import check uses the correct wrapper module:
+   ```python
+   from torch_ttnn.cpp_extension.ttnn_device_mode import ttnn_module
+   ```
+   This wrapper uses `ExtensionFileLoader` which can handle extension files with or without `.so` extension.
+
+**Files Updated:**
+- `scripts/run-cpp-extension-tests-only.sh`: All `python3` calls replaced with `${PYTHON}`
+- `scripts/direct.sh`: All `python3` calls replaced with `${PYTHON}`
+- Import check simplified to use proper wrapper module instead of direct import
+
+**Key Points:**
+- Always use Python from the virtual environment where packages are installed
+- Extension modules should be imported through wrapper modules that handle loading correctly
+- `ExtensionFileLoader` can load extension files with or without `.so` extension
+
 ## Build Environment Setup
 
 ### Required Tools

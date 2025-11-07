@@ -5,6 +5,7 @@
 #include <tt-metalium/memory_pin.hpp>
 #include <ttnn/tensor/tensor.hpp>
 #include <ttnn/tensor/storage.hpp>
+#include <ttnn/operations/core/core.hpp>
 #include "ttnn_cpp_extension/core/TtnnGuard.hpp"
 #include "ttnn_cpp_extension/core/TtnnTensorImpl.hpp"
 #include "ttnn_cpp_extension/utils/extension_utils.hpp"
@@ -41,7 +42,7 @@ at::Tensor ttnn_copy_from(const at::Tensor& self, const at::Tensor& dst, bool no
                 tt::tt_metal::MemoryPin(self_tensor_shared));
             ttnn::Tensor src_cpu = ttnn::Tensor(host_buffer, logical_shape, dtype, ttnn::Layout::ROW_MAJOR);
 
-            ttnn::Tensor src_dev = src_cpu.to_device(ttnn_device);
+            ttnn::Tensor src_dev = ttnn::operations::core::to_device(src_cpu, ttnn_device, std::nullopt);
 
             // Finally save ttnn tensor on device to custom TorchImpl
             tensor_impl->set_ttnn_tensor(src_dev);
@@ -60,7 +61,7 @@ at::Tensor ttnn_copy_from(const at::Tensor& self, const at::Tensor& dst, bool no
 
             // Initialized as ROW_MAJOR for this dtype because of an issue with ttnn.embedding if this tensor was
             // converted later: https://github.com/tenstorrent/tt-metal/issues/22257
-            ttnn::Tensor src_dev = src_cpu.to_device(ttnn_device);
+            ttnn::Tensor src_dev = ttnn::operations::core::to_device(src_cpu, ttnn_device, std::nullopt);
 
             // Finally save ttnn tensor on device to custom TorchImpl
             tensor_impl->set_ttnn_tensor(src_dev);

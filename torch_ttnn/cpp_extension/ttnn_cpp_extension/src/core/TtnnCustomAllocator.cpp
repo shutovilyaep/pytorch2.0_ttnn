@@ -3,7 +3,7 @@
 #include "ttnn_cpp_extension/utils/extension_utils.hpp"
 #include <cstring>
 
-c10::DataPtr TtnnCustomAllocator::allocate(size_t nbytes) const {
+c10::DataPtr TtnnCustomAllocator::allocate(size_t nbytes) {
     LOGGING("");
     // Do not allocate any cpu space here
     void* data = nullptr;

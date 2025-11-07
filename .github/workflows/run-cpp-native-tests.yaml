@@ -53,7 +53,7 @@ jobs:
         run: |
           # Set pinned tt-metal ref here. Leave empty to auto-detect latest prerelease.
           # Should be set manually with each PR required to make it work with new tt-metal version
-          TT_METAL_REF="v0.60.1"
+          TT_METAL_REF="v0.63.0"
 
           if [ -z "$TT_METAL_REF" ]; then
             # Auto-detect latest prerelease tag (e.g., v0.64.0-rc8)
@@ -165,7 +165,7 @@ jobs:
             TT_METAL_VERSION="${TT_METAL_REF#v}"
           fi
           if [ -z "$TT_METAL_VERSION" ]; then
-            TT_METAL_VERSION="0.60.1"
+            TT_METAL_VERSION="0.63.0"
             echo "Warning: Could not determine tt-metal version, using fallback: $TT_METAL_VERSION"
           else
             echo "Detected tt-metal version: $TT_METAL_VERSION"
@@ -301,13 +301,13 @@ jobs:
           fi
 
           # echo "Running C++ extension tests"
-          # pytest tests/cpp_extension/test_cpp_extension_functionality.py -v
+          # python3 -m pytest tests/cpp_extension/test_cpp_extension_functionality.py -v
 
           echo "Running BERT C++ extension tests"
-          pytest tests/cpp_extension/test_bert_cpp_extension.py -v
+          python3 -m pytest tests/cpp_extension/test_bert_cpp_extension.py -v
 
           # echo "Running models C++ extension tests"
-          # pytest tests/models/ --native_integration -v
+          # python3 -m pytest tests/models/ --native_integration -v
 
           echo "Running tests passed"
 
