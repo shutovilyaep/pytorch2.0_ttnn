@@ -84,7 +84,7 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install --upgrade scikit-build-core cmake ninja
           python -m pip install -e "${GITHUB_WORKSPACE}"[dev]
-          export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/tt_stl:${TT_METAL_HOME}/build_Release/tt_stl:${LD_LIBRARY_PATH:-}"
+          export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build/tt_stl:${LD_LIBRARY_PATH:-}"
           echo "Running C++ extension functionality tests"
           python -m pytest "${GITHUB_WORKSPACE}/tests/cpp_extension/test_cpp_extension_functionality.py" -v
           echo "Running BERT C++ extension tests"

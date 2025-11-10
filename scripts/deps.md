@@ -1,306 +1,174 @@
-# PyTorch TTNN Build Dependencies and Process
+# PyTorch TTNN Dependency & Artifact Reference
 
 ## Overview
 
-This project builds a PyTorch extension that integrates with Tenstorrent's TTNN (Tensor Neural Network) library. The build process involves multiple layers of dependencies and produces various artifacts that must be correctly linked and located at runtime.
+- The repository exposes the editable `torch-ttnn` Python package together with the native `torch_ttnn_cpp_extension`.
+- All native builds are driven by the tt-metal submodule at `torch_ttnn/cpp_extension/third-party/tt-metal`, aligned with **TT_METAL_REF = v0.63.0** in CI (`.github/workflows/run-cpp-native-tests.yaml`).
+- A successful build produces reusable tt-metal libraries, installs the `ttnn` Python package inside the tt-metal virtual environment, and drops `ttnn_device_extension.so` (plus its dependent shared libraries) into the active Python environment.
 
-## Key Components
+## Component inventory
 
-### 1. Main Python Package (`torch-ttnn`)
-- **Location**: Root `pyproject.toml`
-- **Dependencies**:
-  - `torch==2.2.1+cpu` (PyTorch)
-  - `ttnn==0.60.1` (Tenstorrent TTNN from PyPI)
-  - Various Python packages for ML/compilation
-- **Artifacts**: Pure Python package with TTNN compiler
+| Component | Source | Version / ref | Purpose |
+| --- | --- | --- | --- |
+| tt-metal | `torch_ttnn/cpp_extension/third-party/tt-metal` | `v0.63.0` (default CI tag) | Provides the Metal runtime, TTNN C++ sources, toolchains and helper scripts such as `create_venv.sh`. |
+| ttnn (Python) | Installed from the tt-metal checkout via `create_venv.sh` | matches tt-metal tag | Supplies Python APIs and ships `_ttnn.so`, `_ttnncpp.so`, and MPI-enabled runtime libraries. |
+| torch-ttnn | Root `pyproject.toml` | depends on `torch==2.7.1+cpu` (`x86_64`), `torchvision==0.22.1+cpu`, `ttnn==0.63.0`, etc. | Front-end compiler and Python integration layer. |
+| torch_ttnn_cpp_extension | `torch_ttnn/cpp_extension` | built with `scikit-build-core` | Loads Tenstorrent devices inside PyTorch; links to tt-metal and the PyTorch C++ ABI. |
 
-### 2. C++ Extension (`torch_ttnn_cpp_extension`)
-- **Location**: `torch_ttnn/cpp_extension/`
-- **Build System**: scikit-build-core + CMake
-- **Purpose**: Provides C++ backend for PyTorch operations on TTNN devices
+## Build workflow
 
-## Build Process Flow
-
-### Phase 1: tt-metal Build (Dependency)
-```
-Input: tt-metal git submodule (third-party/tt-metal/)
-Build: ./build_metal.sh --build-type Release --ttnn-shared-sub-libs --enable-ccache
-Output: Static/shared libraries, headers, Python bindings
-```
-
-**Key Build Flags:**
-- `--ttnn-shared-sub-libs`: Enables `ENABLE_TTNN_SHARED_SUBLIBS=ON` in CMake
-- This builds tt_metal and tt_stl as shared libraries instead of static
-
-**Artifacts Produced:**
-- `libtt_metal.a` / `libtt_metal.so` (static/shared metal library)
-- `libtt_stl.a` / `libtt_stl.so` (static/shared STL library)
-- `_ttnncpp.so` (TTNN C++ Python extension)
-- `_ttnn.so` (TTNN Python extension)
-- Various other dependencies (fmt, spdlog, etc.)
-
-### Phase 2: TTNN Installation
-```
-Input: PyPI package ttnn==0.60.1 (or built from source)
-Output: Installed TTNN Python package with shared libraries
+```mermaid
+flowchart TD
+    subgraph Phase1 ["Phase 1 – tt-metal sources"]
+        A[tt-metal submodule] --> B[./build_metal.sh --release --enable-ccache]
+        B --> C[(build/lib*, build_Release/lib*, headers)]
+    end
+    subgraph Phase2 ["Phase 2 – Python environment"]
+        C --> D[./create_venv.sh]
+        D --> E[(python_env site-packages/ttnn)]
+    end
+    subgraph Phase3 ["Phase 3 – torch-ttnn"]
+        E --> F[pip install -e .[dev]]
+        F --> G[(ttnn_device_extension.so + copied libs)]
+    end
+    G --> H[pytest suites]
 ```
 
-**When installed from PyPI:**
-- Libraries placed in site-packages/ttnn/
-- May include: `_ttnn.so`, `_ttnncpp.so`, `libtt_metal.so`, `libtt_stl.so`
+## Phase 1 – Build tt-metal
 
-**When built from source:**
-- Libraries in tt-metal build directories
-- Need to be discoverable via LD_LIBRARY_PATH
+1. Set `TT_METAL_HOME=/path/to/pytorch2.0_ttnn/torch_ttnn/cpp_extension/third-party/tt-metal`.
+2. From `${TT_METAL_HOME}` execute:
 
-### Phase 3: C++ Extension Build
-```
-Input: C++ source code + tt-metal static libraries
-Build: pip install -e . (scikit-build-core)
-Output: torch_ttnn_cpp_extension Python package
-```
+   ```bash
+   ./install_dependencies.sh
+   ./build_metal.sh --release --enable-ccache
+   ```
 
-**CMake Configuration:**
-- `BUILD_SHARED_LIBS=OFF` - Forces static linking of tt-metal libraries
-- `WITH_PYTHON_BINDINGS=ON` - Enables TTNN Python bindings
-- Extension builds tt-metal as static libraries internally
+Key facts:
 
-**Linkage:**
-- Extension statically links tt-metal libraries (libtt_metal.a, etc.)
-- Only external dependencies: Torch, Python, system libs
-- Produces self-contained `ttnn_device_extension.so`
+- `torch_ttnn/cpp_extension/third-party/CMakeLists.txt` sets `BUILD_SHARED_LIBS ON`, so the default build emits shared libraries alongside static archives.
+- `./build_metal.sh` symlinks `${TT_METAL_HOME}/build` to the active configuration (for `--release`, that resolves to `${TT_METAL_HOME}/build_Release`).
+- Headers are available in `${TT_METAL_HOME}/build*/include`; toolchains remain in `cmake/`.
 
-## Runtime Library Dependencies
+### Phase 1 artifacts
 
-### With Full Static Linking (Current Implementation)
-The extension embeds all tt-metal and ttnn code statically. Only these external dependencies are needed:
+| Artifact | Location | Notes |
+| --- | --- | --- |
+| `libtt_metal.so`, `libtt_metal.a` | `${TT_METAL_HOME}/build/lib` (→ `build_Release/lib`) | Shared libs are consumed by the extension; static archives remain for custom scenarios. |
+| `libtt_stl.so`, `libtt_stl.a` | `${TT_METAL_HOME}/build/tt_stl` (→ `build_Release/tt_stl`) | STL runtime used by tt-metal and TTNN. |
+| `_ttnn.so`, `_ttnncpp.so` | `${TT_METAL_HOME}/build/lib` | Python bindings required by the `ttnn` package. |
+| Headers | `${TT_METAL_HOME}/build/include` (→ `build_Release/include`) | Exposed to the extension via `target_include_directories`. |
 
-1. **PyPI TTNN libraries**: `_ttnn.so`, `_ttnncpp.so` (Python API)
-2. **Torch libraries**: PyTorch native extensions
-3. **Python runtime**: Standard Python shared libraries
-4. **System libraries**: libc, libstdc++, libm, etc.
+## Phase 2 – Provision the Python environment
 
-**No tt-metal shared libraries needed at runtime!**
+Run `${TT_METAL_HOME}/create_venv.sh`. The script:
 
-### LD_LIBRARY_PATH Requirements
-- **Before**: Complex setup with tt-metal + ttnn shared libs
-- **After**: Minimal, only for PyPI TTNN package location
+- Creates `${TT_METAL_HOME}/python_env` (override with `PYTHON_ENV_DIR`).
+- Pins pip/setuptools on Ubuntu 22.04 and configures `https://download.pytorch.org/whl/cpu` as an extra wheel index.
+- Installs tt-metal development requirements and runs `pip install -e .`, registering the `ttnn` package built from source.
+- Activates the virtual environment. Subsequent steps must reuse that shell or `source python_env/bin/activate`.
 
-### Library Location Hierarchy
+The installed `ttnn` wheel exposes `_ttnn.so`, `_ttnncpp.so`, and the tt-metal shared libraries under `${PYTHON_ENV_DIR}/lib/python*/site-packages/ttnn/`.
 
-Libraries are searched in this order at runtime:
+## Phase 3 – Build torch-ttnn and the C++ extension
 
-1. **rpath** (`$ORIGIN` in extension) - Libraries bundled with extension
-2. **LD_LIBRARY_PATH** - Environment variable paths
-3. **System paths** - `/usr/lib`, `/usr/local/lib`
-4. **Package directories** - site-packages locations
+With the tt-metal virtualenv active and `TT_METAL_HOME` exported:
 
-## Common Build Issues
-
-### Issue 1: Missing libtt_metal.so at Runtime
-**Symptom:** `ModuleNotFoundError: No module named 'ttnn_device_extension'`
-**Cause:** `libtt_metal.so` not in LD_LIBRARY_PATH during testing
-**Solution:** Ensure tt-metal build used `--ttnn-shared-sub-libs` flag
-
-### Issue 2: Static vs Shared Library Mismatch
-**Symptom:** Link errors or missing symbols
-**Cause:** tt-metal built with static libs, extension expects shared
-**Solution:** Use `--ttnn-shared-sub-libs` when building tt-metal
-
-### Issue 3: Multiple TTNN Installations
-**Symptom:** ABI mismatches, crashes
-**Cause:** PyPI TTNN + source-built TTNN both present
-**Solution:** `pip uninstall ttnn` before building from source
-
-## Build Configuration Analysis
-
-### Current Implementation (Default: Static)
-**Status**: ✅ **Static tt_metal + Static ttnn** (fully self-contained extension)
-
-- **tt-metal build**: `BUILD_SHARED_LIBS=OFF` (static libraries)
-- **TTNN source**: PyPI package provides runtime libraries
-- **Extension linkage**: Static tt_metal + Static ttnn (embedded in .so)
-- **Wheel contents**: Only `ttnn_device_extension.so` (self-contained)
-- **Runtime needs**: Only PyPI TTNN libs + system libs
-- **Advantages**: No shared library conflicts, minimal distribution
-
-### Alternative: Shared Libraries (with Wheel Packaging)
-**Status**: 🔄 **Shared tt_metal + Shared ttnn** (with proper wheel packaging)
-
-- **Build**: `TORCH_TTNN_BUILD_SHARED_LIBS=ON` environment variable
-- **Extension linkage**: Links against shared tt_metal.so + ttnn.so
-- **Wheel contents**: Extension + bundled tt-metal shared libs
-- **Install rules**: CMake automatically packages dependencies in wheel
-- **Runtime**: Self-contained wheel, no external tt-metal libs needed
-- **Advantages**: Can share libraries between components, easier debugging
-
-### Previous Shared Approach (Broken)
-**Status**: ❌ **Not recommended** (causes runtime conflicts)
-
-- **tt-metal build**: `--ttnn-shared-sub-libs` (shared sublibraries)
-- **Extension linkage**: Links against shared tt-metal/ttnn libs
-- **Wheel contents**: Extension only (missing shared libs!)
-- **Runtime needs**: All tt-metal shared libs must be in LD_LIBRARY_PATH
-- **Problems**: Shared libs not included in wheel, runtime loading failures
-
-### Implementation Details
-
-**Static Linking (Current)**:
-```cmake
-# In extension/third-party/CMakeLists.txt
-set(BUILD_SHARED_LIBS OFF)  # Forces static tt-metal build
-
-# In tt-metal/ttnn/CMakeLists.txt (patched at build time)
-if(BUILD_SHARED_LIBS)
-    add_library(ttnncpp SHARED)  # For shared builds
-else()
-    add_library(ttnncpp STATIC)  # For static builds (patched)
-endif()
-```
-
-**Patching Strategy:**
-- tt-metal is a third-party submodule, so direct modifications are lost on CI checkout
-- CI patches `ttnn/CMakeLists.txt` at build time to enable conditional static/shared builds
-- Local development script also applies the same patch
-
-## Build Configuration Matrix
-
-| Scenario | Environment Variable | tt-metal build | TTNN source | Extension links to | Wheel contents | Runtime needs |
-|----------|----------------------|----------------|-------------|-------------------|----------------|---------------|
-| **CI/CD (Default)** | `TORCH_TTNN_BUILD_SHARED_LIBS` unset | Static libs | PyPI (0.60.1) | tt-metal static + PyPI shared | Extension only | PyPI libs only |
-| **Shared Libs (Testing)** | `TORCH_TTNN_BUILD_SHARED_LIBS=ON` | Shared libs | PyPI | tt-metal shared + PyPI shared | Extension + tt-metal .so | Self-contained |
-| **Previous (Broken)** | N/A | `--ttnn-shared-sub-libs` | PyPI/Source | tt-metal shared | Extension only | tt-metal + PyPI libs |
-
-**Wheel Building**:
-- scikit-build-core automatically includes the extension .so
-- For static builds: no additional shared libs needed in wheel
-- For shared builds: CMake install rules bundle tt-metal shared libs in wheel
-- PyPI TTNN provides runtime dependencies separately
-
-**Runtime Resolution**:
-- Extension loads with embedded tt-metal/ttnn code
-- PyPI TTNN provides `_ttnn.so`, `_ttnncpp.so` for Python API
-- No LD_LIBRARY_PATH manipulation needed
-
-## Artifact Locations
-
-### tt-metal Build Outputs
-```
-build_Release/
-├── lib/
-│   ├── libtt_metal.a         # Static metal lib
-│   ├── libtt_metal.so        # Shared metal lib (with --ttnn-shared-sub-libs)
-│   ├── libtt_stl.so          # Shared STL lib (with --ttnn-shared-sub-libs)
-│   ├── _ttnncpp.so           # TTNN C++ extension
-│   └── _ttnn.so              # TTNN Python extension
-└── include/                  # Headers for extension building
-```
-
-### C++ Extension Build Outputs
-```
-torch_ttnn/cpp_extension/build/lib.linux-x86_64-3.10/
-├── ttnn_device_extension.cpython-310-x86_64-linux-gnu.so  # Main extension
-├── libtt_metal.so          # Copied/linked from tt-metal
-├── _ttnncpp.so            # Copied/linked from tt-metal
-└── _ttnn.so               # Copied/linked from tt-metal
-```
-
-### Installed Package Structure
-```
-site-packages/
-├── torch_ttnn/                    # Main Python package
-├── torch_ttnn_cpp_extension/      # C++ extension package
-│   └── ttnn_device_extension.so   # The extension module
-└── ttnn/                          # TTNN package (from PyPI or source)
-    ├── _ttnn.so
-    ├── _ttnncpp.so
-    ├── libtt_metal.so
-    └── libtt_stl.so
-```
-
-## Runtime Library Resolution
-
-The extension uses several strategies to locate libraries:
-
-1. **Build-time rpath**: `$ORIGIN` points to extension directory
-2. **Environment LD_LIBRARY_PATH**: Set in CI/test scripts
-3. **Dynamic search**: Python code searches site-packages and tt-metal dirs
-4. **Fallback search**: tt-metal build directories
-
-### LD_LIBRARY_PATH Construction (from CI)
 ```bash
-# Base tt-metal dirs
-LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib"
-
-# TTNN package libs
-LD_LIBRARY_PATH="${TTNN_LIB_DIR}:${LD_LIBRARY_PATH}"
-
-# MPI libs (for distributed)
-LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH}"
-
-# Found tt_stl/tt_metal dirs
-LD_LIBRARY_PATH="${STL_LIB_DIR}:${METAL_LIB_DIR}:${LD_LIBRARY_PATH}"
+cd /path/to/pytorch2.0_ttnn
+python -m pip install --upgrade pip
+python -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
+python -m pip install -e .[dev]
 ```
 
-## Debugging Library Issues
+Important details:
 
-### Check Extension Dependencies
+- `scikit-build-core` drives the CMake project in `torch_ttnn/cpp_extension`, inheriting toolchain settings from `${TT_METAL_HOME}/cmake` and Torch via `torch.utils.cmake_prefix_path`.
+- The extension links against `TT::Metalium`, `TTNN::CPP`, `Torch::Torch`, and `Torch::Python`.
+- Install rules copy any discovered `libtt_metal.so` and `libtt_stl.so` into `${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension`, ensuring they sit next to `ttnn_device_extension.so`.
+- Editable installs keep the generated build tree under `torch_ttnn/cpp_extension/build/`.
+
+### Extension artifacts
+
+| Location | Produced by | Contents |
+| --- | --- | --- |
+| `torch_ttnn/cpp_extension/build/lib.*/torch_ttnn_cpp_extension/` | CMake build tree | Transient extension binaries during editable builds. |
+| `${VIRTUAL_ENV}/lib/python*/site-packages/torch_ttnn_cpp_extension/` | `pip install -e .[dev]` | `ttnn_device_extension.so`, copied tt-metal shared libs, package metadata. |
+| `${VIRTUAL_ENV}/lib/python*/site-packages/torch_ttnn/` | `pip install -e .[dev]` | Python sources and runtime helpers. |
+| `${VIRTUAL_ENV}/lib/python*/site-packages/ttnn/` | `create_venv.sh` | TTNN Python package with `_ttnn*.so` and supporting libraries. |
+
+## Runtime linking and environment setup
+
+- `ttnn_device_extension.so` is built with `BUILD_RPATH="$ORIGIN"`, so bundled `libtt_metal.so`/`libtt_stl.so` are found automatically once installed.
+- For developer workflows we still extend `LD_LIBRARY_PATH` with the tt-metal build outputs so scripts that run directly from the build tree can locate their dependencies. The helper below prefers the canonical `build` symlink and falls back to `build_Release` if the symlink was not created (for example after manual edits):
+
+  ```bash
+  add_tt_path() {
+      local dir="$1"
+      [ -d "$dir" ] || return
+      case ":${LD_LIBRARY_PATH:-}:" in
+          *":$dir:"*) ;;
+          *) LD_LIBRARY_PATH="${dir}${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}";;
+      esac
+  }
+
+  TT_METAL_LIB_DIR="${TT_METAL_HOME}/build/lib"
+  [ -d "${TT_METAL_LIB_DIR}" ] || TT_METAL_LIB_DIR="${TT_METAL_HOME}/build_Release/lib"
+  TT_METAL_STL_DIR="${TT_METAL_HOME}/build/tt_stl"
+  [ -d "${TT_METAL_STL_DIR}" ] || TT_METAL_STL_DIR="${TT_METAL_HOME}/build_Release/tt_stl"
+
+  add_tt_path "${TT_METAL_LIB_DIR}"
+  add_tt_path "${TT_METAL_STL_DIR}"
+  export LD_LIBRARY_PATH
+  ```
+
+- TTNN’s `_ttnncpp.so` links against MPI; append your MPI installation (CI uses `/opt/openmpi-v5.0.7-ulfm/lib`) to `LD_LIBRARY_PATH` when running distributed workloads.
+- Prefer importing through `from torch_ttnn.cpp_extension.ttnn_device_mode import ttnn_module`, which relies on `ExtensionFileLoader` to find the compiled module.
+
+## Configuration knobs
+
+| Setting | How to change | Effect |
+| --- | --- | --- |
+| `TT_METAL_HOME` | Export before invoking CMake/pip | Points CMake to the tt-metal checkout. |
+| `TT_METAL_VERSION` | Export before building | Overrides the version string embedded into the build. |
+| `PYTHON_CMD`, `PYTHON_ENV_DIR` | Environment variables for `create_venv.sh` | Select the interpreter or destination virtualenv. |
+| `CMAKE_ARGS="-DBUILD_SHARED_LIBS=OFF"` | Prefix the `python -m pip install ...` call | Forces a static tt-metal build (requires a clean build directory). |
+| `CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Debug"` | Prefix the install command | Generates a Debug build of the extension. |
+
+## Common issues and resolutions
+
+1. **Missing `libtt_metal.so` at runtime**
+
+   - *Cause*: libraries were not copied because `TT_METAL_HOME` referenced the wrong checkout or the build tree was outdated.
+   - *Fix*: rebuild tt-metal, rerun `pip install -e .[dev]`, and confirm the files exist in `${TT_METAL_HOME}/build*/lib` and `${VIRTUAL_ENV}/lib/python*/site-packages/torch_ttnn_cpp_extension/`.
+
+2. **`MPIX_Comm_revoke` unresolved**
+
+   - *Cause*: MPI libraries are absent from `LD_LIBRARY_PATH` when importing `ttnn`.
+   - *Fix*: export the MPI library directory, for example `export LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH}"`.
+
+3. **Multiple TTNN installations conflict**
+
+   - *Cause*: mixing the PyPI `ttnn` wheel with the source build inside the same environment.
+   - *Fix*: `pip uninstall ttnn` before running `create_venv.sh`, or recreate the virtual environment from scratch.
+
+4. **Wrong Python interpreter**
+
+   - *Cause*: running the host `python3` instead of `${TT_METAL_HOME}/python_env/bin/python`.
+   - *Fix*: activate the virtual environment prior to building or testing (`source ${TT_METAL_HOME}/python_env/bin/activate`).
+
+## Quick validation checklist
+
 ```bash
-# Find extension .so file
-find . -name "*ttnn_device_extension*.so"
+# Verify versions
+python -m pip show torch ttnn torch-ttnn
 
-# Check dependencies
-ldd /path/to/ttnn_device_extension.so
+# Inspect extension dependencies
+python -c "import torch_ttnn_cpp_extension.ttnn_device_extension as mod; print(mod.__file__)"
+ldd $(python -c "import torch_ttnn_cpp_extension.ttnn_device_extension as mod; print(mod.__file__)")
 
-# See what Python finds
-python3 -c "import ttnn_device_extension; print(ttnn_device_extension.__file__)"
+# Confirm tt-metal tag
+pushd "${TT_METAL_HOME}" && git describe --tags && popd
 ```
 
-### Check TTNN Package
-```bash
-# Find TTNN installation
-python3 -c "import ttnn; import pathlib; print(pathlib.Path(ttnn.__file__).parent)"
-
-# List TTNN libraries
-python3 -c "import ttnn, pathlib, os; p=pathlib.Path(ttnn.__file__).parent; [print(f) for f in os.listdir(p) if '.so' in f]"
-```
-
-### Check LD_LIBRARY_PATH
-```bash
-echo $LD_LIBRARY_PATH
-# Should include paths to all required .so files
-```
-
-## Testing Different Build Configurations
-
-### Static Build (Default)
-```bash
-# Default behavior - static linking
-pip install -e torch_ttnn/cpp_extension
-```
-
-### Shared Build (Testing)
-```bash
-# Force shared libraries build
-TORCH_TTNN_BUILD_SHARED_LIBS=ON pip install -e torch_ttnn/cpp_extension
-
-# Check that shared libs are included in wheel
-find torch_ttnn/cpp_extension/build -name "*.so"
-```
-
-### Local Script Testing
-```bash
-# Test static build (default)
-./scripts/run-cpp-native-tests.sh
-
-# Test shared build
-TORCH_TTNN_BUILD_SHARED_LIBS=ON ./scripts/run-cpp-native-tests.sh
-```
-
-## Recommendations
-
-1. **✅ Default to static linking**: Most reliable, no runtime issues
-2. **Test shared libs occasionally**: Ensure wheel packaging works correctly
-3. **Clean builds**: Remove build artifacts when switching linkage types
-4. **PyPI TTNN**: Use official package for runtime dependencies
-5. **Verify with ldd**: Check extension dependencies after build
+This reference matches the CI workflow defined in `.github/workflows/run-cpp-native-tests.yaml` and should be kept in sync with future toolchain bumps.

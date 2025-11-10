@@ -224,12 +224,24 @@ if(TARGET tt_metal)
                 LIBRARY DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension"
                 RUNTIME DESTINATION "${SKBUILD_PLATLIB_DIR}/torch_ttnn_cpp_extension")
     else()
-        set(_tt_metal_lib_dirs
-            "${TT_METAL_HOME}/build_Release/lib"
+        set(_tt_metal_candidate_dirs
             "${TT_METAL_HOME}/build/lib"
-            "${TT_METAL_HOME}/build_Release/tt_stl"
+            "${TT_METAL_HOME}/build_Release/lib"
             "${TT_METAL_HOME}/build/tt_stl"
+            "${TT_METAL_HOME}/build_Release/tt_stl"
         )
+        set(_tt_metal_lib_dirs "")
+        set(_tt_metal_seen_realpaths "")
+        foreach(_candidate IN LISTS _tt_metal_candidate_dirs)
+            if(EXISTS "${_candidate}")
+                get_filename_component(_resolved "${_candidate}" REALPATH)
+                list(FIND _tt_metal_seen_realpaths "${_resolved}" _idx)
+                if(_idx EQUAL -1)
+                    list(APPEND _tt_metal_seen_realpaths "${_resolved}")
+                    list(APPEND _tt_metal_lib_dirs "${_candidate}")
+                endif()
+            endif()
+        endforeach()
         foreach(_lib_dir IN LISTS _tt_metal_lib_dirs)
             if(EXISTS "${_lib_dir}/libtt_metal.so")
                 install(FILES "${_lib_dir}/libtt_metal.so"
