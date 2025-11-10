@@ -9,8 +9,8 @@ on:
       - 'tests/cpp_extension/**'
   pull_request:
     paths:
-      - "torch_ttnn/cpp_extension/**"
-      - "tests/cpp_extension/**"
+      - 'torch_ttnn/cpp_extension/**'
+      - 'tests/cpp_extension/**'
   workflow_dispatch:
     inputs:
       docker_tag:
@@ -29,287 +29,68 @@ jobs:
         -v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }}
         -v /mnt/tt-metal-pytorch-cache/.cache:/root/.cache
     env:
-      CACHE_DIR: /root/.cache/cpp-extension-cache
+      TT_METAL_REF: v0.63.0
     defaults:
       run:
         shell: bash
     steps:
-      - name: Install git-lfs for checkout
+      - name: Prepare checkout
         run: |
-          apt-get update -y
+          set -euxo pipefail
+          apt-get update
           apt-get install -y git-lfs
           git lfs install
+
       - uses: actions/checkout@v4
         with:
           lfs: true
           fetch-depth: 0
-          submodules: "recursive"
+          submodules: recursive
 
-      - name: Update system
+      - name: Synchronise tt-metal submodule
         run: |
-          apt update -y && apt upgrade -y
-          apt install -y curl jq
-      - name: Update .gitsubmodules
-        run: |
-          # Set pinned tt-metal ref here. Leave empty to auto-detect latest prerelease.
-          # Should be set manually with each PR required to make it work with new tt-metal version
-          TT_METAL_REF="v0.63.0"
-
-          if [ -z "$TT_METAL_REF" ]; then
-            # Auto-detect latest prerelease tag (e.g., v0.64.0-rc8)
-            latest_pre_release=$(curl -s https://api.github.com/repos/tenstorrent/tt-metal/releases | jq -r '[.[] | select(.prerelease == true)][0].tag_name')
-            RESOLVED_TT_METAL_REF="$latest_pre_release"
-            echo "Auto-detected latest prerelease tag: $RESOLVED_TT_METAL_REF"
-          else
-            RESOLVED_TT_METAL_REF="$TT_METAL_REF"
-            echo "Using pinned tt-metal ref: $RESOLVED_TT_METAL_REF"
-          fi
-
-          # Export for later steps
-          echo "TT_METAL_REF=$RESOLVED_TT_METAL_REF" >> $GITHUB_ENV
-
-      - name: Setup submodules
-        run: |
-          # Allow git operations in runner workspace paths
-          git config --global --add safe.directory /__w/pytorch2.0_ttnn/pytorch2.0_ttnn || true
-          git config --global --add safe.directory "${{ github.workspace }}" || true
-          git config --global --add safe.directory "$(pwd)" || true
-
-          # Retry helper with exponential backoff
-          retry() {
-            local max_attempts=${1:-5}; shift
-            local attempt=1
-            until "$@"; do
-              if (( attempt >= max_attempts )); then
-                echo "Command failed after ${attempt} attempts: $*"
-                return 1
-              fi
-              echo "Command failed (attempt ${attempt}/${max_attempts}): $*"
-              sleep $(( 2 ** attempt ))
-              ((attempt++))
-            done
-          }
-
-          # Be tolerant to network hiccups for submodule operations
-          retry 5 git submodule sync --recursive
-          retry 5 git submodule update --init --recursive
-
-          # Check out the requested tt-metal ref inside the submodule without editing .gitmodules
+          set -euxo pipefail
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}/torch_ttnn/cpp_extension/third-party/tt-metal"
+          git submodule sync --recursive
+          git submodule update --init --recursive
           pushd torch_ttnn/cpp_extension/third-party/tt-metal
-          # Avoid tag clobber issues if upstream moved tags; clean local tags and fetch with force
-          git config fetch.prune true || true
-          git config fetch.pruneTags true || true
-          git tag -l | xargs -r -n 1 git tag -d || true
-          retry 5 git -c protocol.version=2 fetch --all --tags --force --prune --prune-tags
-          if echo "$TT_METAL_REF" | grep -q '^releases/'; then
-            # Treat as branch on origin
-            if git rev-parse --verify "$TT_METAL_REF" >/dev/null 2>&1; then
-              retry 5 git checkout -f "$TT_METAL_REF"
-            else
-              retry 5 git checkout -B "$TT_METAL_REF" "origin/$TT_METAL_REF" || retry 5 git checkout -f "origin/$TT_METAL_REF"
-            fi
-          else
-            # Treat as tag or plain ref
-            retry 5 git -c advice.detachedHead=false checkout -f "tags/$TT_METAL_REF" || retry 5 git checkout -f "$TT_METAL_REF"
-          fi
-          # Update nested submodules to the versions recorded by the checked-out ref
-          retry 5 git submodule sync --recursive
-          retry 5 git submodule update --init --recursive
-          # LFS for all nested submodules
-          git submodule foreach --recursive 'git lfs fetch --all || true'
-          git submodule foreach --recursive 'git lfs pull || true'
+          git fetch --tags --force
+          git checkout "${TT_METAL_REF}"
+          git submodule update --init --recursive
+          git lfs fetch --all || true
+          git lfs pull || true
           popd
 
-      - name: Install dependencies
+      - name: Install system dependencies
         run: |
-          apt upgrade -y && apt update -y
-          apt install -y cmake python3 python3-venv python3-pip git-lfs ccache
-          git config --global --add safe.directory /home/ubuntu/actions-runner/_work/pytorch2.0_ttnn/pytorch2.0_ttnn
-          git config --global --add safe.directory /__w/pytorch2.0_ttnn/pytorch2.0_ttnn
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y build-essential clang-17 llvm-17-dev cmake ninja-build \
+            python3 python3-venv python3-pip curl jq ccache
 
-          # Remove hugepages setup from install_dependencies.sh
-          sed -i '/^configure_hugepages() {/,/^}/c\configure_hugepages() {\n    echo "Skip hugepages installation"\n}' ./torch_ttnn/cpp_extension/third-party/tt-metal/install_dependencies.sh
-          ./torch_ttnn/cpp_extension/third-party/tt-metal/install_dependencies.sh
-
-      - name: Install python dependencies
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
-          # Tooling for testing/build; no project packages are installed here
-          python3 -m pip install pytest-github-report
-
-      - name: Install root package
-        run: |
-          # Upgrade pip to support editable installs with pyproject.toml
-          python3 -m pip install --upgrade pip setuptools wheel
-          # Installs top-level Python package 'torch-ttnn' (pure Python only).
-          # This does NOT build the native C++ extension and does NOT install tt-metal's 'ttnn'.
-          python3 -m pip install -e .[dev]
-
-      - name: Build C++ Extension
-        run: |
-          export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
-          # Configure git safe.directory for entire workspace (covers all subdirectories including CPM cache)
-          # This prevents race conditions when CPM creates new cache directories during CMake execution
-          # Use realpath to ensure we have the absolute path
-          WORKSPACE_REALPATH=$(realpath "${{ github.workspace }}" || echo "${{ github.workspace }}")
-          git config --global --add safe.directory "${WORKSPACE_REALPATH}" || true
-          git config --global --add safe.directory "${{ github.workspace }}" || true
-          git config --global --add safe.directory "${TT_METAL_HOME}" || true
-          # Determine tt-metal version for CMake
-          TT_METAL_VERSION=""
-          if [ -d "$TT_METAL_HOME/.git" ]; then
-            TT_METAL_VERSION=$(cd "$TT_METAL_HOME" && git describe --abbrev=0 --tags 2>/dev/null | sed 's/^v//' || echo "")
-          fi
-          if [ -z "$TT_METAL_VERSION" ] && [ -n "${TT_METAL_REF:-}" ]; then
-            TT_METAL_VERSION="${TT_METAL_REF#v}"
-          fi
-          if [ -z "$TT_METAL_VERSION" ]; then
-            TT_METAL_VERSION="0.63.0"
-            echo "Warning: Could not determine tt-metal version, using fallback: $TT_METAL_VERSION"
-          else
-            echo "Detected tt-metal version: $TT_METAL_VERSION"
-          fi
-          # Select clang-17 toolchain used by tt-metal to avoid default GCC-11
-          export TOOLCHAIN_PATH="cmake/x86_64-linux-clang-17-libstdcpp-toolchain.cmake"
-          export TT_METAL_VERSION
-          # Ensure CMake can locate Torch package config from current Python
-          export CMAKE_PREFIX_PATH=$(python3 - <<'PY'
-          import torch
-          print(torch.utils.cmake_prefix_path)
-          PY
-          )
-          # Forward toolchain and common flags to scikit-build-core/CMake
-          # Pass VERSION_NUMERIC to tt-metal CMake to avoid fallback warnings
-          export CMAKE_ARGS="-DCMAKE_TOOLCHAIN_FILE=${TT_METAL_HOME}/${TOOLCHAIN_PATH} -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER_LAUNCHER=ccache -DCMAKE_CXX_COMPILER_LAUNCHER=ccache -DWITH_PYTHON_BINDINGS=ON -DVERSION_NUMERIC=${TT_METAL_VERSION}"
-          # Prefer clang-17 explicitly in case the toolchain file is not picked up early
-          export CC=clang-17
-          export CXX=clang++-17
-          # Ensure tt-metal's Python package (ttnn) is built so _ttnncpp.so is present
-          # Set up LD_LIBRARY_PATH for tt-metal build directories
-          export LD_LIBRARY_PATH="${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/tt_stl:${TT_METAL_HOME}/build/tt_stl:${LD_LIBRARY_PATH:-}"
-          # Ensure PEP517 backend & native build tools are available for pyproject builds
-          python3 -m pip install --upgrade scikit-build-core cmake ninja
-          # Install build dependencies required by tt-metal (setuptools-scm for use_scm_version)
-          python3 -m pip install --upgrade "setuptools==70.1.0" "setuptools-scm==8.1.0"
-          # Builds and installs tt-metal's Python package 'ttnn' from the submodule root
-          # (produces '_ttnncpp.so' and installs tt-metal shared libraries)
-          # Guard against preinstalled PyPI wheels creating ABI/runtime mismatches
-          python3 -m pip uninstall -y ttnn || true
-          # Ensure we use the runner Python's cmake/ninja instead of any stale virtualenv in the submodule
-          unset VIRTUAL_ENV || true
-          USER_SCRIPTS_DIR=$(python3 -c 'import sysconfig; print(sysconfig.get_path("scripts"))')
-          export PATH="${USER_SCRIPTS_DIR}:${PATH}"
-          # Do NOT set CIBUILDWHEEL=1 - this would bypass build_metal.sh
-          # Instead, let setup.py use build_metal.sh which properly handles toolchain and all CMake args
-          # build_metal.sh will automatically use the correct toolchain and handle VERSION_NUMERIC via git describe
-          # Git safe.directory already configured above for workspace and TT_METAL_HOME
-          # CPM performs git operations in cache directories - add all relevant paths statically
-          # The workspace already covers most paths, but we add CPM cache explicitly to be safe
-          CPM_CACHE_DIR="${TT_METAL_HOME}/.cpmcache"
-          mkdir -p "${CPM_CACHE_DIR}" || true
-          git config --global --add safe.directory "${CPM_CACHE_DIR}" || true
-          # Add common CPM packages that are known to cause issues
-          # Add base directories
-          git config --global --add safe.directory "${CPM_CACHE_DIR}/nlohmann_json" || true
-          git config --global --add safe.directory "${CPM_CACHE_DIR}/boost" || true
-          git config --global --add safe.directory "${CPM_CACHE_DIR}/googletest" || true
-          git config --global --add safe.directory "${CPM_CACHE_DIR}/pybind11" || true
-          git config --global --add safe.directory "${CPM_CACHE_DIR}/fmt" || true
-          git config --global --add safe.directory "${CPM_CACHE_DIR}/yaml-cpp" || true
-          # Add specific nlohmann_json hash path that causes issues
-          # This is the exact path from the error: nlohmann_json/798e0374658476027d9723eeb67a262d0f3c8308
-          git config --global --add safe.directory "${CPM_CACHE_DIR}/nlohmann_json/798e0374658476027d9723eeb67a262d0f3c8308" || true
-          # Add all subdirectories recursively for nlohmann_json (has hash subdirectories)
-          # This covers paths like nlohmann_json/798e0374658476027d9723eeb67a262d0f3c8308
-          if [ -d "${CPM_CACHE_DIR}/nlohmann_json" ]; then
-            find "${CPM_CACHE_DIR}/nlohmann_json" -type d -maxdepth 2 2>/dev/null | while read nlohmann_dir; do
-              git config --global --add safe.directory "$nlohmann_dir" || true
-            done
-          fi
-          # Also add all existing package subdirectories to cover hash-based paths
-          if [ -d "${CPM_CACHE_DIR}" ]; then
-            find "${CPM_CACHE_DIR}" -type d -mindepth 2 -maxdepth 2 2>/dev/null | while read pkg_subdir; do
-              git config --global --add safe.directory "$pkg_subdir" || true
-            done
-          fi
-          export CPM_SOURCE_CACHE="${CPM_CACHE_DIR}"
-          # Verify git config (for debugging)
-          echo "Verifying git safe.directory configuration:"
-          git config --global --get-all safe.directory | grep -E "(cpmcache|nlohmann)" | head -10 || echo "No CPM cache entries found in git config"
-          # Force CMake to install to lib64/ instead of lib/ to match setup.py expectations
-          # setup.py's get_lib_dir() returns lib64 if /usr/lib64 exists
-          # GNUInstallDirs must read CMAKE_INSTALL_LIBDIR before include(), so we pass it via CMake cache
-          # Patch build_metal.sh to add -DCMAKE_INSTALL_LIBDIR=lib64 to cmake_args
-          if [ -d "/usr/lib64" ]; then
-            python3 << 'PYTHON_PATCH'
-          import os
-          build_metal_sh = os.path.join(os.environ['TT_METAL_HOME'], 'build_metal.sh')
-          with open(build_metal_sh, 'r') as f:
-              lines = f.readlines()
-          
-          # Find where cmake_args are prepared and add CMAKE_INSTALL_LIBDIR
-          for i, line in enumerate(lines):
-              if 'cmake_args+=("-DCMAKE_INSTALL_PREFIX=' in line:
-                  # Insert CMAKE_INSTALL_LIBDIR right after CMAKE_INSTALL_PREFIX
-                  indent = ' ' * (len(line) - len(line.lstrip()))
-                  lines.insert(i + 1, f'{indent}cmake_args+=("-DCMAKE_INSTALL_LIBDIR=lib64")\n')
-                  break
-          
-          with open(build_metal_sh, 'w') as f:
-              f.writelines(lines)
-          print("Patched build_metal.sh to set CMAKE_INSTALL_LIBDIR=lib64")
-          PYTHON_PATCH
-          fi
-          # Install from source (non-editable) to build and bundle native libs into the package
-          # Note: --no-build-isolation requires build dependencies to be installed manually
-          # setup.py will call build_metal.sh with --build-static-libs --release, which handles everything correctly
-          python3 -m pip install --no-build-isolation "${TT_METAL_HOME}"
-
-          # Early sanity check: ensure 'ttnn' and its pybind module resolve
-          # Note: tt-metal libraries are now bundled in torch_ttnn_cpp_extension package
-          # via CMake install, so LD_LIBRARY_PATH setup is minimal here
-          # However, ttnn package's _ttnncpp.so needs MPI libraries for distributed support
-          # Add MPI library path temporarily for this check
-          if [ -d "/opt/openmpi-v5.0.7-ulfm/lib" ]; then
-            export LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH:-}"
-          fi
-          python3 -c "import importlib, os; print('TT_METAL_HOME=', os.environ.get('TT_METAL_HOME')); import ttnn; importlib.import_module('ttnn._ttnn'); print('import ttnn OK')"
-
-          cd torch_ttnn/cpp_extension
-          # Ensure pip is up to date for editable installs
-          python3 -m pip install --upgrade pip setuptools wheel
-          # Builds and installs our project C++ extension package 'torch_ttnn_cpp_extension'
-          # using scikit-build-core/CMake, linking against tt-metal libraries
-          python3 -m pip install -e .
-          cd ${{ github.workspace }}
-
-      - name: Run C++ Extension Tests
+      - name: Build and test
         env:
           TT_METAL_HOME: ${{ github.workspace }}/torch_ttnn/cpp_extension/third-party/tt-metal
         run: |
-          # Test phase: C++ extension with shared libraries bundled in package
-          # libtt_metal.so and libtt_stl.so are copied to site-packages/torch_ttnn_cpp_extension/
-          # via CMake install rules, and found via INSTALL_RPATH "$ORIGIN"
-          # TTNN Python modules (_ttnn.so, _ttnncpp.so) are found via standard Python import
-          # However, ttnn package's _ttnncpp.so requires MPI libraries (even if distributed not used)
-          export TT_METAL_HOME=$(realpath ./torch_ttnn/cpp_extension/third-party/tt-metal)
-          
-          # Add MPI library path - required by ttnn package's _ttnncpp.so
-          if [ -d "/opt/openmpi-v5.0.7-ulfm/lib" ]; then
-            export LD_LIBRARY_PATH="/opt/openmpi-v5.0.7-ulfm/lib:${LD_LIBRARY_PATH:-}"
-          fi
-
-          # echo "Running C++ extension tests"
-          # python3 -m pytest tests/cpp_extension/test_cpp_extension_functionality.py -v
-
+          set -euxo pipefail
+          export TT_METAL_HOME
+          cd "${TT_METAL_HOME}"
+          ./install_dependencies.sh
+          ./build_metal.sh --release --enable-ccache
+          ./create_venv.sh
+          source ./python_env/bin/activate
+          python -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
+          python -m pip install --upgrade pip
+          python -m pip install --upgrade scikit-build-core cmake ninja
+          python -m pip install -e "${GITHUB_WORKSPACE}"[dev]
+          export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/lib:${TT_METAL_HOME}/build/tt_stl:${TT_METAL_HOME}/build_Release/tt_stl:${LD_LIBRARY_PATH:-}"
+          echo "Running C++ extension functionality tests"
+          python -m pytest "${GITHUB_WORKSPACE}/tests/cpp_extension/test_cpp_extension_functionality.py" -v
           echo "Running BERT C++ extension tests"
-          python3 -m pytest tests/cpp_extension/test_bert_cpp_extension.py -v
-
-          # echo "Running models C++ extension tests"
-          # python3 -m pytest tests/models/ --native_integration -v
-
-          echo "Running tests passed"
+          python -m pytest "${GITHUB_WORKSPACE}/tests/cpp_extension/test_bert_cpp_extension.py" -v
+          echo "Running models C++ extension tests"
+          python -m pytest "${GITHUB_WORKSPACE}/tests/models" --native_integration -v
 
   tests-passed:
     if: ${{ always() }}
@@ -320,7 +101,7 @@ jobs:
     steps:
       - id: check
         run: |
-          cpp_tests_result="${{ needs.cpp-extension-tests.result}}"
+          cpp_tests_result="${{ needs.cpp-extension-tests.result }}"
           if [[ $cpp_tests_result == "success" || $cpp_tests_result == "skipped" ]]; then
             echo "didpass=0" >> $GITHUB_OUTPUT
             exit 0

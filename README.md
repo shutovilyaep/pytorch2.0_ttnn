@@ -244,20 +244,21 @@ To get started with development, you'll need a Wormhole or Blackhole Tenstorrent
 * can be ordered on the [Tenstorrent website](https://tenstorrent.com/) 
 * can be requested on [Koyeb](https://www.koyeb.com/blog/tenstorrent-cloud-instances-unveiling-next-gen-ai-accelerators)
 
-Install the development dependencies:
+Install the development dependencies and build the project (including the C++
+extension) in editable mode from the tt-metal virtual environment created by
+`create_venv.sh`:
 ```shell
 pip install -e .[dev]
 ```
 
-To build and install the C++ extension separately:
-```shell
-cd torch_ttnn/cpp_extension
-pip install -e .
-```
+To rebuild the native extension after changing C++ sources, re-run the
+installation command. The scikit-build-core backend will reuse the build
+directory and pick up code changes automatically. See [build.md](build.md) for a
+detailed walkthrough of the recommended workflow.
 
-You can build the wheel file with
+You can build a distributable wheel by running the modern PEP 517 build flow:
 ```shell
-python -m build
+python -m build --wheel
 ```
 
 ## Project Structure

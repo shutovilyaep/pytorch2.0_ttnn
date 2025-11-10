@@ -1,155 +1,128 @@
-# Build and Test Issues Documentation
+# Build Guide
 
-## Overview
+This document describes the supported workflow for building the PyTorch TTNN
+native extension and running the C++ regression tests. The flow mirrors the
+continuous-integration job and keeps the project aligned with the
+**tt-metal&nbsp;0.60.1** toolchain.
 
-This document describes build and runtime issues encountered when building and testing the PyTorch TTNN C++ extension.
+## 1. Prerequisites
 
-## Issue 1: Undefined Symbol - BinaryOperation::invoke
+### System packages
 
-### Symptoms
-
-When importing the C++ extension module, the following error occurs:
-
-```
-undefined symbol: _ZN4ttnn10operations6binary15BinaryOperationILNS1_12BinaryOpTypeE0EE6invokeEN4ttsl10StrongTypeIhNS_10QueueIdTagEEERKN2tt8tt_metal6TensorESD_RKSt8optionalIKNSA_8DataTypeEERKSE_INSA_12MemoryConfigEERKSE_ISB_ESt4spanIKNS0_5unary14UnaryWithParamELm18446744073709551615EESV_SV_RKSE_IbE
-```
-
-Demangled symbol:
-```
-ttnn::operations::binary::BinaryOperation<(ttnn::operations::binary::BinaryOpType)0>::invoke(ttsl::StrongType<unsigned char, ttnn::QueueIdTag>, tt::tt_metal::Tensor const&, tt::tt_metal::Tensor const&, std::optional<tt::tt_metal::DataType const> const&, std::optional<tt::tt_metal::MemoryConfig> const&, std::optional<tt::tt_metal::Tensor> const&, std::span<ttnn::operations::unary::UnaryWithParam const, 18446744073709551615ul>, std::span<ttnn::operations::unary::UnaryWithParam const, 18446744073709551615ul>, std::span<ttnn::operations::unary::UnaryWithParam const, 18446744073709551615ul>, std::optional<bool> const&)
-```
-
-### Root Cause
-
-The symbol exists in `_ttnncpp.so` but is marked as a **weak symbol** (`W` in `nm` output). Weak symbols can be overridden and may not be properly resolved during dynamic linking if:
-
-1. The symbol is not properly exported from the library
-2. Library loading order is incorrect
-3. There are version mismatches between the extension and tt-metal libraries
-
-### Investigation
-
-1. **Symbol exists but is weak**: `nm -D _ttnncpp.so | grep BinaryOperation` shows the symbol exists but is marked as `W` (weak)
-2. **Used in code**: The extension uses `ttnn::add()` which internally calls `BinaryOperation<0>::invoke()`
-3. **Library dependencies**: The extension depends on `_ttnncpp.so` which should contain this symbol
-
-### Solution
-
-The issue is likely due to:
-- **Template instantiation**: `BinaryOperation` is a template class, and the specific instantiation may not be properly exported
-- **Library linking order**: The extension may need to explicitly link against tt-metal binary operation libraries
-
-### Workaround
-
-1. Ensure `LD_LIBRARY_PATH` includes the tt-metal build directory:
-   ```bash
-   export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${LD_LIBRARY_PATH}"
-   ```
-
-2. Use `LD_PRELOAD` to force-load tt-metal libraries:
-   ```bash
-   export LD_PRELOAD="${TT_METAL_HOME}/build/lib/_ttnncpp.so"
-   ```
-
-3. Rebuild the extension to ensure it's linked against the correct tt-metal version:
-   ```bash
-   cd torch_ttnn/cpp_extension
-   pip install -e . --force-reinstall --no-cache-dir
-   ```
-
-## Issue 2: Undefined Symbol - Tensor::to_device (RESOLVED)
-
-### Symptoms
-
-Previous error with `Tensor::to_device` method not being found.
-
-### Root Cause
-
-The `Tensor::to_device` method is not exported from tt-metal libraries. The extension was calling `tensor.to_device(device)` which uses a non-exported method.
-
-### Solution
-
-Changed code to use the exported function `ttnn::operations::core::to_device()`:
-
-```cpp
-// Before (doesn't work):
-ttnn::Tensor src_dev = src_cpu.to_device(ttnn_device);
-
-// After (works):
-ttnn::Tensor src_dev = ttnn::operations::core::to_device(src_cpu, ttnn_device, std::nullopt);
-```
-
-**Files modified:**
-- `torch_ttnn/cpp_extension/ttnn_cpp_extension/src/core/copy.cpp`
-
-## Issue 3: MeshDevice API Migration
-
-### Background
-
-TT-Metal migrated from `Device` API to `MeshDevice` API. The extension code was updated to use `MeshDevice*` instead of `Device*`.
-
-### Changes Required
-
-1. **Device type**: Changed from `ttnn::Device*` to `ttnn::MeshDevice*`
-2. **to_device calls**: Use `ttnn::operations::core::to_device()` instead of `tensor.to_device()`
-3. **Device opening**: Use `MeshDevice::create_unit_meshes()` or similar MeshDevice APIs
-
-## Testing
-
-### Isolated Test Execution
-
-Use `scripts/run-cpp-extension-tests-only.sh` to run tests without rebuilding:
+Install the host dependencies (Ubuntu 22.04 or later):
 
 ```bash
-./scripts/run-cpp-extension-tests-only.sh
+sudo apt update
+sudo apt install -y git-lfs cmake ninja-build python3 python3-venv python3-pip \
+    build-essential clang-17 llvm-17-dev ccache
 ```
 
-This script:
-- Sets up `LD_LIBRARY_PATH` correctly
-- Finds and loads the extension module
-- Provides detailed diagnostics for import failures
-- Detects undefined symbol errors and suggests solutions
+The `clang-17` toolchain matches the compilers used by tt-metal. `git-lfs` is
+required because the tt-metal submodule tracks large binaries via LFS.
 
-### Debugging Import Issues
+### Repository checkout
 
-The script provides:
-1. **Symbol checking**: Checks if undefined symbols exist in tt-metal libraries
-2. **Library path diagnostics**: Shows all library paths being searched
-3. **Import diagnostics**: Detailed error messages with demangled symbols
-
-## Recommendations
-
-1. **Always rebuild after tt-metal updates**: The extension must be rebuilt when tt-metal is updated
-2. **Use exported APIs**: Prefer using exported functions from `ttnn::operations::core::` namespace
-3. **Check symbol visibility**: Use `nm -D` to check if symbols are exported (marked with `T` or `W`)
-4. **Library loading order**: Ensure tt-metal libraries are loaded before the extension
-
-## Future Work
-
-1. **Explicit template instantiation**: Consider explicitly instantiating `BinaryOperation<0>` in the extension to ensure the symbol is available
-2. **Static linking option**: Investigate if static linking can resolve weak symbol issues
-3. **Symbol export verification**: Add build-time checks to verify all required symbols are available
-
-## Recommended Solution for PR
-
-### Immediate Fix
-
-For the PR, add `LD_PRELOAD` to ensure `_ttnncpp.so` is loaded before the extension. This resolves weak symbol issues:
+Clone the repository and sync the tt-metal submodule:
 
 ```bash
-# In run-cpp-extension-tests-only.sh, add before import check:
-if [[ -f "${TT_METAL_HOME}/build/lib/_ttnncpp.so" ]]; then
-  export LD_PRELOAD="${TT_METAL_HOME}/build/lib/_ttnncpp.so:${LD_PRELOAD:-}"
-elif [[ -f "${TT_METAL_HOME}/build_Release/lib/_ttnncpp.so" ]]; then
-  export LD_PRELOAD="${TT_METAL_HOME}/build_Release/lib/_ttnncpp.so:${LD_PRELOAD:-}"
-fi
+git clone https://github.com/tenstorrent/pytorch2.0_ttnn.git
+cd pytorch2.0_ttnn
+git submodule update --init --recursive
 ```
 
-This ensures weak symbols from `_ttnncpp.so` are available when the extension loads.
+The tt-metal submodule is pinned to the `v0.60.1` release. If the checkout falls
+back to a different version, explicitly reset it:
 
-### Long-term Solution
+```bash
+pushd torch_ttnn/cpp_extension/third-party/tt-metal
+git fetch --tags
+git checkout v0.60.1
+git submodule update --init --recursive
+popd
+```
 
-1. **Investigate template instantiation**: Work with tt-metal team to ensure `BinaryOperation<ADD>` is properly exported
-2. **Consider explicit instantiation**: Add explicit template instantiation in extension if needed
-3. **Documentation**: Update build.md with final solution once root cause is identified
+## 2. Build tt-metal
 
+All native builds rely on the libraries produced by tt-metal. Build them once
+and keep the environment around for subsequent iterations:
+
+```bash
+export TT_METAL_HOME="$(pwd)/torch_ttnn/cpp_extension/third-party/tt-metal"
+cd "$TT_METAL_HOME"
+./install_dependencies.sh
+./build_metal.sh --release --enable-ccache
+./create_venv.sh
+source ./python_env/bin/activate
+```
+
+The commands above produce:
+
+| Artifact | Location |
+| --- | --- |
+| Compiled tt-metal libraries | `build/` and `build_Release/` inside `TT_METAL_HOME` |
+| Python virtual environment | `TT_METAL_HOME/python_env` |
+| Shared libraries exposed to dependants | `TT_METAL_HOME/build*/lib` and `TT_METAL_HOME/build*/tt_stl` |
+
+The `create_venv.sh` script activates the virtual environment and installs the
+Python-facing `ttnn` package that ships with tt-metal. Keep the environment
+active for the remaining steps.
+
+## 3. Install pytorch2.0_ttnn
+
+From the repository root (with the virtual environment still activated):
+
+```bash
+cd /path/to/pytorch2.0_ttnn
+python -m pip install --upgrade pip
+python -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
+python -m pip install -e .[dev]
+```
+
+The `pip install -e .[dev]` invocation builds the C++ extension via
+`scikit-build-core` using the in-tree CMake project. The configuration phase
+picks up the following automatically:
+
+- `TT_METAL_HOME` – provides headers, shared libraries and the default toolchain
+- `clang-17` – supplied through the tt-metal toolchain files
+- PyTorch’s CMake configuration – discovered via the active Python interpreter
+
+During the first build CMake generates the native build tree under
+`torch_ttnn/cpp_extension/build/*`. Subsequent installs reuse the existing build
+artifacts unless the directory is removed manually.
+
+## 4. Running the C++ tests
+
+Still inside the tt-metal virtual environment:
+
+```bash
+python -m pytest tests/cpp_extension/test_bert_cpp_extension.py -v
+```
+
+The tests link against the libraries installed in the virtual environment. If
+the runtime loader cannot locate a dependency, append the tt-metal library
+folders to `LD_LIBRARY_PATH`:
+
+```bash
+export LD_LIBRARY_PATH="${TT_METAL_HOME}/build/lib:${TT_METAL_HOME}/build_Release/lib:${LD_LIBRARY_PATH:-}"
+```
+
+## 5. Rebuilding
+
+Whenever you change C++ sources, re-run `pip install -e .[dev]`. The editable
+install rebuilds the extension in place. To force a fully fresh build, delete
+`torch_ttnn/cpp_extension/build` before reinstalling.
+
+## 6. Troubleshooting
+
+- Ensure the virtual environment created by `create_venv.sh` is active while
+  building pytorch2.0_ttnn. Mixing Python interpreters can result in ABI
+  mismatches.
+- Verify that `TT_METAL_HOME` points to the freshly built tt-metal checkout.
+- If `find_package(Torch)` fails, confirm that PyTorch is installed inside the
+  virtual environment (`python -c "import torch; print(torch.__version__)"`).
+- Use `CMAKE_ARGS="-DCMAKE_BUILD_TYPE=Debug" python -m pip install -e .` to
+  override the default Release configuration during iterative debugging.
+
+For additional context see the CI configuration in
+[.github/workflows/run-cpp-native-tests.yaml](.github/workflows/run-cpp-native-tests.yaml),
+which implements the exact same sequence.
