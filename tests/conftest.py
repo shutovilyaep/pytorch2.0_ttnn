@@ -87,11 +87,21 @@ def device(request):
 
         ttnn.synchronize_device(device)
         ttnn.close_mesh_device(device)
+
+        # Explicit cleanup AFTER closing device to avoid double free issues in tt-metal 0.60.1
+        # The static pointer in TtnnGuard holds a reference to the device,
+        # and closing it while references still exist can cause double free errors
+        # Calling gc.collect() after close helps ensure all Python references are cleared
+        import gc
+
+        gc.collect()  # Force Python garbage collection to clear tensor references
     else:
         device_id = 0
 
-        device = ttnn.open_device(
-            device_id=device_id, dispatch_core_config=dispatch_core_config, l1_small_size=l1_small_size
+        # Use mesh_device even for single device (recommended in tt-metal)
+        # This may help avoid double free issues in tt-metal 0.60.1
+        device = ttnn.open_mesh_device(
+            ttnn.MeshShape(1, 1), dispatch_core_config=dispatch_core_config, l1_small_size=l1_small_size
         )
 
         device.enable_program_cache()
@@ -101,7 +111,15 @@ def device(request):
         yield device
 
         ttnn.synchronize_device(device)
-        ttnn.close_device(device)
+        ttnn.close_mesh_device(device)
+
+        # Explicit cleanup AFTER closing device to avoid double free issues in tt-metal 0.60.1
+        # The static pointer in TtnnGuard holds a reference to the device,
+        # and closing it while references still exist can cause double free errors
+        # Calling gc.collect() after close helps ensure all Python references are cleared
+        import gc
+
+        gc.collect()  # Force Python garbage collection to clear tensor references
 
 
 def get_dispatch_core_type():
