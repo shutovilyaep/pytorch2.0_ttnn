@@ -27,7 +27,7 @@ on:
         description: 'TTSim version to use'
         required: false
         type: string
-        default: 'v1.3.5'
+        default: 'v1.3.6'
       arch:
         description: 'Target architecture for TTSim'
         required: false
@@ -124,7 +124,7 @@ jobs:
       - name: Download TTSim binary
         run: |
           set -euxo pipefail
-          TTSIM_VERSION="${{ inputs.ttsim_version || 'v1.3.5' }}"
+          TTSIM_VERSION="${{ inputs.ttsim_version || 'v1.3.6' }}"
           ASSET_NAME="${{ steps.ttsim-asset.outputs.asset_name }}"
           
           mkdir -p /tmp/ttsim-download
@@ -197,7 +197,7 @@ jobs:
           echo "TT_METAL_SIMULATOR=$TT_METAL_SIMULATOR"
           echo "TT_METAL_SLOW_DISPATCH_MODE=$TT_METAL_SLOW_DISPATCH_MODE"
           echo "Architecture: ${{ inputs.arch || 'wormhole_b0' }}"
-          echo "TTSim Version: ${{ inputs.ttsim_version || 'v1.3.5' }}"
+          echo "TTSim Version: ${{ inputs.ttsim_version || 'v1.3.6' }}"
           ls -la $TT_METAL_SIMULATOR_HOME/
           file $TT_METAL_SIMULATOR || echo "Warning: Could not determine file type"
           echo "=========================================="

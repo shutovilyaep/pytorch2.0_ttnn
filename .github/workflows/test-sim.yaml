@@ -7,7 +7,7 @@ on:
         description: 'TTSim version to use'
         required: false
         type: string
-        default: 'v1.3.5'
+        default: 'v1.3.6'
       arch:
         description: 'Target architecture'
         required: false
@@ -45,7 +45,7 @@ jobs:
           echo "=========================================="
           echo "TTSim Simulator Test Parameters"
           echo "=========================================="
-          echo "ttsim_version: ${{ inputs.ttsim_version || 'v1.3.5' }}"
+          echo "ttsim_version: ${{ inputs.ttsim_version || 'v1.3.6' }}"
           echo "arch: ${{ inputs.arch || 'wormhole_b0' }}"
           echo "TT_METAL_SIMULATOR_HOME: $TT_METAL_SIMULATOR_HOME"
           echo "TT_METAL_SIMULATOR: $TT_METAL_SIMULATOR"
@@ -98,7 +98,7 @@ jobs:
         uses: robinraju/release-downloader@daf26c55d821e836577a15f77d86ddc078948b05
         with:
           repository: tenstorrent/ttsim
-          tag: ${{ inputs.ttsim_version || 'v1.3.5' }}
+          tag: ${{ inputs.ttsim_version || 'v1.3.6' }}
           fileName: ${{ steps.ttsim-asset.outputs.asset_name }}
           out-file-path: /tmp/ttsim-download
 
@@ -179,5 +179,5 @@ jobs:
           echo "TTSim Test Summary"
           echo "=========================================="
           echo "Architecture: ${{ inputs.arch || 'wormhole_b0' }}"
-          echo "TTSim Version: ${{ inputs.ttsim_version || 'v1.3.5' }}"
+          echo "TTSim Version: ${{ inputs.ttsim_version || 'v1.3.6' }}"
           echo "=========================================="
