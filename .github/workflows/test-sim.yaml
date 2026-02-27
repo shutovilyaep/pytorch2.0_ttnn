@@ -1,4 +1,11 @@
-name: "Simulator Tests (TTSim)"
+name: "Simulator Tests (TTSim) [DISABLED]"
+
+# DISABLED: TTSim/UMD version incompatibility
+# The tt-metal UMD requires 'libttsim_tensix_reset_deassert' symbol which TTSim v1.3.6
+# doesn't export yet. This workflow is disabled until a compatible TTSim version is released.
+# See: https://github.com/tenstorrent/tt-umd/pull/1250 (UMD change requiring new symbol)
+#
+# To re-enable: uncomment the 'on:' triggers below and remove this comment block.
 
 on:
   workflow_dispatch:
@@ -16,9 +23,10 @@ on:
           - wormhole_b0
           - blackhole
         default: 'wormhole_b0'
-  pull_request:
-    types: [opened, synchronize, reopened]
-    branches: ["main"]
+  # DISABLED: pull_request trigger - TTSim doesn't support current UMD API
+  # pull_request:
+  #   types: [opened, synchronize, reopened]
+  #   branches: ["main"]
 
 permissions:
   actions: read
