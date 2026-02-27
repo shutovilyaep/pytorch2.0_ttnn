@@ -1,11 +1,11 @@
-name: "Simulator Tests (TTSim) [DISABLED]"
+name: "Simulator Tests (TTSim) [SHIM WORKAROUND]"
 
-# DISABLED: TTSim/UMD version incompatibility
-# The tt-metal UMD requires 'libttsim_tensix_reset_deassert' symbol which TTSim v1.3.6
-# doesn't export yet. This workflow is disabled until a compatible TTSim version is released.
-# See: https://github.com/tenstorrent/tt-umd/pull/1250 (UMD change requiring new symbol)
+# WORKAROUND: TTSim/UMD version incompatibility
+# TTSim v1.3.6 doesn't export 'libttsim_tensix_reset_deassert' and 'libttsim_tensix_reset_assert'
+# symbols required by UMD. This workflow uses a shim library to provide no-op stubs.
 #
-# To re-enable: uncomment the 'on:' triggers below and remove this comment block.
+# UGLY WORKAROUND - Remove when Tenstorrent fixes TTSim!
+# Tracking issue: https://github.com/tenstorrent/ttsim/issues/4
 
 on:
   workflow_dispatch:
@@ -23,10 +23,13 @@ on:
           - wormhole_b0
           - blackhole
         default: 'wormhole_b0'
-  # DISABLED: pull_request trigger - TTSim doesn't support current UMD API
-  # pull_request:
-  #   types: [opened, synchronize, reopened]
-  #   branches: ["main"]
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: ["main"]
+    paths:
+      - 'torch_ttnn/cpp_extension/**'
+      - 'tests/cpp_extension/**'
+      - '.github/workflows/test-sim.yaml'
 
 permissions:
   actions: read
@@ -41,6 +44,7 @@ env:
   TT_METAL_SIMULATOR_HOME: /tmp/ttsim
   TT_METAL_SIMULATOR: /tmp/ttsim/libttsim.so
   TT_METAL_SLOW_DISPATCH_MODE: 1
+  TTSIM_SHIM_REAL_LIB: /tmp/ttsim/libttsim_real.so
   PYTHONPATH: ${{ github.workspace }}
   PIP_CACHE_DIR: /tmp/pip_cache
 
@@ -52,6 +56,9 @@ jobs:
         run: |
           echo "=========================================="
           echo "TTSim Simulator Test Parameters"
+          echo "=========================================="
+          echo "⚠️  USING SHIM WORKAROUND - TTSim missing symbols"
+          echo "Issue: https://github.com/tenstorrent/ttsim/issues/4"
           echo "=========================================="
           echo "ttsim_version: ${{ inputs.ttsim_version || 'v1.3.6' }}"
           echo "arch: ${{ inputs.arch || 'wormhole_b0' }}"
@@ -110,14 +117,35 @@ jobs:
           fileName: ${{ steps.ttsim-asset.outputs.asset_name }}
           out-file-path: /tmp/ttsim-download
 
-      - name: Install TTSim
+      - name: Install TTSim with shim workaround
         run: |
+          echo "=========================================="
+          echo "⚠️  UGLY WORKAROUND: Building TTSim shim"
+          echo "Issue: https://github.com/tenstorrent/ttsim/issues/4"
+          echo "=========================================="
+          
           mkdir -p $TT_METAL_SIMULATOR_HOME
-          mv /tmp/ttsim-download/${{ steps.ttsim-asset.outputs.asset_name }} $TT_METAL_SIMULATOR_HOME/libttsim.so
+          
+          # Move real TTSim to libttsim_real.so
+          mv /tmp/ttsim-download/${{ steps.ttsim-asset.outputs.asset_name }} $TT_METAL_SIMULATOR_HOME/libttsim_real.so
+          
+          # Copy SOC descriptor
           cp $TT_METAL_HOME/tt_metal/soc_descriptors/${{ steps.ttsim-asset.outputs.soc_desc }} $TT_METAL_SIMULATOR_HOME/soc_descriptor.yaml
           
-          echo "TTSim installed:"
+          # Build the shim library
+          echo "Building TTSim shim library..."
+          cd torch_ttnn/cpp_extension/ttsim_shim
+          ./build_shim.sh $TT_METAL_SIMULATOR_HOME
+          
+          # Rename shim to libttsim.so (what UMD expects)
+          mv $TT_METAL_SIMULATOR_HOME/libttsim_shim.so $TT_METAL_SIMULATOR_HOME/libttsim.so
+          
+          echo ""
+          echo "TTSim installation with shim:"
           ls -la $TT_METAL_SIMULATOR_HOME/
+          echo ""
+          echo "Verifying shim exports missing symbols:"
+          nm -D $TT_METAL_SIMULATOR_HOME/libttsim.so | grep tensix_reset || echo "ERROR: Shim missing tensix_reset symbols!"
 
       - name: Setup Python 3.10
         uses: actions/setup-python@v5
@@ -149,20 +177,27 @@ jobs:
           echo "Verifying TTSim environment..."
           echo "TT_METAL_SIMULATOR_HOME=$TT_METAL_SIMULATOR_HOME"
           echo "TT_METAL_SIMULATOR=$TT_METAL_SIMULATOR"
+          echo "TTSIM_SHIM_REAL_LIB=$TTSIM_SHIM_REAL_LIB"
           ls -la $TT_METAL_SIMULATOR_HOME/
           
           # Check if libttsim.so is a valid shared library
           file $TT_METAL_SIMULATOR || echo "Warning: Could not determine file type"
+          
+          # Verify shim has the required symbols
+          echo ""
+          echo "Shim exported symbols:"
+          nm -D $TT_METAL_SIMULATOR | grep libttsim
 
       - name: Run basic import test
         run: |
-          # Test that ttnn can be imported (will use simulator)
+          # Test that ttnn can be imported (will use simulator via shim)
           python3 -c "
           import os
           print('Environment variables:')
           print(f'  TT_METAL_SIMULATOR_HOME={os.environ.get(\"TT_METAL_SIMULATOR_HOME\", \"not set\")}')
           print(f'  TT_METAL_SIMULATOR={os.environ.get(\"TT_METAL_SIMULATOR\", \"not set\")}')
           print(f'  TT_METAL_SLOW_DISPATCH_MODE={os.environ.get(\"TT_METAL_SLOW_DISPATCH_MODE\", \"not set\")}')
+          print(f'  TTSIM_SHIM_REAL_LIB={os.environ.get(\"TTSIM_SHIM_REAL_LIB\", \"not set\")}')
           
           try:
               import ttnn
@@ -185,6 +220,9 @@ jobs:
         run: |
           echo "=========================================="
           echo "TTSim Test Summary"
+          echo "=========================================="
+          echo "⚠️  USING SHIM WORKAROUND"
+          echo "Issue: https://github.com/tenstorrent/ttsim/issues/4"
           echo "=========================================="
           echo "Architecture: ${{ inputs.arch || 'wormhole_b0' }}"
           echo "TTSim Version: ${{ inputs.ttsim_version || 'v1.3.6' }}"
