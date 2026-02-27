@@ -1,4 +1,4 @@
-name: "C++ Extension Tests"
+name: "C++ Extension Tests (TTSim)"
 
 on:
   push:
@@ -21,35 +21,48 @@ on:
         type: string
         # Using tt-metal Docker image instead of building pytorch2.0_ttnn images
         # Rationale: tt-metal images are public and provide all needed dependencies
-        # pytorch2.0_ttnn images require authentication and are built on top of tt-metal
         # PINNED to specific digest for reproducibility (Nov 18, 2025)
-        # Digest from: docker manifest inspect --verbose ghcr.io/tenstorrent/tt-metal/tt-metalium/ubuntu-22.04-ci-test-amd64:latest
-        # To update: Get new digest and update the sha256 hash below
         default: "ghcr.io/tenstorrent/tt-metal/tt-metalium/ubuntu-22.04-ci-test-amd64@sha256:104b062b1942b398902884d6340a9695fbfcd4ffe6fb5a59f3d6363c499e7fce"
+      ttsim_version:
+        description: 'TTSim version to use'
+        required: false
+        type: string
+        default: 'v1.3.5'
+      arch:
+        description: 'Target architecture for TTSim'
+        required: false
+        type: choice
+        options:
+          - wormhole_b0
+          - blackhole
+        default: 'wormhole_b0'
 
 jobs:
   cpp-extension-tests:
-    runs-on: ["in-service", "nfs"]
+    # Run on standard GitHub runners with TTSim simulator (no TT hardware required)
+    runs-on: ubuntu-22.04
     container:
-      # Using tt-metal public Docker image (not building pytorch2.0_ttnn images)
-      # Pinned to specific digest for reproducibility and project freeze (Nov 18, 2025)
-      # Rationale: Ensures consistent build environment across all CI runs and prevents
-      # unexpected breakages from upstream image updates. Manual override available via workflow_dispatch.
+      # Using tt-metal public Docker image (all dependencies pre-installed)
       image: ${{ github.event.inputs.docker_tag || 'ghcr.io/tenstorrent/tt-metal/tt-metalium/ubuntu-22.04-ci-test-amd64@sha256:104b062b1942b398902884d6340a9695fbfcd4ffe6fb5a59f3d6363c499e7fce' }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
       options: >-
-        --rm -v /dev/hugepages-1G:/dev/hugepages-1G --device /dev/tenstorrent
+        --rm
         -v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }}
-        -v /mnt/tt-metal-pytorch-cache/.cache:/root/.cache
     env:
-      CCACHE_DIR: /root/.cache/ccache
-      CPM_SOURCE_CACHE: /root/.cache/cpm
+      # Build cache (local to this run, no NFS)
+      CCACHE_DIR: /tmp/ccache
+      CPM_SOURCE_CACHE: /tmp/cpm
       CCACHE_BASEDIR: ${{ github.workspace }}
-      CCACHE_MAXSIZE: 30G
+      CCACHE_MAXSIZE: 5G
+      # Python environment
       PYTHON_ENV_DIR: ${{ github.workspace }}/torch_ttnn/cpp_extension/third-party/tt-metal/python_env
       TT_METAL_HOME: ${{ github.workspace }}/torch_ttnn/cpp_extension/third-party/tt-metal
+      # TTSim simulator configuration (replaces real hardware)
+      TT_METAL_SIMULATOR_HOME: /tmp/ttsim
+      TT_METAL_SIMULATOR: /tmp/ttsim/libttsim.so
+      TT_METAL_SLOW_DISPATCH_MODE: 1
     defaults:
       run:
         shell: bash
@@ -65,8 +78,8 @@ jobs:
         with:
           lfs: true
           fetch-depth: 0
-          submodules: recursive  # Let GitHub Actions handle all submodules
-          clean: true            # Clean working tree before checkout
+          submodules: recursive
+          clean: true
 
       - name: Configure git safe directories
         run: |
@@ -79,6 +92,49 @@ jobs:
           set -euxo pipefail
           git submodule update --init --recursive
       
+      - name: Determine TTSim asset name
+        id: ttsim-asset
+        run: |
+          set -euxo pipefail
+          arch="${{ inputs.arch || 'wormhole_b0' }}"
+          case "$arch" in
+            wormhole_b0)
+              echo "asset_name=libttsim_wh.so" >> "$GITHUB_OUTPUT"
+              echo "soc_desc=wormhole_b0_versim.yaml" >> "$GITHUB_OUTPUT"
+              ;;
+            blackhole)
+              echo "asset_name=libttsim_bh.so" >> "$GITHUB_OUTPUT"
+              echo "soc_desc=blackhole_simulation_1x2_arch.yaml" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Unknown architecture: $arch"
+              exit 1
+              ;;
+          esac
+
+      - name: Download TTSim binary
+        run: |
+          set -euxo pipefail
+          TTSIM_VERSION="${{ inputs.ttsim_version || 'v1.3.5' }}"
+          ASSET_NAME="${{ steps.ttsim-asset.outputs.asset_name }}"
+          
+          mkdir -p /tmp/ttsim-download
+          curl -L -o "/tmp/ttsim-download/${ASSET_NAME}" \
+            "https://github.com/tenstorrent/ttsim/releases/download/${TTSIM_VERSION}/${ASSET_NAME}"
+          
+          echo "Downloaded TTSim:"
+          ls -la /tmp/ttsim-download/
+
+      - name: Install TTSim
+        run: |
+          set -euxo pipefail
+          mkdir -p $TT_METAL_SIMULATOR_HOME
+          mv /tmp/ttsim-download/${{ steps.ttsim-asset.outputs.asset_name }} $TT_METAL_SIMULATOR_HOME/libttsim.so
+          cp $TT_METAL_HOME/tt_metal/soc_descriptors/${{ steps.ttsim-asset.outputs.soc_desc }} $TT_METAL_SIMULATOR_HOME/soc_descriptor.yaml
+          
+          echo "TTSim installed:"
+          ls -la $TT_METAL_SIMULATOR_HOME/
+
       - name: Install system dependencies
         run: |
           set -euxo pipefail
@@ -122,11 +178,26 @@ jobs:
             bash torch_ttnn/cpp_extension/build_cpp_extension.sh Release
           fi
       
+      - name: Verify TTSim setup
+        run: |
+          set -euxo pipefail
+          echo "=========================================="
+          echo "TTSim Environment Verification"
+          echo "=========================================="
+          echo "TT_METAL_SIMULATOR_HOME=$TT_METAL_SIMULATOR_HOME"
+          echo "TT_METAL_SIMULATOR=$TT_METAL_SIMULATOR"
+          echo "TT_METAL_SLOW_DISPATCH_MODE=$TT_METAL_SLOW_DISPATCH_MODE"
+          echo "Architecture: ${{ inputs.arch || 'wormhole_b0' }}"
+          echo "TTSim Version: ${{ inputs.ttsim_version || 'v1.3.5' }}"
+          ls -la $TT_METAL_SIMULATOR_HOME/
+          file $TT_METAL_SIMULATOR || echo "Warning: Could not determine file type"
+          echo "=========================================="
+
       - name: Run tests
         run: |
           set -euxo pipefail
           
-          # Run tests using the test runner script
+          # Run tests using the test runner script (TTSim will simulate the device)
           bash torch_ttnn/cpp_extension/run_cpp_extension_tests.sh
           
           # Show ccache statistics
@@ -146,7 +217,6 @@ jobs:
           # Clean and build wheel
           rm -rf dist/
           # Use --wheel to skip sdist creation and --no-isolation to access pre-built tt-metal
-          # (building sdist first copies to /tmp/ without build_Release/)
           python3 -m build --wheel --no-isolation
           
           # Show what was built
