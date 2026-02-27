@@ -67,6 +67,15 @@ jobs:
       run:
         shell: bash
     steps:
+      - name: Fix apt repository keys
+        run: |
+          set -euxo pipefail
+          # Fix expired Kitware GPG key in tt-metal Docker image
+          # Remove the problematic Kitware repository if it exists
+          rm -f /etc/apt/sources.list.d/kitware.list 2>/dev/null || true
+          # Alternative: update the key (if we need cmake from Kitware)
+          # wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+
       - name: Prepare checkout
         run: |
           set -euxo pipefail
