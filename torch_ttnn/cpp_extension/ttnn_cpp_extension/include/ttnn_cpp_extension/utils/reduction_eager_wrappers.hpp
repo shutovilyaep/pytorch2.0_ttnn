@@ -18,12 +18,12 @@ inline std::optional<std::variant<int, ttnn::SmallVector<int>>> to_ttnn_dim_vari
 template <auto Op>
 struct reduction_all {
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, c10::optional<at::ScalarType> dtype = c10::nullopt) {
-        at::Tensor out = make_empty_like_tt(a, dtype);
+        at::Tensor out = make_empty_like_ttnn(a, dtype);
         return invoke_into(a, dtype, out);
     }
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& in, c10::optional<at::ScalarType> dtype, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor a_tile = tilize(in);
         ttnn::Tensor result = Op(a_tile, std::nullopt, /*keepdim*/ false);
         if (dtype.has_value()) {
             result = ttnn::typecast(result, to_ttnn_dtype(*dtype));
@@ -35,11 +35,11 @@ struct reduction_all {
 template <auto Op>
 struct reduction_all_nodtype {
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& a) {
-        at::Tensor out = make_empty_like_tt(a);
+        at::Tensor out = make_empty_like_ttnn(a);
         return invoke_into(a, out);
     }
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor a_tile = tilize(in);
         ttnn::Tensor result = Op(a_tile, std::nullopt, /*keepdim*/ false);
         return write_from_ttnn(out, in, result);
     }
@@ -52,7 +52,7 @@ struct reduction_dimlist {
         c10::OptionalArrayRef<int64_t> dim,
         bool keepdim,
         c10::optional<at::ScalarType> dtype = c10::nullopt) {
-        at::Tensor out = make_empty_like_tt(a, dtype);
+        at::Tensor out = make_empty_like_ttnn(a, dtype);
         return invoke_into(a, dim, keepdim, dtype, out);
     }
     [[nodiscard]] static at::Tensor& invoke_into(
@@ -61,7 +61,7 @@ struct reduction_dimlist {
         bool keepdim,
         c10::optional<at::ScalarType> dtype,
         at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor a_tile = tilize(in);
         std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_variant = to_ttnn_dim_variant(dim);
         ttnn::Tensor result = Op(a_tile, dim_variant, keepdim);
         if (dtype.has_value()) {
@@ -118,11 +118,11 @@ struct reduction_dimlist {
 template <auto Op>
 struct reduction_all_unbiased {
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, bool unbiased = false) {
-        at::Tensor out = make_empty_like_tt(a);
+        at::Tensor out = make_empty_like_ttnn(a);
         return invoke_into(a, unbiased, out);
     }
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, bool unbiased, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor a_tile = tilize(in);
         ttnn::Tensor result = Op(a_tile, std::nullopt, /*keepdim*/ false, std::nullopt, std::nullopt, 1.0f, unbiased);
         return write_from_ttnn(out, in, result);
     }
@@ -133,7 +133,7 @@ template <auto Op>
 struct reduction_dimlist_unbiased_out {
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& in, c10::OptionalArrayRef<int64_t> dim, bool unbiased, bool keepdim, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor a_tile = tilize(in);
         std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_variant = to_ttnn_dim_variant(dim);
         ttnn::Tensor result = Op(a_tile, dim_variant, keepdim, std::nullopt, std::nullopt, 1.0f, unbiased);
         return write_from_ttnn(out, in, result);
@@ -154,7 +154,7 @@ struct reduction_dimlist_correction {
         c10::OptionalArrayRef<int64_t> dim,
         const c10::optional<c10::Scalar>& correction,
         bool keepdim) {
-        at::Tensor out = make_empty_like_tt(a);
+        at::Tensor out = make_empty_like_ttnn(a);
         return invoke_into(a, dim, correction, keepdim, out);
     }
     [[nodiscard]] static at::Tensor& invoke_into(
@@ -164,7 +164,7 @@ struct reduction_dimlist_correction {
         bool keepdim,
         at::Tensor& out) {
         const bool unbiased = to_unbiased(correction);
-        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor a_tile = tilize(in);
         std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_variant = to_ttnn_dim_variant(dim);
         ttnn::Tensor result = Op(a_tile, dim_variant, keepdim, std::nullopt, std::nullopt, 1.0f, unbiased);
         return write_from_ttnn(out, in, result);
@@ -264,19 +264,19 @@ struct reduction_dimlist_with_names : reduction_dimlist<Op> {
 template <auto ReduceOp, auto ArgOp>
 struct reduction_dim_pair {
     [[nodiscard]] static std::tuple<at::Tensor, at::Tensor> invoke(const at::Tensor& a, int64_t dim, bool keepdim) {
-        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor a_tile = tilize(a);
         auto dim_variant = std::optional<std::variant<int, ttnn::SmallVector<int>>>(static_cast<int>(dim));
         ttnn::Tensor v_tt = ReduceOp(a_tile, dim_variant, keepdim);
         ttnn::Tensor i_tt = ArgOp(a_tile, static_cast<int64_t>(dim), /*all=*/false);
-        at::Tensor v_out = make_empty_like_tt(a);
-        at::Tensor i_out = make_empty_like_tt(a, at::kInt);
+        at::Tensor v_out = make_empty_like_ttnn(a);
+        at::Tensor i_out = make_empty_like_ttnn(a, at::kInt);
         write_from_ttnn(v_out, a, v_tt);
         write_from_ttnn(i_out, a, i_tt);
         return {v_out, i_out};
     }
     [[nodiscard]] static std::tuple<at::Tensor&, at::Tensor&> invoke_into(
         const at::Tensor& a, int64_t dim, bool keepdim, at::Tensor& values_out, at::Tensor& indices_out) {
-        ttnn::Tensor a_tile = tileify(a);
+        ttnn::Tensor a_tile = tilize(a);
         auto dim_variant = std::optional<std::variant<int, ttnn::SmallVector<int>>>(static_cast<int>(dim));
         ttnn::Tensor v_tt = ReduceOp(a_tile, dim_variant, keepdim);
         ttnn::Tensor i_tt = ArgOp(a_tile, static_cast<int64_t>(dim), /*all=*/false);
@@ -345,12 +345,12 @@ template <auto Op>
 struct reduction_dimlist_unbiased {
     [[nodiscard]] static at::Tensor invoke(
         const at::Tensor& a, c10::OptionalArrayRef<int64_t> dim, bool unbiased, bool keepdim) {
-        at::Tensor out = make_empty_like_tt(a);
+        at::Tensor out = make_empty_like_ttnn(a);
         return invoke_into(a, dim, unbiased, keepdim, out);
     }
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& in, c10::OptionalArrayRef<int64_t> dim, bool unbiased, bool keepdim, at::Tensor& out) {
-        ttnn::Tensor a_tile = tileify(in);
+        ttnn::Tensor a_tile = tilize(in);
         std::optional<std::variant<int, ttnn::SmallVector<int>>> dim_variant = to_ttnn_dim_variant(dim);
         ttnn::Tensor result = Op(a_tile, dim_variant, keepdim, std::nullopt, std::nullopt, 1.0f, unbiased);
         return write_from_ttnn(out, in, result);
