@@ -81,14 +81,14 @@ template <auto Op>
     requires TTNNUnaryIntFn<Op>
 struct unary_tensor_int {
     [[nodiscard]] static at::Tensor invoke(const at::Tensor& a, const c10::Scalar& value) {
-        at::Tensor out = tt_eager::ext::make_empty_like_tt(a);
+        at::Tensor out = tt_eager::ext::make_empty_like_ttnn(a);
         return invoke_into(a, value, out);
     }
     [[nodiscard]] static at::Tensor& invoke_inplace(at::Tensor& self, const c10::Scalar& value) {
         return invoke_into(self, value, self);
     }
     [[nodiscard]] static at::Tensor& invoke_into(const at::Tensor& in, const c10::Scalar& value, at::Tensor& out) {
-        ttnn::Tensor a_tile = tt_eager::ext::tileify(in);
+        ttnn::Tensor a_tile = tt_eager::ext::tilize(in);
         int32_t v = static_cast<int32_t>(value.toLong());
         ttnn::Tensor result = Op(a_tile, v);
         return tt_eager::ext::write_from_ttnn(out, in, result);
