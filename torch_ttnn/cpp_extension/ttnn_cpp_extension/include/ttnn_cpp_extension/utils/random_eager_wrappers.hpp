@@ -29,7 +29,7 @@ template <auto Op>
 struct unary_random_seeded {
     [[nodiscard]] static at::Tensor invoke(
         const at::Tensor& input, c10::optional<at::Generator> generator = c10::nullopt) {
-        at::Tensor out = tt_eager::ext::make_empty_like_tt(input);
+        at::Tensor out = tt_eager::ext::make_empty_like_ttnn(input);
         return invoke_into(input, generator, out);
     }
     [[nodiscard]] static at::Tensor& invoke_inplace(
@@ -38,7 +38,7 @@ struct unary_random_seeded {
     }
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& input, c10::optional<at::Generator> generator, at::Tensor& out) {
-        ttnn::Tensor in_tile = tt_eager::ext::tileify(input);
+        ttnn::Tensor in_tile = tt_eager::ext::tilize(input);
         static thread_local std::mt19937 rng(std::random_device{}());
         uint32_t seed = generator.has_value() ? static_cast<uint32_t>(generator.value().current_seed()) : rng();
         ttnn::Tensor result = Op(in_tile, seed, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
@@ -56,7 +56,7 @@ struct unary_random_uniform {
     }
     [[nodiscard]] static at::Tensor& invoke_into(
         const at::Tensor& input, double from, double to, c10::optional<at::Generator> generator, at::Tensor& out) {
-        ttnn::Tensor in_tile = tt_eager::ext::tileify(input);
+        ttnn::Tensor in_tile = tt_eager::ext::tilize(input);
         static thread_local std::mt19937 rng(std::random_device{}());
         uint32_t seed = generator.has_value() ? static_cast<uint32_t>(generator.value().current_seed()) : rng();
         const float low = static_cast<float>(from);
@@ -109,7 +109,7 @@ struct random_like_rand {
         return (src.dtype() == ttnn::DataType::BFLOAT16) ? src : ttnn::typecast(src, ttnn::DataType::BFLOAT16);
     }
     static at::Tensor& fill(at::Tensor& self, double low, double high, bool is_int, c10::optional<at::Generator> gen) {
-        ttnn::Tensor like = tt_eager::ext::tileify(self);
+        ttnn::Tensor like = tt_eager::ext::tilize(self);
         uint32_t seed = seed_of(gen);
         ttnn::Tensor rnd = sample_f32_like(like, low, high, seed);
         ttnn::Tensor out_tt = cast_after_sampling(rnd, self.scalar_type(), is_int);
