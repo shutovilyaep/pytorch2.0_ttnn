@@ -134,11 +134,11 @@ struct conv2d_aten {
         TORCH_CHECK(
             !bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
 
-        ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
-        ttnn::Tensor w_tt = tt_eager::ext::tileify(weight);
+        ttnn::Tensor in_tt = tt_eager::ext::tilize(input);
+        ttnn::Tensor w_tt = tt_eager::ext::tilize(weight);
         std::optional<ttnn::Tensor> bias_local = std::nullopt;
         if (bias.has_value()) {
-            bias_local = tt_eager::ext::tileify(*bias);
+            bias_local = tt_eager::ext::tilize(*bias);
         }
 
         const int64_t N = input.size(0);
@@ -234,11 +234,11 @@ struct conv1d_aten {
         TORCH_CHECK(
             !bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
 
-        ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
-        ttnn::Tensor w_tt = tt_eager::ext::tileify(weight);
+        ttnn::Tensor in_tt = tt_eager::ext::tilize(input);
+        ttnn::Tensor w_tt = tt_eager::ext::tilize(weight);
         std::optional<ttnn::Tensor> bias_local = std::nullopt;
         if (bias.has_value()) {
-            bias_local = tt_eager::ext::tileify(*bias);
+            bias_local = tt_eager::ext::tilize(*bias);
         }
 
         const int64_t N = input.size(0);
@@ -320,11 +320,11 @@ struct conv_transpose2d_aten {
         TORCH_CHECK(
             !bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
 
-        ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
-        ttnn::Tensor w_tt = tt_eager::ext::tileify(weight);
+        ttnn::Tensor in_tt = tt_eager::ext::tilize(input);
+        ttnn::Tensor w_tt = tt_eager::ext::tilize(weight);
         std::optional<ttnn::Tensor> bias_local = std::nullopt;
         if (bias.has_value()) {
-            bias_local = tt_eager::ext::tileify(*bias);
+            bias_local = tt_eager::ext::tilize(*bias);
         }
 
         const int64_t N = input.size(0);
@@ -412,11 +412,11 @@ struct conv3d_aten {
         TORCH_CHECK(
             !bias.has_value() || bias->device().type() == c10::DeviceType::PrivateUse1, "bias must be on TTNN device");
 
-        ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
-        ttnn::Tensor w_tt = tt_eager::ext::tileify(weight);
+        ttnn::Tensor in_tt = tt_eager::ext::tilize(input);
+        ttnn::Tensor w_tt = tt_eager::ext::tilize(weight);
         std::optional<ttnn::Tensor> b_tt = std::nullopt;
         if (bias.has_value()) {
-            b_tt = tt_eager::ext::tileify(*bias);
+            b_tt = tt_eager::ext::tilize(*bias);
         }
 
         const int64_t N = input.size(0);
@@ -492,7 +492,7 @@ struct max_pool2d_aten {
         TORCH_CHECK(input.dim() == 4, "max_pool2d expects 4D input [N, C, H, W]");
         TORCH_CHECK(kernel_size.size() == 2, "max_pool2d: kernel_size must have 2 elements");
 
-        ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
+        ttnn::Tensor in_tt = tt_eager::ext::tilize(input);
         const int64_t N = input.size(0);
         const int64_t C = input.size(1);
         const int64_t H = input.size(2);
@@ -558,7 +558,7 @@ struct avg_pool2d_aten {
         TORCH_CHECK(input.dim() == 4, "avg_pool2d expects 4D input [N, C, H, W]");
         TORCH_CHECK(kernel_size.size() == 2, "avg_pool2d: kernel_size must have 2 elements");
 
-        ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
+        ttnn::Tensor in_tt = tt_eager::ext::tilize(input);
         const int64_t N = input.size(0);
         const int64_t C = input.size(1);
         const int64_t H = input.size(2);
@@ -621,7 +621,7 @@ struct adaptive_avg_pool2d_aten {
             output_size[0] == 1 && output_size[1] == 1,
             "adaptive_avg_pool2d currently supports only output_size=[1,1] on TTNN");
 
-        ttnn::Tensor in_tt = tt_eager::ext::tileify(input);
+        ttnn::Tensor in_tt = tt_eager::ext::tilize(input);
         ttnn::Tensor out_tt = ttnn::global_avg_pool2d(in_tt);
         at::Tensor out = tt_eager::ops::create::custom_empty_memory_format(
             {input.size(0), input.size(1), 1, 1},
