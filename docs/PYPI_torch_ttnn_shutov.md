@@ -22,7 +22,7 @@ Publication fix (channel change, not eager-op logic):
    (`tools/repack_ttnn_shutov_wheel.py`, SHA256-verified source wheel).
 2. Publish `ttnn-shutov` first.
 3. Publish `torch-ttnn-shutov` with `[pypi]` extra ->
-   `ttnn-shutov==0.62.0.dev20250916`.
+   `ttnn-shutov==0.62.0.dev20250916.post1`.
 
 ### Option A (not available today)
 
@@ -162,3 +162,5 @@ Why order matters:
 - `torch-ttnn-shutov[pypi]` depends on `ttnn-shutov`.
 - Publishing `torch-ttnn-shutov` before `ttnn-shutov` creates a broken public install.
 - Production PyPI versions cannot be overwritten after upload.
+
+TestPyPI and production PyPI also **never** allow re-uploading the same wheel filename, even if you delete the release. If an upload fails or you need a retry, bump `DEFAULT_PUBLISH_VERSION` in `tools/repack_ttnn_shutov_wheel.py` and `VERSION` for `torch-ttnn-shutov` instead of deleting and re-uploading the same version. See https://test.pypi.org/help/#file-name-reuse

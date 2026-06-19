@@ -44,7 +44,7 @@ dependencies = [
 # Runtime ttnn comes from the ttnn-shutov distribution (import name stays ttnn).
 # NOTE: This line is automatically updated by .github/workflows/update-ttnn-wheel.yaml
 pypi = [
-    "ttnn-shutov==0.62.0.dev20250916 ; python_version==\"3.10\"",
+    "ttnn-shutov==0.62.0.dev20250916.post1 ; python_version==\"3.10\"",
 ]
 
 dev = [
