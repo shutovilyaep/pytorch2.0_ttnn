@@ -12,6 +12,7 @@
 #include "ttnn_cpp_extension/utils/binary_eager_register.hpp"
 #include "ttnn_cpp_extension/utils/conv_pool_eager_register.hpp"
 #include "ttnn_cpp_extension/utils/random_eager_register.hpp"
+#include "ttnn_cpp_extension/utils/reduction_eager_register.hpp"
 
 #include <ttnn/operations/eltwise/unary/unary.hpp>
 #include <ttnn/operations/eltwise/unary/unary_composite.hpp>
@@ -57,6 +58,7 @@ TORCH_LIBRARY_IMPL(aten, PrivateUse1, m) {
     register_binary_ops(m);
     register_conv_and_pool_ops(m);
     register_random_ops(m);
+    register_reductions(m);
 }
 
 // This macro registers helper functions associated with the ttnn_device_mode module that can be used in Python
