@@ -30,12 +30,12 @@ jobs:
       - name: Update pyproject.toml
         id: update-pyproject
         run: |
-          latest_release=${{ steps.fetch_release.outputs.release }}
-          ttnn_line="ttnn @ ${{ env.repo_url }}${latest_release} ; python_version==\"3.10\""
+          latest_release_short=${{ steps.fetch_release.outputs.release_short }}
+          ttnn_line="ttnn-shutov==${latest_release_short} ; python_version==\"3.10\""
           
-          # Update pyproject.toml in the [pypi] optional dependencies section
-          # The ttnn line is the first line after 'pypi = ['
+          # Fork publish path uses PyPI-compliant ttnn-shutov pin, not direct URL.
           sed -i '/^pypi = \[/,/^\]/ {
+            s|^    "ttnn-shutov== .*|    "'"${ttnn_line}"'",|
             s|^    "ttnn @ .*|    "'"${ttnn_line}"'",|
           }' pyproject.toml
           
