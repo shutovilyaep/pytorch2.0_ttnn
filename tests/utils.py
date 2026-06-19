@@ -1,12 +1,21 @@
 # SPDX-FileCopyrightText: © 2025 Tenstorrent AI ULC
 #
 # SPDX-License-Identifier: Apache-2.0
+# Deferred annotations let this module import without ttnn (used by ttnn-free tool tests).
+from __future__ import annotations
+
 import math
 import torch
 import numpy as np
 import re
 import requests
-import ttnn
+
+try:
+    import ttnn
+except ModuleNotFoundError:
+    # ttnn is optional: the pure-Python helpers here (accuracy, pcc, input rendering)
+    # are exercised by tool tests that run in environments without the ttnn runtime.
+    ttnn = None
 from os import path, makedirs
 from collections.abc import Mapping, Sequence
 from typing import List, Dict, Tuple, Union
@@ -380,16 +389,19 @@ def comp_ulp(golden, calculated, ulp_threshold, allow_nonfinite=False):
 
 
 # Dictionaries for converting dtypes
-tt_dtype_to_torch_dtype = {
-    ttnn.uint8: torch.uint8,
-    ttnn.uint16: torch.int16,
-    ttnn.uint32: torch.int32,
-    ttnn.int32: torch.int32,
-    ttnn.float32: torch.float,
-    ttnn.bfloat16: torch.bfloat16,
-    ttnn.bfloat8_b: torch.float,
-    ttnn.bfloat4_b: torch.float,
-}
+if ttnn is not None:
+    tt_dtype_to_torch_dtype = {
+        ttnn.uint8: torch.uint8,
+        ttnn.uint16: torch.int16,
+        ttnn.uint32: torch.int32,
+        ttnn.int32: torch.int32,
+        ttnn.float32: torch.float,
+        ttnn.bfloat16: torch.bfloat16,
+        ttnn.bfloat8_b: torch.float,
+        ttnn.bfloat4_b: torch.float,
+    }
+else:
+    tt_dtype_to_torch_dtype = {}
 
 
 def assert_with_ulp(
