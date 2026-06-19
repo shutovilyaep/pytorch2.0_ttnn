@@ -227,7 +227,8 @@ jobs:
     name: >-
       Publish pytorch-ttnn to PyPI
     needs: [build-wheel, test-wheel-lowering, test-wheel-model]
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.wheel_type == 'release'}}
+    # Deprecated: superseded by release-torch-ttnn-shutov.yaml (torch-ttnn-shutov naming).
+    if: ${{ false }}
     runs-on: ubuntu-latest
     environment:
       name: pypi
