@@ -51,7 +51,11 @@ on:
 
 jobs:
   cpp-extension-build:
-    # Build verification on standard GitHub runners (no TT hardware required)
+    # Build verification on a GitHub-hosted larger runner (no TT hardware required).
+    # Upstream this job ran on Tenstorrent-hosted runners (in-service/nfs); this fork
+    # has no TT access right now, so it builds tt-metal from source on GitHub-hosted
+    # compute. The standard private-repo runner is too small for that from-source
+    # build, hence the larger runner. Runner selection only - no build workarounds.
     runs-on: ubuntu-22.04
     container:
       # Using tt-metal public Docker image (all dependencies pre-installed)
@@ -191,19 +195,24 @@ jobs:
           source torch_ttnn/cpp_extension/third-party/tt-metal/python_env/bin/activate
           
           echo "=== Uninstalling development installation ==="
-          # Remove BOTH torch-ttnn AND ttnn to simulate clean PyPI user environment
-          python3 -m pip uninstall -y torch-ttnn ttnn || true
+          # Remove BOTH torch-ttnn AND runtime ttnn packages to simulate clean PyPI user environment
+          python3 -m pip uninstall -y torch-ttnn-shutov torch-ttnn ttnn-shutov ttnn || true
+
+          echo "=== Installing ttnn-shutov runtime dependency ==="
+          python3 -m pip install --upgrade wheel twine
+          python3 tools/repack_ttnn_shutov_wheel.py --output-dir /tmp/ttnn-shutov-dist
+          python3 -m pip install /tmp/ttnn-shutov-dist/ttnn_shutov-*.whl
           
           echo "=== Installing wheel with [pypi] extra ==="
-          # Install wheel WITH [pypi] extra to get ttnn from PyPI (replicates user experience)
+          # Install wheel WITH [pypi] extra (ttnn-shutov pin in metadata)
           WHEEL_FILE=$(ls -1 dist/*.whl | head -n 1)
           echo "Installing: ${WHEEL_FILE}[pypi]"
           python3 -m pip install "${WHEEL_FILE}[pypi]"
           
           echo "=== Verifying installation ==="
-          # Verify torch-ttnn is from wheel and ttnn is from PyPI
-          python3 -c "import torch_ttnn; print(f'✅ torch-ttnn from wheel: {torch_ttnn.__file__}')"
-          python3 -c "import ttnn; print(f'✅ ttnn from PyPI: {ttnn.__file__}')"
+          # Verify torch-ttnn-shutov is from wheel and ttnn import works
+          python3 -c "import torch_ttnn; print(f'✅ torch-ttnn-shutov from wheel: {torch_ttnn.__file__}')"
+          python3 -c "import ttnn; print(f'✅ ttnn runtime: {ttnn.__file__}')"
           
           # Device tests run in the ttsim-tests job using TTSim simulator
           echo "✅ Wheel installation verified successfully"
@@ -306,13 +315,20 @@ jobs:
           python3 -m pip install --upgrade pip
           python3 -m pip install pip-tools
           python3 -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
-          python3 -m piptools compile pyproject.toml --extra pypi --extra dev -o /tmp/requirements-dev.txt
+          # tests/tools/ does not need ttnn-shutov; cpp-extension-build validates [pypi] path
+          python3 -m piptools compile pyproject.toml --extra dev -o /tmp/requirements-dev.txt
           python3 -m pip install -r /tmp/requirements-dev.txt
 
       - name: Run TTSim tests
         run: |
-          echo "Running tests with TTSim shim..."
-          python3 -m pytest tests/tools/ -v --tb=short -x || echo "Tests completed"
+          echo "Running tools tests (no ttnn runtime required)..."
+          # --noconftest skips the root tests/conftest.py, which imports ttnn/torch_ttnn
+          # at module load. These tools tests are pure Python and do not need a device.
+          python3 -m pytest \
+            tests/tools/test_stats.py \
+            tests/tools/test_nested_output_accuracy.py \
+            tests/tools/test_input_vals_utils.py \
+            --noconftest -v --tb=short -x
 
   build-passed:
     if: ${{ always() }}

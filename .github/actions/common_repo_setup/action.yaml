@@ -116,17 +116,7 @@ runs:
       shell: bash -e -o pipefail -u -x {0}
       run: |
         df -h
-        python3 -m pip install --upgrade pip                    
-        python3 -m pip install pip-tools
-        python3 -m pip config set global.extra-index-url https://download.pytorch.org/whl/cpu
-        
-        # Compile dependencies from pyproject.toml without building the package
-        # This extracts all dependencies (base + pypi + dev extras) to a requirements file
-        python3 -m piptools compile pyproject.toml --extra pypi --extra dev -o /tmp/requirements-dev.txt
-        
-        # Install dependencies from the compiled requirements file
-        python3 -m pip install -r /tmp/requirements-dev.txt
-        
+        bash tools/ci_install_pypi_deps.sh
         python3 -m pip install pytest-github-report
         df -h
 

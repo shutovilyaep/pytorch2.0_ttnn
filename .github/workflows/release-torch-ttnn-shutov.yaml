@@ -1,0 +1,224 @@
+name: "Release torch-ttnn-shutov (fork, no HW runners)"
+run-name: "Release torch-ttnn-shutov (${{ inputs.wheel_type }} -> ${{ inputs.publish_target }})"
+
+# Fork-adapted from build-test-release-wheel.yaml:
+# - runs-on: ubuntu-22.04 + public tt-metal CI container (same as run-cpp-native-tests.yaml)
+# - no Tenstorrent hardware mounts (/dev/tenstorrent, hugepages NFS cache)
+# - distribution name: torch-ttnn-shutov (import package stays torch_ttnn)
+# - publish: workflow_dispatch with wheel_type=release only, explicitly choosing TestPyPI or PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      wheel_type:
+        description: "pre-release builds wheel artifact only; release also publishes to the selected index"
+        required: true
+        default: pre-release
+        type: choice
+        options:
+          - pre-release
+          - release
+      publish_target:
+        description: "Package index for release uploads; ignored for pre-release artifact-only runs"
+        required: true
+        default: testpypi
+        type: choice
+        options:
+          - testpypi
+          - pypi
+
+jobs:
+  build-wheel:
+    # Public fork uses standard GitHub-hosted runners (no private larger runner).
+    runs-on: ubuntu-22.04
+    container:
+      image: ghcr.io/tenstorrent/tt-metal/tt-metalium/ubuntu-22.04-ci-test-amd64@sha256:104b062b1942b398902884d6340a9695fbfcd4ffe6fb5a59f3d6363c499e7fce
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      options: >-
+        --rm
+        -v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }}
+    env:
+      CCACHE_DIR: /tmp/ccache
+      CPM_SOURCE_CACHE: /tmp/cpm
+      CCACHE_BASEDIR: ${{ github.workspace }}
+      CCACHE_MAXSIZE: 5G
+      PYTHON_ENV_DIR: ${{ github.workspace }}/torch_ttnn/cpp_extension/third-party/tt-metal/python_env
+      TT_METAL_HOME: ${{ github.workspace }}/torch_ttnn/cpp_extension/third-party/tt-metal
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Fix apt repository keys
+        run: |
+          set -euxo pipefail
+          rm -f /etc/apt/sources.list.d/kitware.list 2>/dev/null || true
+
+      - name: Prepare checkout
+        run: |
+          set -euxo pipefail
+          apt-get update
+          apt-get install -y git-lfs
+          git lfs install
+
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+          submodules: recursive
+          clean: true
+
+      - name: Configure git safe directories
+        run: |
+          set -euxo pipefail
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          git config --global --add safe.directory '*'
+
+      - name: Initialize git submodules
+        run: |
+          set -euxo pipefail
+          git submodule update --init --recursive
+
+      - name: Restore ccache
+        uses: actions/cache@v4
+        with:
+          path: /tmp/ccache
+          key: ccache-shutov-release-${{ runner.os }}-${{ hashFiles('torch_ttnn/cpp_extension/**/*.cpp', 'torch_ttnn/cpp_extension/**/*.hpp', 'VERSION') }}
+          restore-keys: |
+            ccache-shutov-release-${{ runner.os }}-
+
+      - name: Configure ccache
+        run: |
+          set -euxo pipefail
+          mkdir -p "${CCACHE_DIR}"
+          ccache --set-config=cache_dir="${CCACHE_DIR}"
+          ccache --set-config=max_size="${CCACHE_MAXSIZE}"
+          ccache --set-config=base_dir="${CCACHE_BASEDIR}"
+          ccache --set-config=compression=true
+          ccache --zero-stats
+
+      - name: Install TT-Metal system dependencies
+        run: |
+          set -euxo pipefail
+          cd torch_ttnn/cpp_extension/third-party/tt-metal
+          ./install_dependencies.sh
+
+      - name: Build C++ extension (includes tt-metal build)
+        run: |
+          set -euxo pipefail
+          bash torch_ttnn/cpp_extension/build_cpp_extension.sh Release
+          ccache --show-stats
+
+      - name: Build torch-ttnn-shutov wheel
+        run: |
+          set -euxo pipefail
+          source torch_ttnn/cpp_extension/third-party/tt-metal/python_env/bin/activate
+          python3 -m pip install --upgrade build "scikit-build-core>=0.10,<0.11" wheel
+          rm -rf dist/
+          python3 -m build --wheel --no-isolation
+          ls -lh dist/
+          test -f VERSION
+          echo "Built from commit: $(git rev-parse HEAD)"
+          echo "Distribution: torch-ttnn-shutov $(cat VERSION)"
+
+      - name: Repair wheel platform tag for PyPI
+        run: |
+          set -euxo pipefail
+          source torch_ttnn/cpp_extension/third-party/tt-metal/python_env/bin/activate
+          apt-get update
+          apt-get install -y patchelf
+          python3 -m pip install --upgrade auditwheel twine
+          mkdir -p wheelhouse
+          WHEEL_FILE=$(ls -1 dist/*.whl | head -n 1)
+          auditwheel repair \
+            --plat manylinux_2_35_x86_64 \
+            --exclude libtorch_cpu.so \
+            --exclude libtorch.so \
+            --exclude libtorch_python.so \
+            --exclude libc10.so \
+            -w wheelhouse \
+            "${WHEEL_FILE}"
+          rm -f dist/*.whl
+          mv wheelhouse/*.whl dist/
+          ls -lh dist/
+          twine check dist/*.whl
+
+      - name: Test wheel installation (import only)
+        run: |
+          set -euxo pipefail
+          source torch_ttnn/cpp_extension/third-party/tt-metal/python_env/bin/activate
+          python3 -m pip uninstall -y torch-ttnn-shutov torch-ttnn ttnn-shutov ttnn || true
+          python3 -m pip install --upgrade wheel twine
+          python3 tools/repack_ttnn_shutov_wheel.py --output-dir /tmp/ttnn-shutov-dist
+          python3 -m pip install /tmp/ttnn-shutov-dist/ttnn_shutov-*.whl
+          WHEEL_FILE=$(ls -1 dist/*shutov*.whl 2>/dev/null || ls -1 dist/*.whl | head -n 1)
+          if [[ "${{ github.event.inputs.publish_target || 'testpypi' }}" == "testpypi" ]]; then
+            python3 -m pip install \
+              --index-url https://test.pypi.org/simple/ \
+              --extra-index-url https://pypi.org/simple/ \
+              "${WHEEL_FILE}[pypi]"
+          else
+            python3 -m pip install "${WHEEL_FILE}[pypi]"
+          fi
+          python3 -c "import torch_ttnn; print('IMPORT OK:', torch_ttnn.__file__)"
+          python3 -c "import ttnn; print('TTNN OK:', ttnn.__file__)"
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: torch-ttnn-shutov-distributions
+          path: dist/
+
+  publish-to-testpypi:
+    name: Publish torch-ttnn-shutov to TestPyPI
+    needs: [build-wheel]
+    if: >-
+      ${{
+        github.repository == 'shutovilyaep/pytorch2.0_ttnn' &&
+        github.actor == 'shutovilyaep' &&
+        github.event_name == 'workflow_dispatch' &&
+        github.event.inputs.wheel_type == 'release' &&
+        github.event.inputs.publish_target == 'testpypi'
+      }}
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/torch-ttnn-shutov
+    steps:
+      - name: Download wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: torch-ttnn-shutov-distributions
+          path: dist/
+      - name: Publish distribution to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TESTPYPI_API_TOKEN }}
+
+  publish-to-pypi:
+    name: Publish torch-ttnn-shutov to PyPI
+    needs: [build-wheel]
+    if: >-
+      ${{
+        github.repository == 'shutovilyaep/pytorch2.0_ttnn' &&
+        github.actor == 'shutovilyaep' &&
+        github.event_name == 'workflow_dispatch' &&
+        github.event.inputs.wheel_type == 'release' &&
+        github.event.inputs.publish_target == 'pypi'
+      }}
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/torch-ttnn-shutov
+    permissions:
+      id-token: write
+    steps:
+      - name: Download wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: torch-ttnn-shutov-distributions
+          path: dist/
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

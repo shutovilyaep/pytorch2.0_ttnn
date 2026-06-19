@@ -7,9 +7,9 @@ requires = [
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "torch-ttnn"
+name = "torch-ttnn-shutov"
 dynamic = ["version"]
-description = "PyTorch 2.0 TTNN Compiler (install with [pypi] extra for runtime dependencies)"
+description = "PyTorch 2.0 TTNN Compiler (unofficial -shutov build of the eager-op work; install with [pypi] extra for runtime dependencies)"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
@@ -40,11 +40,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# PyPI users should install with: pip install torch-ttnn[pypi]
-# This adds ttnn as a dependency from PyPI
+# PyPI users should install with: pip install torch-ttnn-shutov[pypi]
+# Runtime ttnn comes from the ttnn-shutov distribution (import name stays ttnn).
 # NOTE: This line is automatically updated by .github/workflows/update-ttnn-wheel.yaml
 pypi = [
-    "ttnn @ https://pypi.eng.aws.tenstorrent.com/ttnn/ttnn-0.62.0.dev20250916-cp310-cp310-manylinux_2_34_x86_64.whl#sha256=d68ddb1fd83f558f43b908c10094ebe016664646da9d795844de07a15aedbf09 ; python_version==\"3.10\"",
+    "ttnn-shutov==0.62.0.dev20250916 ; python_version==\"3.10\"",
 ]
 
 dev = [
@@ -83,7 +83,7 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/tenstorrent/pytorch2.0_ttnn"
+Repository = "https://github.com/shutovilyaep/pytorch2.0_ttnn"
 
 [tool.scikit-build]
 cmake.version = ">=3.23"

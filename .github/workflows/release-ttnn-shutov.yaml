@@ -1,0 +1,62 @@
+name: "Release ttnn-shutov (repack for public PyPI)"
+
+# Repacks the pinned internal ttnn wheel as ttnn-shutov for PyPI-compliant metadata.
+# This is publication-channel work after the eager-op stack is already green in CI.
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_target:
+        description: "Package index for release uploads"
+        required: true
+        default: testpypi
+        type: choice
+        options:
+          - testpypi
+          - pypi
+
+jobs:
+  repack-and-publish:
+    if: ${{ github.repository == 'shutovilyaep/pytorch2.0_ttnn' && github.actor == 'shutovilyaep' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ github.event.inputs.publish_target == 'pypi' && 'pypi' || 'testpypi' }}
+      url: ${{ github.event.inputs.publish_target == 'pypi' && 'https://pypi.org/p/ttnn-shutov' || 'https://test.pypi.org/p/ttnn-shutov' }}
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install repack tooling
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --upgrade pip wheel twine
+
+      - name: Repack internal ttnn wheel as ttnn-shutov
+        run: |
+          set -euxo pipefail
+          python3 tools/repack_ttnn_shutov_wheel.py --output-dir dist
+          ls -lh dist/
+
+      - name: Upload ttnn-shutov artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ttnn-shutov-distributions
+          path: dist/
+
+      - name: Publish ttnn-shutov to TestPyPI
+        if: ${{ github.event.inputs.publish_target == 'testpypi' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TESTPYPI_API_TOKEN }}
+
+      - name: Publish ttnn-shutov to PyPI
+        if: ${{ github.event.inputs.publish_target == 'pypi' }}
+        uses: pypa/gh-action-pypi-publish@release/v1
