@@ -17,7 +17,6 @@ on:
 
 jobs:
   repack-and-publish:
-    if: ${{ github.repository == 'shutovilyaep/pytorch2.0_ttnn' && github.actor == 'shutovilyaep' }}
     runs-on: ubuntu-latest
     environment:
       name: ${{ github.event.inputs.publish_target == 'pypi' && 'pypi' || 'testpypi' }}
@@ -43,6 +42,16 @@ jobs:
           set -euxo pipefail
           python3 tools/repack_ttnn_shutov_wheel.py --output-dir dist
           ls -lh dist/
+
+      - name: Smoke test repacked wheel
+        run: |
+          set -euxo pipefail
+          python3 -m venv /tmp/ttnn-repack-smoke
+          source /tmp/ttnn-repack-smoke/bin/activate
+          python3 -m pip install --upgrade pip
+          python3 -m pip install dist/ttnn_shutov-*.whl
+          python3 -c "import ttnn; print('TTNN REPACK OK:', ttnn.__file__)"
+          python3 -m twine check dist/*.whl
 
       - name: Upload ttnn-shutov artifact
         uses: actions/upload-artifact@v4

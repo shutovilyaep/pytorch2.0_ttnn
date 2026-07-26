@@ -11,12 +11,23 @@ By leveraging the TT-NN backend, you can achieve significant performance improve
 
 ## 🚀 Quick Start
 
-### Installation
+### Installation (this fork: `-shutov` packages)
 
-**For PyPI users** (recommended):
+**Linux x86_64, CPython 3.10 only.** No Tenstorrent hardware is required for import smoke tests.
+
 ```bash
-pip install torch-ttnn[pypi]
+python3.10 -m venv .venv && source .venv/bin/activate
+pip install --upgrade pip
+pip install 'torch-ttnn-shutov[pypi]'
+python -c "import ttnn, torch_ttnn; from torch_ttnn.cpp_extension import ttnn_module; assert hasattr(ttnn_module,'as_torch_device'); print('ok')"
 ```
+
+That pulls matching `ttnn-shutov==0.65.0.dev20251205` (metal pin `8dfb324099a`). Import names stay
+`torch_ttnn` / `ttnn`. OpenMPI ULFM is bundled in the wheel (no `LD_LIBRARY_PATH` / `TT_METAL_HOME`).
+
+Long-form background: [discussion #10](https://github.com/shutovilyaep/pytorch2.0_ttnn/discussions/10) (why upstream `pip install torch-ttnn[pypi]` does not work).
+
+Upstream Tenstorrent docs still recommend `pip install torch-ttnn[pypi]`; public PyPI `torch-ttnn` is **0.5.6** without a `[pypi]` extra — see the discussion above.
 
 **For development** (building from source):
 
