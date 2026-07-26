@@ -3,7 +3,14 @@
 #include "ttnn_cpp_extension/utils/eager_common.hpp"
 
 #include <ttnn/operations/reduction/generic/generic_reductions.hpp>
-#include <ttnn/operations/experimental/reduction/argmax/argmax.hpp>
+#include <ttnn/operations/reduction/argmax/argmax.hpp>
+#include <torch/version.h>
+
+#if TORCH_VERSION_MAJOR > 2 || (TORCH_VERSION_MAJOR == 2 && TORCH_VERSION_MINOR >= 7)
+#define TTNN_TORCH_HAS_DIMNAME 0
+#else
+#define TTNN_TORCH_HAS_DIMNAME 1
+#endif
 
 namespace tt_eager::ext {
 
@@ -69,6 +76,7 @@ struct reduction_dimlist {
         }
         return write_from_ttnn(out, in, result);
     }
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static at::Tensor invoke_dimnames(
         const at::Tensor& a,
         at::DimnameList dimnames,
@@ -90,6 +98,8 @@ struct reduction_dimlist {
         }
         return invoke(a, c10::OptionalArrayRef<int64_t>(positions), keepdim, dtype);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static at::Tensor& invoke_dimnames_into(
         const at::Tensor& a,
         at::DimnameList dimnames,
@@ -112,6 +122,7 @@ struct reduction_dimlist {
         }
         return invoke_into(a, c10::OptionalArrayRef<int64_t>(positions), keepdim, dtype, out);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
 };
 
 // Unbiased (std/var) all-elements
@@ -169,6 +180,7 @@ struct reduction_dimlist_correction {
         ttnn::Tensor result = Op(a_tile, dim_variant, keepdim, std::nullopt, std::nullopt, 1.0f, unbiased);
         return write_from_ttnn(out, in, result);
     }
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static at::Tensor invoke_dimnames(
         const at::Tensor& a, at::DimnameList dimnames, const c10::optional<c10::Scalar>& correction, bool keepdim) {
         // Map names → positions
@@ -188,6 +200,8 @@ struct reduction_dimlist_correction {
         }
         return invoke(a, c10::OptionalArrayRef<int64_t>(positions), correction, keepdim);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static at::Tensor& invoke_dimnames_into(
         const at::Tensor& a,
         at::DimnameList dimnames,
@@ -210,12 +224,14 @@ struct reduction_dimlist_correction {
         }
         return invoke_into(a, c10::OptionalArrayRef<int64_t>(positions), correction, keepdim, out);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
 };
 
 // Add dimnames variants for reduction_dimlist and reduction_dim_pair
 template <auto Op>
 struct reduction_dimlist_with_names : reduction_dimlist<Op> {
     using Base = reduction_dimlist<Op>;
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static at::Tensor invoke_dimnames(
         const at::Tensor& a,
         at::DimnameList dimnames,
@@ -237,6 +253,8 @@ struct reduction_dimlist_with_names : reduction_dimlist<Op> {
         }
         return Base::invoke(a, c10::OptionalArrayRef<int64_t>(positions), keepdim, dtype);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static at::Tensor& invoke_dimnames_into(
         const at::Tensor& a,
         at::DimnameList dimnames,
@@ -259,6 +277,7 @@ struct reduction_dimlist_with_names : reduction_dimlist<Op> {
         }
         return Base::invoke_into(a, c10::OptionalArrayRef<int64_t>(positions), keepdim, dtype, out);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
 };
 
 template <auto ReduceOp, auto ArgOp>
@@ -284,6 +303,7 @@ struct reduction_dim_pair {
         write_from_ttnn(indices_out, a, i_tt);
         return {values_out, indices_out};
     }
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static std::tuple<at::Tensor, at::Tensor> invoke_dimnames(
         const at::Tensor& a, at::DimnameList dimnames, bool keepdim) {
         auto names = a.names();
@@ -298,6 +318,8 @@ struct reduction_dim_pair {
         TORCH_CHECK(pos >= 0, "Dimname not found in tensor");
         return invoke(a, pos, keepdim);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static std::tuple<at::Tensor, at::Tensor> invoke_dimname(
         const at::Tensor& a, at::Dimname dimname, bool keepdim) {
         auto names = a.names();
@@ -311,6 +333,8 @@ struct reduction_dim_pair {
         TORCH_CHECK(pos >= 0, "Dimname not found in tensor");
         return invoke(a, pos, keepdim);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static std::tuple<at::Tensor&, at::Tensor&> invoke_dimnames_into(
         const at::Tensor& a, at::DimnameList dimnames, bool keepdim, at::Tensor& values_out, at::Tensor& indices_out) {
         auto names = a.names();
@@ -325,6 +349,8 @@ struct reduction_dim_pair {
         TORCH_CHECK(pos >= 0, "Dimname not found in tensor");
         return invoke_into(a, pos, keepdim, values_out, indices_out);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static std::tuple<at::Tensor&, at::Tensor&> invoke_dimname_into(
         const at::Tensor& a, at::Dimname dimname, bool keepdim, at::Tensor& values_out, at::Tensor& indices_out) {
         auto names = a.names();
@@ -338,6 +364,7 @@ struct reduction_dim_pair {
         TORCH_CHECK(pos >= 0, "Dimname not found in tensor");
         return invoke_into(a, pos, keepdim, values_out, indices_out);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
 };
 
 // Unbiased over dim list (no out)
@@ -355,6 +382,7 @@ struct reduction_dimlist_unbiased {
         ttnn::Tensor result = Op(a_tile, dim_variant, keepdim, std::nullopt, std::nullopt, 1.0f, unbiased);
         return write_from_ttnn(out, in, result);
     }
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static at::Tensor invoke_dimnames(
         const at::Tensor& a, at::DimnameList dimnames, bool unbiased, bool keepdim) {
         auto names = a.names();
@@ -373,6 +401,8 @@ struct reduction_dimlist_unbiased {
         }
         return invoke(a, c10::OptionalArrayRef<int64_t>(positions), unbiased, keepdim);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
+#if TTNN_TORCH_HAS_DIMNAME
     [[nodiscard]] static at::Tensor& invoke_dimnames_into(
         const at::Tensor& a, at::DimnameList dimnames, bool unbiased, bool keepdim, at::Tensor& out) {
         auto names = a.names();
@@ -391,6 +421,7 @@ struct reduction_dimlist_unbiased {
         }
         return invoke_into(a, c10::OptionalArrayRef<int64_t>(positions), unbiased, keepdim, out);
     }
+#endif  // TTNN_TORCH_HAS_DIMNAME
 };
 
 }  // namespace tt_eager::ext
