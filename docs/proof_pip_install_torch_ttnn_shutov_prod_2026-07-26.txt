@@ -1,0 +1,144 @@
+=== 2026-07-26T20:13:03+02:00 prod PyPI e2e (clean env) ===
+PYTHONPATH=<unset>
+LD_LIBRARY_PATH=<unset>
+TT_METAL_HOME=<unset>
+Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+Collecting torch-ttnn-shutov[pypi]
+  Downloading torch_ttnn_shutov-0.2.0-cp310-cp310-manylinux_2_35_x86_64.whl.metadata (64 kB)
+Collecting torch==2.7.1+cpu (from torch-ttnn-shutov[pypi])
+  Using cached torch-2.7.1%2Bcpu-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (27 kB)
+Collecting torchvision==0.22.1+cpu (from torch-ttnn-shutov[pypi])
+  Using cached torchvision-0.22.1%2Bcpu-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (6.1 kB)
+Collecting graphviz (from torch-ttnn-shutov[pypi])
+  Using cached graphviz-0.21-py3-none-any.whl.metadata (12 kB)
+Collecting ttnn-shutov==0.65.0.dev20251205 (from torch-ttnn-shutov[pypi])
+  Using cached ttnn_shutov-0.65.0.dev20251205-cp310-cp310-manylinux_2_34_x86_64.whl.metadata (17 kB)
+Collecting filelock (from torch==2.7.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached filelock-3.32.0-py3-none-any.whl.metadata (2.0 kB)
+Collecting typing-extensions>=4.10.0 (from torch==2.7.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting sympy>=1.13.3 (from torch==2.7.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached sympy-1.14.0-py3-none-any.whl.metadata (12 kB)
+Collecting networkx (from torch==2.7.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached networkx-3.4.2-py3-none-any.whl.metadata (6.3 kB)
+Collecting jinja2 (from torch==2.7.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting fsspec (from torch==2.7.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached fsspec-2026.6.0-py3-none-any.whl.metadata (10 kB)
+Collecting numpy (from torchvision==0.22.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+Collecting pillow!=8.3.*,>=5.3.0 (from torchvision==0.22.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached pillow-12.3.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.1 kB)
+Collecting numpy (from torchvision==0.22.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached numpy-1.26.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+Collecting loguru>=0.6.0 (from ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached loguru-0.7.3-py3-none-any.whl.metadata (22 kB)
+Collecting pyyaml>=5.4 (from ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.4 kB)
+Collecting click>=8.1.7 (from ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached click-8.4.2-py3-none-any.whl.metadata (2.6 kB)
+Collecting pandas>=2.0.3 (from ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached pandas-2.3.3-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (91 kB)
+Collecting seaborn>=0.13.2 (from ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached seaborn-0.13.2-py3-none-any.whl.metadata (5.4 kB)
+Collecting python-dateutil>=2.8.2 (from pandas>=2.0.3->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting pytz>=2020.1 (from pandas>=2.0.3->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached pytz-2026.3.post1-py2.py3-none-any.whl.metadata (22 kB)
+Collecting tzdata>=2022.7 (from pandas>=2.0.3->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached tzdata-2026.3-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting six>=1.5 (from python-dateutil>=2.8.2->pandas>=2.0.3->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting matplotlib!=3.6.1,>=3.4 (from seaborn>=0.13.2->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached matplotlib-3.10.9-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (52 kB)
+Collecting contourpy>=1.0.1 (from matplotlib!=3.6.1,>=3.4->seaborn>=0.13.2->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached contourpy-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.5 kB)
+Collecting cycler>=0.10 (from matplotlib!=3.6.1,>=3.4->seaborn>=0.13.2->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached cycler-0.12.1-py3-none-any.whl.metadata (3.8 kB)
+Collecting fonttools>=4.22.0 (from matplotlib!=3.6.1,>=3.4->seaborn>=0.13.2->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached fonttools-4.63.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (118 kB)
+Collecting kiwisolver>=1.3.1 (from matplotlib!=3.6.1,>=3.4->seaborn>=0.13.2->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached kiwisolver-1.5.0-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl.metadata (5.1 kB)
+Collecting packaging>=20.0 (from matplotlib!=3.6.1,>=3.4->seaborn>=0.13.2->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting pyparsing>=3 (from matplotlib!=3.6.1,>=3.4->seaborn>=0.13.2->ttnn-shutov==0.65.0.dev20251205->torch-ttnn-shutov[pypi])
+  Using cached pyparsing-3.3.2-py3-none-any.whl.metadata (5.8 kB)
+Collecting mpmath<1.4,>=1.1.0 (from sympy>=1.13.3->torch==2.7.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached mpmath-1.3.0-py3-none-any.whl.metadata (8.6 kB)
+Collecting MarkupSafe>=2.0 (from jinja2->torch==2.7.1+cpu->torch-ttnn-shutov[pypi])
+  Using cached markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+Downloading torch_ttnn_shutov-0.2.0-cp310-cp310-manylinux_2_35_x86_64.whl (33.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 33.4/33.4 MB 13.2 MB/s  0:00:03
+Using cached torch-2.7.1%2Bcpu-cp310-cp310-manylinux_2_28_x86_64.whl (175.9 MB)
+Using cached torchvision-0.22.1%2Bcpu-cp310-cp310-manylinux_2_28_x86_64.whl (2.0 MB)
+Downloading ttnn_shutov-0.65.0.dev20251205-cp310-cp310-manylinux_2_34_x86_64.whl (40.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 40.2/40.2 MB 24.4 MB/s  0:00:01
+Using cached numpy-1.26.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (18.2 MB)
+Using cached click-8.4.2-py3-none-any.whl (119 kB)
+Using cached graphviz-0.21-py3-none-any.whl (47 kB)
+Using cached loguru-0.7.3-py3-none-any.whl (61 kB)
+Using cached networkx-3.4.2-py3-none-any.whl (1.7 MB)
+Using cached pandas-2.3.3-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (12.8 MB)
+Using cached pillow-12.3.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.9 MB)
+Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Downloading pytz-2026.3.post1-py2.py3-none-any.whl (508 kB)
+Using cached pyyaml-6.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (770 kB)
+Using cached seaborn-0.13.2-py3-none-any.whl (294 kB)
+Using cached matplotlib-3.10.9-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (8.8 MB)
+Using cached contourpy-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (325 kB)
+Using cached cycler-0.12.1-py3-none-any.whl (8.3 kB)
+Using cached fonttools-4.63.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.9 MB)
+Using cached kiwisolver-1.5.0-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (1.6 MB)
+Using cached packaging-26.2-py3-none-any.whl (100 kB)
+Using cached pyparsing-3.3.2-py3-none-any.whl (122 kB)
+Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+Using cached sympy-1.14.0-py3-none-any.whl (6.3 MB)
+Using cached mpmath-1.3.0-py3-none-any.whl (536 kB)
+Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Using cached tzdata-2026.3-py2.py3-none-any.whl (348 kB)
+Using cached filelock-3.32.0-py3-none-any.whl (97 kB)
+Using cached fsspec-2026.6.0-py3-none-any.whl (203 kB)
+Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+Using cached markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (20 kB)
+Installing collected packages: pytz, mpmath, tzdata, typing-extensions, sympy, six, pyyaml, pyparsing, pillow, packaging, numpy, networkx, MarkupSafe, loguru, kiwisolver, graphviz, fsspec, fonttools, filelock, cycler, click, python-dateutil, jinja2, contourpy, torch, pandas, matplotlib, torchvision, seaborn, ttnn-shutov, torch-ttnn-shutov
+
+Successfully installed MarkupSafe-3.0.3 click-8.4.2 contourpy-1.3.2 cycler-0.12.1 filelock-3.32.0 fonttools-4.63.0 fsspec-2026.6.0 graphviz-0.21 jinja2-3.1.6 kiwisolver-1.5.0 loguru-0.7.3 matplotlib-3.10.9 mpmath-1.3.0 networkx-3.4.2 numpy-1.26.4 packaging-26.2 pandas-2.3.3 pillow-12.3.0 pyparsing-3.3.2 python-dateutil-2.9.0.post0 pytz-2026.3.post1 pyyaml-6.0.3 seaborn-0.13.2 six-1.17.0 sympy-1.14.0 torch-2.7.1+cpu torch-ttnn-shutov-0.2.0 torchvision-0.22.1+cpu ttnn-shutov-0.65.0.dev20251205 typing-extensions-4.16.0 tzdata-2026.3
+Name: torch-ttnn-shutov
+Version: 0.2.0
+Summary: PyTorch 2.0 TTNN Compiler (unofficial -shutov build of the eager-op work; install with [pypi] extra for runtime dependencies)
+Home-page: 
+Author: 
+Author-email: Tenstorrent <info@tenstorrent.com>
+License: Apache-2.0
+Location: /tmp/verify-shutov-prod2/lib/python3.10/site-packages
+Requires: graphviz, torch, torchvision
+Required-by: 
+---
+Name: ttnn-shutov
+Version: 0.65.0.dev20251205
+Summary: General compute framework for Tenstorrent devices | Provenance build: repackaged from tt-metal ttnn 0.62.0rc36.dev2504+gg8dfb324099 (Apache-2.0). Import package remains ttnn. Metal pin 8dfb324099a1bf6b8839cffd5740e22a4d621385. Published as 0.65.0.dev20251205 (metadata bump; binary from source 0.62.0rc36.dev2504+gg8dfb324099). Public indexes reject PEP 440 local versions (+g...); pin SHA is recorded here.
+Home-page: http://www.tenstorrent.com
+Author: Tenstorrent
+Author-email: info@tenstorrent.com
+License: Apache-2.0
+Location: /tmp/verify-shutov-prod2/lib/python3.10/site-packages
+Requires: click, graphviz, loguru, networkx, numpy, pandas, pyyaml, seaborn
+Required-by: 
+2026-07-26 20:13:46.430 | DEBUG    | ttnn:<module>:112 - Initial ttnn.CONFIG:
+Config{cache_path=/home/kilka/.cache/ttnn,model_cache_path=/home/kilka/.cache/ttnn/models,tmp_dir=/tmp/ttnn,enable_model_cache=false,enable_fast_runtime_mode=true,throw_exception_on_fallback=false,enable_logging=false,enable_graph_report=false,enable_detailed_buffer_report=false,enable_detailed_tensor_report=false,enable_comparison_mode=false,comparison_mode_should_raise_exception=false,comparison_mode_pcc=0.9999,root_report_path=generated/ttnn/reports,report_name=std::nullopt,std::nullopt}
+ttnn: /tmp/verify-shutov-prod2/lib/python3.10/site-packages/ttnn/__init__.py
+2026-07-26 20:13:47.641 | DEBUG    | ttnn:<module>:112 - Initial ttnn.CONFIG:
+Config{cache_path=/home/kilka/.cache/ttnn,model_cache_path=/home/kilka/.cache/ttnn/models,tmp_dir=/tmp/ttnn,enable_model_cache=false,enable_fast_runtime_mode=true,throw_exception_on_fallback=false,enable_logging=false,enable_graph_report=false,enable_detailed_buffer_report=false,enable_detailed_tensor_report=false,enable_comparison_mode=false,comparison_mode_should_raise_exception=false,comparison_mode_pcc=0.9999,root_report_path=generated/ttnn/reports,report_name=std::nullopt,std::nullopt}
+torch_ttnn: /home/kilka/Projects/_OutOfRegistry/ML.TT.PyTorchTtnn/torch_ttnn/__init__.py
+2026-07-26 20:13:49.404 | DEBUG    | ttnn:<module>:112 - Initial ttnn.CONFIG:
+Config{cache_path=/home/kilka/.cache/ttnn,model_cache_path=/home/kilka/.cache/ttnn/models,tmp_dir=/tmp/ttnn,enable_model_cache=false,enable_fast_runtime_mode=true,throw_exception_on_fallback=false,enable_logging=false,enable_graph_report=false,enable_detailed_buffer_report=false,enable_detailed_tensor_report=false,enable_comparison_mode=false,comparison_mode_should_raise_exception=false,comparison_mode_pcc=0.9999,root_report_path=generated/ttnn/reports,report_name=std::nullopt,std::nullopt}
+as_torch_device: <built-in method as_torch_device of PyCapsule object at 0x766ce0e88750>
+PAIR_SMOKE_OK
+=== follow-up imports from /tmp (no cwd shadowing) ===
+2026-07-26 20:14:06.423 | DEBUG    | ttnn:<module>:112 - Initial ttnn.CONFIG:
+Config{cache_path=/home/kilka/.cache/ttnn,model_cache_path=/home/kilka/.cache/ttnn/models,tmp_dir=/tmp/ttnn,enable_model_cache=false,enable_fast_runtime_mode=true,throw_exception_on_fallback=false,enable_logging=false,enable_graph_report=false,enable_detailed_buffer_report=false,enable_detailed_tensor_report=false,enable_comparison_mode=false,comparison_mode_should_raise_exception=false,comparison_mode_pcc=0.9999,root_report_path=generated/ttnn/reports,report_name=std::nullopt,std::nullopt}
+torch_ttnn: /tmp/verify-shutov-prod2/lib/python3.10/site-packages/torch_ttnn/__init__.py
+2026-07-26 20:14:08.083 | DEBUG    | ttnn:<module>:112 - Initial ttnn.CONFIG:
+Config{cache_path=/home/kilka/.cache/ttnn,model_cache_path=/home/kilka/.cache/ttnn/models,tmp_dir=/tmp/ttnn,enable_model_cache=false,enable_fast_runtime_mode=true,throw_exception_on_fallback=false,enable_logging=false,enable_graph_report=false,enable_detailed_buffer_report=false,enable_detailed_tensor_report=false,enable_comparison_mode=false,comparison_mode_should_raise_exception=false,comparison_mode_pcc=0.9999,root_report_path=generated/ttnn/reports,report_name=std::nullopt,std::nullopt}
+as_torch_device: <built-in method as_torch_device of PyCapsule object at 0x7cfb075b0060>
+PAIR_SMOKE_OK
