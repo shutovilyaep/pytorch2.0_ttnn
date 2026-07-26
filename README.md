@@ -27,7 +27,7 @@ That pulls matching `ttnn-shutov==0.65.0.dev20251205` (metal pin `8dfb324099a`).
 
 Long-form background: [discussion #10](https://github.com/shutovilyaep/pytorch2.0_ttnn/discussions/10) (why upstream `pip install torch-ttnn[pypi]` does not work).
 
-Upstream Tenstorrent docs still recommend `pip install torch-ttnn[pypi]`; public PyPI `torch-ttnn` is **0.5.6** without a `[pypi]` extra — see the discussion above.
+Upstream `tenstorrent/pytorch2.0_ttnn` **main** documents `pip install git+https://bitbucket.org/tenstorrent/pytorch2.0_ttnn` (HTTP 404) and `pip install -e .`, not `torch-ttnn[pypi]`. Public PyPI `torch-ttnn` is **0.5.6** without a `ttnn` dependency or `[pypi]` extra - see [discussion #10](https://github.com/shutovilyaep/pytorch2.0_ttnn/discussions/10).
 
 **For development** (building from source):
 

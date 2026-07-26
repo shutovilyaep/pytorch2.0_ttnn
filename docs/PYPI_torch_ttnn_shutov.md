@@ -95,7 +95,7 @@ Compare `pip show` version with `VERSION` file and workflow log `Built from comm
 | SHA256 ttnn | `6328c55d12db443b53356ddfac85972d0bd775dbf13e4c7922fc3272855e9a92` |
 | SHA256 torch | `1746d67042e6364e4d38741eadce3a9fc7bfc60c0d642164e672936217c36bf3` |
 
-Do **not** upload `+g…` / `+local` versions to TestPyPI/PyPI (HTTP 400).
+Do **not** upload `+g...` / `+local` versions to TestPyPI/PyPI (HTTP 400).
 
 ## Local repack (debug)
 
