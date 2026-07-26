@@ -519,6 +519,7 @@ struct max_pool2d_aten {
             c10::optional<at::Device>(input.device()),
             c10::nullopt);
 
+        // Pin 8dfb324: MaxPool2DOp::invoke has no in_place_halo; returns vector<Tensor>.
         auto res = ttnn::max_pool2d(
             in_tt,
             static_cast<uint32_t>(N),
@@ -532,16 +533,13 @@ struct max_pool2d_aten {
             /*ceil_mode*/ ceil_mode,
             /*memory_config*/ std::nullopt,
             /*applied_shard_scheme*/ std::nullopt,
-            /*in_place_halo*/ false,
             /*deallocate_input*/ false,
             /*reallocate_halo_output*/ true,
             /*return_indices*/ false,
             /*dtype*/ ttnn::DataType::BFLOAT16,
             /*output_layout*/ ttnn::ROW_MAJOR_LAYOUT);
 
-        ttnn::Tensor out_tt = std::holds_alternative<ttnn::Tensor>(res)
-                                  ? std::get<ttnn::Tensor>(res)
-                                  : std::get<ttnn::operations::pool::MaxPoolWithIndicesResult>(res).output;
+        ttnn::Tensor out_tt = res.at(0);
         return tt_eager::ext::write_from_ttnn(out, out, out_tt);
     }
 };
@@ -589,6 +587,7 @@ struct avg_pool2d_aten {
             div_opt = static_cast<int32_t>(divisor_override.value());
         }
 
+        // Pin 8dfb324: AvgPool2DOp::invoke takes compute_kernel_config (not in_place_halo).
         ttnn::Tensor out_tt = ttnn::avg_pool2d(
             in_tt,
             static_cast<uint32_t>(N),
@@ -603,7 +602,7 @@ struct avg_pool2d_aten {
             /*divisor_override*/ div_opt,
             /*memory_config*/ std::nullopt,
             /*applied_shard_scheme*/ std::nullopt,
-            /*in_place_halo*/ false,
+            /*compute_kernel_config*/ std::nullopt,
             /*deallocate_input*/ false,
             /*reallocate_halo_output*/ true,
             /*dtype*/ ttnn::DataType::BFLOAT16,
