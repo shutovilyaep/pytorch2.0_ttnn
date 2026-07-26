@@ -51,7 +51,7 @@ The repack workflow produced wheels where `libtt_metal.so` still listed auditwhe
 python3.10 -m venv .venv && source .venv/bin/activate
 pip install --upgrade pip
 pip install 'torch-ttnn-shutov[pypi]'
-python -c "import ttnn; import torch_ttnn; print('ok')"
+python -c "import ttnn; import torch_ttnn; from torch_ttnn.cpp_extension import ttnn_module; assert hasattr(ttnn_module,'as_torch_device'); print('ok')"
 ```
 
 Platform: **Linux x86_64**, **CPython 3.10**. Import succeeds without `LD_LIBRARY_PATH`, `LD_PRELOAD`, or `TT_METAL_HOME`. Running models on device still requires Tenstorrent hardware and their system packages.

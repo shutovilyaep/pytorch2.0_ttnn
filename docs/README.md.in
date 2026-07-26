@@ -9,12 +9,49 @@ By leveraging the TT-NN backend, you can achieve significant performance improve
 
 ## 🚀 Quick Start
 
-### Installation
+### Installation (this fork: `-shutov` packages)
 
-**For PyPI users** (recommended):
+**Linux x86_64, CPython 3.10 only.** No Tenstorrent hardware is required for import smoke tests.
+
 ```bash
-pip install torch-ttnn[pypi]
+python3.10 -m venv .venv && source .venv/bin/activate
+pip install --upgrade pip
+pip install 'torch-ttnn-shutov[pypi]'
+python -c "import ttnn, torch_ttnn; from torch_ttnn.cpp_extension import ttnn_module; assert hasattr(ttnn_module,'as_torch_device'); print('ok')"
 ```
+
+That pulls matching `ttnn-shutov==0.65.0.dev20251205` (metal pin `8dfb324099a`). Import names stay
+`torch_ttnn` / `ttnn`. OpenMPI ULFM is bundled in the wheel (no `LD_LIBRARY_PATH` / `TT_METAL_HOME`).
+
+Long-form background: [Why upstream `pip install torch-ttnn[pypi]` does not work](https://github.com/shutovilyaep/pytorch2.0_ttnn/discussions/10).
+
+#### Why this install works here (and what broke upstream packaging)
+
+| Fact | Detail |
+| --- | --- |
+| Role | Eager Execution ops; build-fix PR was green against tt-metal pin `8dfb324099a` |
+| Missing handoff | No public (or matching internal) `ttnn` wheel was published for that SHA |
+| Isolation-only | Loading a newer extension against an older `0.62` runtime can import; Device/`as_torch_device` is still a cross-ABI call |
+| This fork | Builds `ttnn-shutov` from the same pin via GitHub Actions, then `torch-ttnn-shutov` against it |
+
+**Evidence (Actions + PRs, not ad-hoc local wheels):**
+
+| Piece | Link |
+| --- | --- |
+| Frozen tt-metal tip + packaging | [ML.TT.Metal](https://github.com/RedOrangeSweater/ML.TT.Metal) tip `96e4b712` (pin `8dfb324` + PRs [#10](https://github.com/RedOrangeSweater/ML.TT.Metal/pull/10)–[#12](https://github.com/RedOrangeSweater/ML.TT.Metal/pull/12)) |
+| Metal none / TestPyPI | [29074577044](https://github.com/RedOrangeSweater/ML.TT.Metal/actions/runs/29074577044) / [29080934432](https://github.com/RedOrangeSweater/ML.TT.Metal/actions/runs/29080934432) |
+| Torch TestPyPI (`0.2.0`) | [29093775367](https://github.com/RedOrangeSweater/ML.TT.PyTorchTtnn/actions/runs/29093775367) |
+| Wheel SHA256 | `ttnn` `6328c55d…` / `torch` `1746d670…` (see `docs/PYPI_torch_ttnn_shutov.md`) |
+| Prod PyPI | `shutovilyaep/tt-metal` + `shutovilyaep/pytorch2.0_ttnn` (`ttnn-shutov` / `torch-ttnn-shutov` 0.2.0) |
+
+Upstream `pip install torch-ttnn` still resolves to stale `0.5.6` / broken URL-dep split
+([#1036](https://github.com/tenstorrent/pytorch2.0_ttnn/issues/1036) /
+[#1095](https://github.com/tenstorrent/pytorch2.0_ttnn/pull/1095)). See also
+[docs/analysis/2026-07-01_ttnncpp_soname_abi_ru.md](docs/analysis/2026-07-01_ttnncpp_soname_abi_ru.md)
+and [docs/analysis/2026-06-17_pypi_publish_blocker_ru.md](docs/analysis/2026-06-17_pypi_publish_blocker_ru.md).
+
+Timeline in one line: green CI on the Merge pin → no merge of the follow-on Eager stack →
+no matching public `ttnn` wheel → this repository publishes the matching pair under `-shutov`.
 
 **For development** (building from source):
 
@@ -42,7 +79,7 @@ The build script handles:
 
 > **📖 Detailed Instructions:** See [docs/BuildFlow.md](docs/BuildFlow.md) for complete build documentation, all build types (Debug, RelWithDebInfo, etc.), and troubleshooting.
 
-**Note**: The `[pypi]` extra is required for PyPI users to install the `ttnn` runtime dependency. Development builds use the locally built ttnn from the submodule.
+**Note**: The `[pypi]` extra is required for PyPI users to install the `ttnn-shutov` runtime dependency. Development builds use the locally built ttnn from the submodule.
 
 ### ✨ Basic Usage
 

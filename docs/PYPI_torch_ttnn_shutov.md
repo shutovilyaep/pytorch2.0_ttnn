@@ -1,38 +1,37 @@
 # PyPI: torch-ttnn-shutov + ttnn-shutov
 
-Unofficial provenance build of the eager-op stack for `shutovilyaep/pytorch2.0_ttnn`.
-Import package names stay `torch_ttnn` and `ttnn`; PyPI distribution names are
-`torch-ttnn-shutov` and `ttnn-shutov`.
+Unofficial provenance build of the eager-op stack.
+Import package names stay `torch_ttnn` and `ttnn`; PyPI distribution names are `torch-ttnn-shutov` and `ttnn-shutov`.
 
-## Why `-shutov` distributions exist
+Full analysis (RU): `docs/analysis/2026-06-17_pypi_publish_blocker_ru.md`
 
-Upstream bounty [#1036](https://github.com/tenstorrent/pytorch2.0_ttnn/issues/1036)
-(packaging workflow, merged as PR
-[#1095](https://github.com/tenstorrent/pytorch2.0_ttnn/pull/1095)) made
-`torch-ttnn` pip-installable, but public PyPI **rejects** wheels whose metadata
-contains direct URL dependencies (`ttnn @ https://...`).
+## Why two packages
 
-The eager stack CI originally used a direct URL to an internal Tenstorrent wheel
-index for install smoke tests. That pattern works in private CI but is **not**
-a stable public dependency surface.
+Public PyPI/TestPyPI reject uploaded wheels whose metadata contains direct URL dependencies (`ttnn @ https://...`).
+The eager stack originally used that pattern for CI install smoke tests only.
 
-Publication fix (channel change, not eager-op logic):
+Publication fix (separate from eager-op code):
 
-1. Repack pinned internal `ttnn 0.62.0.dev20250916` as `ttnn-shutov`
-   (`tools/repack_ttnn_shutov_wheel.py`, SHA256-verified source wheel).
-2. Publish `ttnn-shutov` first.
-3. Publish `torch-ttnn-shutov` with `[pypi]` extra ->
-   `ttnn-shutov==0.62.0.dev20250916`.
+1. Build `ttnn` from tt-metal pin `8dfb324099a` (ML.TT.Metal workflow
+   `release-ttnn-shutov-from-source`) and publish as
+   `ttnn-shutov==0.65.0.dev20251205` (built from metal pin `8dfb324099a`).
+2. Publish `torch-ttnn-shutov==0.2.0` with `[pypi]` pinning that matching runtime.
+3. Default CI is artifact-only; TestPyPI then prod after pair-smoke.
 
-### Option A (not available today)
+## Unified PyPI / TestPyPI pipeline
 
-If a compatible `ttnn` wheel were on public PyPI, `torch-ttnn-shutov[pypi]` could
-depend on it directly without a repack layer.
+**Goal:** identical package names and versions on both indexes. The only difference when installing is the index URL.
 
-### Option B (chosen)
+| Package | Version | PyPI | TestPyPI |
+| --- | --- | --- | --- |
+| `ttnn-shutov` | `0.65.0.dev20251205` | yes | yes |
+| `torch-ttnn-shutov` | `0.2.0` | yes | yes |
 
-Internal/runtime wheel is republished as `ttnn-shutov` on public PyPI/TestPyPI.
-Import name remains `ttnn`.
+### Why from-source matching wheel
+
+Eager Execution passes Python `ttnn` Device objects into the C++ extension.
+A mismatched `0.62` runtime + v0.65 extension is a cross-ABI call even with
+SONAME isolation. Building `ttnn-shutov` from the same Merge pin restores one ABI.
 
 ## Workflows
 
@@ -40,13 +39,13 @@ Import name remains `ttnn`.
 | --- | --- |
 | `release-ttnn-shutov.yaml` | Download + SHA256 verify + repack + publish `ttnn-shutov` |
 | `release-torch-ttnn-shutov.yaml` | Build tt-metal + wheel + publish `torch-ttnn-shutov` |
+| `verify-shutov-packaging.yaml` | Fast PR gate: repack smoke + isolation tool check |
 
-Both use `workflow_dispatch` input `publish_target`: `testpypi` or `pypi`.
-Default path is **TestPyPI only** until manual approval.
+Both release workflows use `workflow_dispatch` input `publish_target`: `testpypi` or `pypi`. Same wheel artifact for both targets.
 
 ## One-time setup: TestPyPI
 
-1. Create TestPyPI projects: `ttnn-shutov`, `torch-ttnn-shutov`.
+1. Create TestPyPI projects: `ttnn-shutov`, `torch-ttnn-shutov` (or let first upload recreate them).
 2. GitHub -> **Settings -> Environments** -> `testpypi`.
 3. Secret `TESTPYPI_API_TOKEN` (token from `test.pypi.org`).
 
@@ -54,38 +53,49 @@ Default path is **TestPyPI only** until manual approval.
 
 1. Create PyPI projects: `ttnn-shutov`, `torch-ttnn-shutov`.
 2. Trusted publisher per workflow (environment `pypi`) or API token fallback.
-3. Target repo for public proof: `shutovilyaep/pytorch2.0_ttnn`.
+3. For public proof: prefer owner `shutovilyaep`, repo `pytorch2.0_ttnn`.
 
-## Publish order (TestPyPI rehearsal)
+## Publish order (TestPyPI rehearsal and production)
 
-1. Actions -> **Release ttnn-shutov (repack for public PyPI)** ->
-   `publish_target=testpypi`
-2. Actions -> **Release torch-ttnn-shutov (fork, no HW runners)** ->
-   `wheel_type=release`, `publish_target=testpypi`
+1. Actions -> **Release ttnn-shutov (repack for public PyPI)** -> `publish_target=testpypi`, then `pypi`
+2. Actions -> **Release torch-ttnn-shutov (fork, no HW runners)** -> `wheel_type=release`, `publish_target=testpypi`, then `pypi`
 
-Do **not** run production `publish_target=pypi` until TestPyPI install smoke is green.
+## Post-publish verification
 
-## Post-publish verification (TestPyPI)
+Wheels published from `shutovilyaep/tt-metal` bundle OpenMPI ULFM under `ttnn/build/lib` and
+preload it from `ttnn/__init__.py` (no host `LD_LIBRARY_PATH`).
 
 ```bash
-pip install \
-  --index-url https://test.pypi.org/simple/ \
-  --extra-index-url https://pypi.org/simple/ \
-  torch-ttnn-shutov[pypi]
+python3.10 -m venv /tmp/ttnn-pypi && . /tmp/ttnn-pypi/bin/activate
+pip install -U pip
+pip install 'torch-ttnn-shutov[pypi]==0.2.0'
+
 python -c "import torch_ttnn; print(torch_ttnn.__file__)"
 python -c "import ttnn; print(ttnn.__file__)"
+python -c "from torch_ttnn.cpp_extension import ttnn_module; assert hasattr(ttnn_module, 'as_torch_device'); print(ttnn_module.__file__)"
 pip show torch-ttnn-shutov ttnn-shutov
 ```
 
-## Post-publish verification (production PyPI)
-
-```bash
-pip install torch-ttnn-shutov[pypi]
-python -c "import torch_ttnn; print(torch_ttnn.__file__)"
-python -c "import ttnn; print(ttnn.__file__)"
-```
+TestPyPI rehearsal: same commands with `--index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple/`.
 
 Compare `pip show` version with `VERSION` file and workflow log `Built from commit:`.
+
+### Verified RedOrangeSweater TestPyPI
+
+| Fact | Value |
+| --- | --- |
+| `ttnn-shutov` | `0.65.0.dev20251204` |
+| Metal tip | `96e4b712338ef7fc3ad7b9d1ac551dc8e0eb3938` |
+| Pin | `8dfb324099a1bf6b8839cffd5740e22a4d621385` |
+| Metal none | https://github.com/RedOrangeSweater/ML.TT.Metal/actions/runs/29074577044 |
+| Metal TestPyPI | https://github.com/RedOrangeSweater/ML.TT.Metal/actions/runs/29080934432 |
+| `torch-ttnn-shutov` | `0.2.0` |
+| Torch TestPyPI | https://github.com/RedOrangeSweater/ML.TT.PyTorchTtnn/actions/runs/29093775367 |
+| Local marker | `TESTPYPI_PAIR_SMOKE_OK` |
+| SHA256 ttnn | `6328c55d12db443b53356ddfac85972d0bd775dbf13e4c7922fc3272855e9a92` |
+| SHA256 torch | `1746d67042e6364e4d38741eadce3a9fc7bfc60c0d642164e672936217c36bf3` |
+
+Do **not** upload `+g…` / `+local` versions to TestPyPI/PyPI (HTTP 400).
 
 ## Local repack (debug)
 
@@ -95,70 +105,4 @@ python3 tools/repack_ttnn_shutov_wheel.py --output-dir dist
 twine check dist/ttnn_shutov-*.whl
 ```
 
-## auditwheel note
-
-`release-torch-ttnn-shutov.yaml` runs `auditwheel repair` with PyTorch shared libs
-excluded from vendoring (`libtorch*.so`, `libc10.so`). PyTorch remains a normal
-pip dependency; the wheel carries the TT extension and bundled TT runtime helpers.
-
-## CI before PyPI publish
-
-PR CI does **not** require `ttnn-shutov` to already exist on PyPI or TestPyPI.
-
-| Job / path | Behavior |
-| --- | --- |
-| `cpp-extension-build` wheel smoke | Repacks internal wheel locally, installs `torch-ttnn-shutov[pypi]`, verifies `import torch_ttnn` and `import ttnn` |
-| `ttsim-tests` | Installs `--extra dev` only; runs selected `tests/tools/` without `ttnn-shutov` |
-| `common_repo_setup` | Calls `tools/ci_install_pypi_deps.sh` for jobs that need `[pypi]` deps |
-
-`tools/ci_install_pypi_deps.sh` behavior:
-
-- If `TTNN_SHUTOV_INDEX_URL` is unset: repack pinned internal wheel to `/tmp/ttnn-shutov-dist` and use `--find-links` for `pip-compile` / `pip install`.
-- If `TTNN_SHUTOV_INDEX_URL` is set: resolve `ttnn-shutov` from that index (TestPyPI or PyPI).
-
-### When to change `TTNN_SHUTOV_INDEX_URL`
-
-| Stage | Value | Why |
-| --- | --- | --- |
-| Before any publish | unset (repack fallback) | No public `ttnn-shutov` package yet |
-| After `ttnn-shutov` on TestPyPI | `https://test.pypi.org/simple/` | CI should resolve from TestPyPI like end users |
-| After `ttnn-shutov` on production PyPI | `https://pypi.org/simple/` or unset if default PyPI is enough | Match production install path |
-
-Set as a GitHub Actions repository or organization variable when switching stages.
-
-## Publish workflow security (public repo)
-
-Release workflows are `workflow_dispatch` only. Additional guards:
-
-- Publish jobs require `github.repository == 'shutovilyaep/pytorch2.0_ttnn'` and `github.actor == 'shutovilyaep'`.
-- Final approval is via protected GitHub environments `testpypi` and `pypi`.
-
-One-time GitHub setup for environments `testpypi` and `pypi`:
-
-1. Required reviewers: only your GitHub account.
-2. Deployment branches: `main` only (or your chosen release branch).
-3. Store `TESTPYPI_API_TOKEN` on the `testpypi` environment (not repo-wide).
-4. For production PyPI, prefer Trusted Publishing (OIDC) on environment `pypi` for:
-   - `.github/workflows/release-ttnn-shutov.yaml`
-   - `.github/workflows/release-torch-ttnn-shutov.yaml`
-
-The legacy `build-test-release-wheel.yaml` `publish-to-pypi` job is disabled; use `release-torch-ttnn-shutov.yaml` instead.
-
-## Post-merge checklist (do not skip)
-
-After merge, do **not** immediately publish to production PyPI.
-
-1. Verify GitHub environments `testpypi` and `pypi` require your approval.
-2. Publish `ttnn-shutov` to TestPyPI (`Release ttnn-shutov`, `publish_target=testpypi`).
-3. Publish `torch-ttnn-shutov` to TestPyPI (`wheel_type=release`, `publish_target=testpypi`).
-4. Run TestPyPI install smoke (see Post-publish verification above).
-5. Optionally set `TTNN_SHUTOV_INDEX_URL=https://test.pypi.org/simple/` for CI.
-6. Only after TestPyPI is green: publish `ttnn-shutov` to production PyPI.
-7. Then publish `torch-ttnn-shutov` to production PyPI.
-8. Verify: `pip install torch-ttnn-shutov[pypi]`.
-
-Why order matters:
-
-- `torch-ttnn-shutov[pypi]` depends on `ttnn-shutov`.
-- Publishing `torch-ttnn-shutov` before `ttnn-shutov` creates a broken public install.
-- Production PyPI versions cannot be overwritten after upload.
+Defaults: `--source-version 0.62.0.dev20250916`, `--publish-version 0.62.0.dev20250916+pypi.repack`.

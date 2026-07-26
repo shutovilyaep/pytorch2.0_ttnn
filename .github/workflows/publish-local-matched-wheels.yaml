@@ -1,0 +1,115 @@
+name: "Publish matched eager wheels (from release assets)"
+run-name: "Publish matched wheels -> ${{ inputs.publish_target }}"
+
+# Fallback when Metal from-source CI cannot leave the queue (plan §5.3).
+# Uploads pre-built host-matched wheels attached to a GitHub Release.
+# Default publish_target=none is download + pair-smoke + artifact only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: "GitHub release tag that holds the two .whl assets"
+        required: true
+        default: "eager-matched-8dfb324-cp312"
+        type: string
+      publish_target:
+        description: "none = download+smoke only; testpypi / pypi = upload"
+        required: true
+        default: none
+        type: choice
+        options:
+          - none
+          - testpypi
+          - pypi
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  pair-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release wheel assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euxo pipefail
+          mkdir -p dist
+          gh release download "${{ inputs.release_tag }}" \
+            --repo "${{ github.repository }}" \
+            --dir dist \
+            --pattern "*.whl"
+          ls -lh dist/
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install OpenMPI runtime (host-matched wheel NEEDED)
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libopenmpi3 libhwloc15 || \
+            sudo apt-get install -y --no-install-recommends libopenmpi3t64 libhwloc15t64 || true
+
+      - name: Pair-smoke (L0 / L6)
+        run: |
+          set -euxo pipefail
+          python3 -m venv /tmp/pair
+          # shellcheck disable=SC1091
+          source /tmp/pair/bin/activate
+          python -m pip install -U pip
+          python -m pip install "torch==2.7.1+cpu" --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install 'numpy<2' loguru networkx graphviz pyyaml click 'pandas>=2' seaborn
+          python -m pip install --force-reinstall --no-deps dist/ttnn_shutov-*.whl
+          python -m pip install --force-reinstall --no-deps dist/torch_ttnn_shutov-*.whl
+          python -c "
+          import ttnn, torch_ttnn
+          from torch_ttnn.cpp_extension import ttnn_module
+          assert hasattr(ttnn_module, 'as_torch_device')
+          print('PAIR_SMOKE_OK', ttnn.__file__, ttnn_module)
+          "
+
+      - name: Upload wheels as workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: matched-eager-wheels
+          path: dist/*.whl
+
+  publish-testpypi:
+    needs: pair-smoke
+    if: ${{ inputs.publish_target == 'testpypi' }}
+    runs-on: ubuntu-latest
+    environment: testpypi
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: matched-eager-wheels
+          path: dist/
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
+          repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TESTPYPI_API_TOKEN }}
+          skip-existing: true
+
+  publish-pypi:
+    needs: pair-smoke
+    if: ${{ inputs.publish_target == 'pypi' }}
+    runs-on: ubuntu-latest
+    environment: pypi
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: matched-eager-wheels
+          path: dist/
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
