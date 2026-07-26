@@ -2,10 +2,12 @@ name: "Release torch-ttnn-shutov (fork, no HW runners)"
 run-name: "Release torch-ttnn-shutov (${{ inputs.wheel_type }} -> ${{ inputs.publish_target }})"
 
 # Fork-adapted from build-test-release-wheel.yaml:
-# - runs-on: ubuntu-22.04 + public tt-metal CI container (same as run-cpp-native-tests.yaml)
+# - runs-on: ubuntu-latest (GitHub-hosted). Self-hosted label ttnn-big is empty on this fork.
+# - public tt-metal CI container (same image as run-cpp-native-tests.yaml)
 # - no Tenstorrent hardware mounts (/dev/tenstorrent, hugepages NFS cache)
 # - distribution name: torch-ttnn-shutov (import package stays torch_ttnn)
 # - publish: workflow_dispatch with wheel_type=release only, explicitly choosing TestPyPI or PyPI
+# - Matched eager path: submodule pin 8dfb324 + ttnn-shutov==0.65.0.dev20251204
 
 on:
   workflow_dispatch:
@@ -26,11 +28,19 @@ on:
         options:
           - testpypi
           - pypi
+      isolate_soname:
+        description: "SONAME isolation (interim for mismatched runtime). Off for matched ttnn-shutov from pin 8dfb324."
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
   build-wheel:
-    # Public fork uses standard GitHub-hosted runners (no private larger runner).
-    runs-on: ubuntu-22.04
+    # GitHub-hosted only — ttnn-big / TT harbor runners are not available on this fork.
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/tenstorrent/tt-metal/tt-metalium/ubuntu-22.04-ci-test-amd64@sha256:104b062b1942b398902884d6340a9695fbfcd4ffe6fb5a59f3d6363c499e7fce
       credentials:
@@ -39,17 +49,29 @@ jobs:
       options: >-
         --rm
         -v ${{ github.workspace }}:${{ github.workspace }} -w ${{ github.workspace }}
+        -v /:/host
     env:
       CCACHE_DIR: /tmp/ccache
       CPM_SOURCE_CACHE: /tmp/cpm
       CCACHE_BASEDIR: ${{ github.workspace }}
-      CCACHE_MAXSIZE: 5G
+      CCACHE_MAXSIZE: 2G
       PYTHON_ENV_DIR: ${{ github.workspace }}/torch_ttnn/cpp_extension/third-party/tt-metal/python_env
       TT_METAL_HOME: ${{ github.workspace }}/torch_ttnn/cpp_extension/third-party/tt-metal
     defaults:
       run:
         shell: bash
     steps:
+      - name: Free disk on host (via /host mount)
+        run: |
+          set -euxo pipefail
+          df -h / /host || true
+          rm -rf /host/usr/share/dotnet /host/usr/local/lib/android /host/opt/ghc \
+            /host/usr/local/share/powershell /host/usr/share/swift /host/usr/local/.ghcup \
+            /host/opt/hostedtoolcache/CodeQL || true
+          # Drop unused docker images on the host if docker CLI is present
+          docker system prune -af || true
+          df -h / /host || true
+
       - name: Fix apt repository keys
         run: |
           set -euxo pipefail
@@ -105,6 +127,9 @@ jobs:
           ./install_dependencies.sh
 
       - name: Build C++ extension (includes tt-metal build)
+        env:
+          VERBOSE: "1"
+          CMAKE_ARGS: "-DCMAKE_BUILD_TYPE=Release -DCMAKE_VERBOSE_MAKEFILE=ON"
         run: |
           set -euxo pipefail
           bash torch_ttnn/cpp_extension/build_cpp_extension.sh Release
@@ -144,14 +169,53 @@ jobs:
           ls -lh dist/
           twine check dist/*.whl
 
-      - name: Test wheel installation (import only)
+      - name: Isolate bundled _ttnncpp SONAME in wheel
+        if: ${{ github.event.inputs.isolate_soname == 'true' }}
+        run: |
+          set -euxo pipefail
+          source torch_ttnn/cpp_extension/third-party/tt-metal/python_env/bin/activate
+          python3 -m pip install --upgrade wheel
+          WHEEL_FILE=$(ls -1 dist/*.whl | head -n 1)
+          UNPACK_DIR=$(mktemp -d)
+          python3 -m wheel unpack "${WHEEL_FILE}" -d "${UNPACK_DIR}"
+          WHEEL_TREE=$(find "${UNPACK_DIR}" -mindepth 1 -maxdepth 1 -type d | head -n 1)
+          python3 tools/isolate_ttnncpp_soname.py "${WHEEL_TREE}"
+          ISOLATED_WHEEL=$(python3 -m wheel pack "${WHEEL_TREE}" -d dist/ | awk '{print $NF}')
+          rm -f dist/*.whl
+          mv "${ISOLATED_WHEEL}" dist/
+          ls -lh dist/
+          twine check dist/*.whl
+
+      - name: ABI / linking report
+        continue-on-error: true
+        run: |
+          set -euxo pipefail
+          source torch_ttnn/cpp_extension/third-party/tt-metal/python_env/bin/activate
+          WHEEL_FILE=$(ls -1 dist/*.whl | head -n 1)
+          {
+            echo "wheel=${WHEEL_FILE}"
+            echo "tt-metal=$(git -C torch_ttnn/cpp_extension/third-party/tt-metal rev-parse HEAD)"
+            if [[ -f tools/report_wheel_abi.py ]]; then
+              python3 tools/report_wheel_abi.py "${WHEEL_FILE}" \
+                --tt-metal-dir torch_ttnn/cpp_extension/third-party/tt-metal \
+                --output /dev/stdout
+            else
+              echo "tools/report_wheel_abi.py missing; skipped detailed ABI dump"
+              unzip -l "${WHEEL_FILE}" | awk '/\.so($|\.)/ {print $NF}' | head -40
+            fi
+          } | tee abi-report.txt
+
+      - name: Upload ABI report
+        uses: actions/upload-artifact@v4
+        with:
+          name: abi-report
+          path: abi-report.txt
+
+      - name: Test wheel installation (pair-smoke)
         run: |
           set -euxo pipefail
           source torch_ttnn/cpp_extension/third-party/tt-metal/python_env/bin/activate
           python3 -m pip uninstall -y torch-ttnn-shutov torch-ttnn ttnn-shutov ttnn || true
-          python3 -m pip install --upgrade wheel twine
-          python3 tools/repack_ttnn_shutov_wheel.py --output-dir /tmp/ttnn-shutov-dist
-          python3 -m pip install /tmp/ttnn-shutov-dist/ttnn_shutov-*.whl
           WHEEL_FILE=$(ls -1 dist/*shutov*.whl 2>/dev/null || ls -1 dist/*.whl | head -n 1)
           if [[ "${{ github.event.inputs.publish_target || 'testpypi' }}" == "testpypi" ]]; then
             python3 -m pip install \
@@ -163,6 +227,11 @@ jobs:
           fi
           python3 -c "import torch_ttnn; print('IMPORT OK:', torch_ttnn.__file__)"
           python3 -c "import ttnn; print('TTNN OK:', ttnn.__file__)"
+          # Load the C++ extension alongside the ttnn runtime: this is the path that
+          # regressed on PyPI (SONAME clash) and was never covered by import-only smoke.
+          # as_torch_device is the matched-eager ABI gate for end users.
+          python3 -c "import torch_ttnn; from torch_ttnn.cpp_extension import ttnn_module; print('CPP EXT OK:', getattr(ttnn_module,'__file__',ttnn_module)); assert hasattr(ttnn_module,'as_torch_device'), dir(ttnn_module); print('AS_TORCH_DEVICE_OK:', ttnn_module.as_torch_device); print('PAIR_SMOKE_OK')"
+
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
@@ -173,14 +242,7 @@ jobs:
   publish-to-testpypi:
     name: Publish torch-ttnn-shutov to TestPyPI
     needs: [build-wheel]
-    if: >-
-      ${{
-        github.repository == 'shutovilyaep/pytorch2.0_ttnn' &&
-        github.actor == 'shutovilyaep' &&
-        github.event_name == 'workflow_dispatch' &&
-        github.event.inputs.wheel_type == 'release' &&
-        github.event.inputs.publish_target == 'testpypi'
-      }}
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.wheel_type == 'release' && github.event.inputs.publish_target == 'testpypi' }}
     runs-on: ubuntu-latest
     environment:
       name: testpypi
@@ -200,14 +262,7 @@ jobs:
   publish-to-pypi:
     name: Publish torch-ttnn-shutov to PyPI
     needs: [build-wheel]
-    if: >-
-      ${{
-        github.repository == 'shutovilyaep/pytorch2.0_ttnn' &&
-        github.actor == 'shutovilyaep' &&
-        github.event_name == 'workflow_dispatch' &&
-        github.event.inputs.wheel_type == 'release' &&
-        github.event.inputs.publish_target == 'pypi'
-      }}
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.wheel_type == 'release' && github.event.inputs.publish_target == 'pypi' }}
     runs-on: ubuntu-latest
     environment:
       name: pypi

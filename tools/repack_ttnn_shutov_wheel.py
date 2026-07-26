@@ -1,23 +1,35 @@
 #!/usr/bin/env python3
-"""Repack an internal ttnn wheel as ttnn-shutov for public PyPI upload."""
+"""Repack a ttnn wheel as ttnn-shutov for public PyPI upload.
+
+Supports downloading a pinned internal wheel or repacking a local --source-wheel
+(from cibuildwheel / CI artifact) with an explicit --publish-version.
+"""
 
 from __future__ import annotations
 
 import argparse
+import http.client
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
 from pathlib import Path
 
+DEFAULT_SOURCE_VERSION = "0.62.0.dev20250916"
+DEFAULT_PUBLISH_VERSION = "0.65.0.dev20251204+g8dfb324099"
 DEFAULT_SHA256 = "d68ddb1fd83f558f43b908c10094ebe016664646da9d795844de07a15aedbf09"
-DEFAULT_VERSION = "0.62.0.dev20250916"
-DEFAULT_WHEEL = f"ttnn-{DEFAULT_VERSION}-cp310-cp310-manylinux_2_34_x86_64.whl"
+DEFAULT_WHEEL = f"ttnn-{DEFAULT_SOURCE_VERSION}-cp310-cp310-manylinux_2_34_x86_64.whl"
 DEFAULT_URL = f"https://pypi.eng.aws.tenstorrent.com/ttnn/{DEFAULT_WHEEL}"
-PROVENANCE = (
-    "Provenance build: repackaged from tt-metal ttnn " f"{DEFAULT_VERSION} (Apache-2.0). Import package remains ttnn."
-)
+
+
+def provenance(source_version: str, publish_version: str) -> str:
+    suffix_note = ""
+    if publish_version != source_version:
+        suffix_note = f" Published as {publish_version} (metadata bump; binary from source {source_version})."
+    return (
+        "Provenance build: repackaged from tt-metal ttnn "
+        f"{source_version} (Apache-2.0). Import package remains ttnn.{suffix_note}"
+    )
 
 
 def parse_args() -> argparse.Namespace:
@@ -27,9 +39,23 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--expected-sha256",
         default=DEFAULT_SHA256,
-        help="Expected SHA256 of the source wheel",
+        help="Expected SHA256 of the source wheel (ignored with --skip-sha256-check)",
     )
-    parser.add_argument("--version", default=DEFAULT_VERSION, help="ttnn version to repack")
+    parser.add_argument(
+        "--skip-sha256-check",
+        action="store_true",
+        help="Skip SHA256 verification (for locally built wheels)",
+    )
+    parser.add_argument(
+        "--source-version",
+        default=None,
+        help="Internal ttnn wheel version (default: parse from wheel filename)",
+    )
+    parser.add_argument(
+        "--publish-version",
+        default=DEFAULT_PUBLISH_VERSION,
+        help="ttnn-shutov distribution version (METADATA and wheel filename)",
+    )
     parser.add_argument(
         "--output-dir",
         type=Path,
@@ -50,13 +76,32 @@ def sha256_file(path: Path) -> str:
 
 
 def download_wheel(url: str, destination: Path) -> None:
+    import time
+    import urllib.error
     import urllib.request
 
-    with urllib.request.urlopen(url, timeout=120) as response:
-        destination.write_bytes(response.read())
+    last_error: Exception | None = None
+    for attempt in range(1, 6):
+        try:
+            with urllib.request.urlopen(url, timeout=300) as response:
+                destination.write_bytes(response.read())
+            return
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.IncompleteRead) as exc:
+            last_error = exc
+            if destination.is_file():
+                destination.unlink()
+            time.sleep(min(2**attempt, 30))
+    raise RuntimeError(f"Failed to download wheel after 5 attempts: {url}") from last_error
 
 
-def rewrite_metadata(metadata_path: Path) -> None:
+def parse_source_version(source_wheel: Path) -> str:
+    match = re.match(r"ttnn-(.+)-cp\d+-cp\d+-.*\.whl$", source_wheel.name)
+    if not match:
+        raise RuntimeError(f"Unexpected source wheel name: {source_wheel.name}")
+    return match.group(1)
+
+
+def rewrite_metadata(metadata_path: Path, publish_version: str, provenance_text: str) -> None:
     text = metadata_path.read_text(encoding="utf-8")
     if not text.startswith("Metadata-Version:"):
         raise RuntimeError(f"Unexpected METADATA header in {metadata_path}")
@@ -66,22 +111,29 @@ def rewrite_metadata(metadata_path: Path) -> None:
     rewritten_header: list[str] = []
     name_replaced = False
     summary_replaced = False
+    version_replaced = False
 
     for line in lines:
         if line.startswith("Name: "):
             rewritten_header.append("Name: ttnn-shutov")
             name_replaced = True
             continue
+        if line.startswith("Version: "):
+            rewritten_header.append(f"Version: {publish_version}")
+            version_replaced = True
+            continue
         if line.startswith("Summary: "):
-            rewritten_header.append(f"Summary: {line.removeprefix('Summary: ')} | {PROVENANCE}")
+            rewritten_header.append(f"Summary: {line.removeprefix('Summary: ')} | {provenance_text}")
             summary_replaced = True
             continue
         rewritten_header.append(line)
 
     if not name_replaced:
         raise RuntimeError(f"Name field not found in {metadata_path}")
+    if not version_replaced:
+        rewritten_header.insert(2, f"Version: {publish_version}")
     if not summary_replaced:
-        rewritten_header.insert(3, f"Summary: {PROVENANCE}")
+        rewritten_header.insert(3, f"Summary: {provenance_text}")
 
     metadata_path.write_text(
         "\n".join(rewritten_header) + "\n\n" + body.lstrip("\n"),
@@ -89,15 +141,18 @@ def rewrite_metadata(metadata_path: Path) -> None:
     )
 
 
-def repack_wheel(source_wheel: Path, version: str, output_dir: Path) -> Path:
-    source_name = source_wheel.name
-    match = re.match(r"ttnn-(.+)-cp\d+-cp\d+-.*\.whl$", source_name)
-    if not match:
-        raise RuntimeError(f"Unexpected source wheel name: {source_name}")
-    if match.group(1) != version:
-        raise RuntimeError(f"Version mismatch: source wheel has {match.group(1)}, expected {version}")
+def repack_wheel(
+    source_wheel: Path,
+    source_version: str,
+    publish_version: str,
+    output_dir: Path,
+) -> Path:
+    parsed = parse_source_version(source_wheel)
+    if parsed != source_version:
+        raise RuntimeError(f"Version mismatch: source wheel has {parsed}, expected {source_version}")
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    provenance_text = provenance(source_version, publish_version)
     with tempfile.TemporaryDirectory(prefix="ttnn-shutov-repack-") as tmp:
         tmp_path = Path(tmp)
         unpack_dir = tmp_path / "unpacked"
@@ -106,15 +161,15 @@ def repack_wheel(source_wheel: Path, version: str, output_dir: Path) -> Path:
             check=True,
         )
 
-        source_root = unpack_dir / f"ttnn-{version}"
-        target_root = unpack_dir / f"ttnn_shutov-{version}"
-        source_dist_info = source_root / f"ttnn-{version}.dist-info"
-        target_dist_info = source_root / f"ttnn_shutov-{version}.dist-info"
+        source_root = unpack_dir / f"ttnn-{source_version}"
+        target_root = unpack_dir / f"ttnn_shutov-{publish_version}"
+        source_dist_info = source_root / f"ttnn-{source_version}.dist-info"
+        target_dist_info = source_root / f"ttnn_shutov-{publish_version}.dist-info"
 
         if not source_root.is_dir():
             raise RuntimeError(f"Missing unpacked directory: {source_root}")
 
-        rewrite_metadata(source_dist_info / "METADATA")
+        rewrite_metadata(source_dist_info / "METADATA", publish_version, provenance_text)
         source_dist_info.rename(target_dist_info)
         source_root.rename(target_root)
 
@@ -131,12 +186,10 @@ def repack_wheel(source_wheel: Path, version: str, output_dir: Path) -> Path:
             check=True,
         )
 
-    produced = output_dir / f"ttnn_shutov-{version}-cp310-cp310-manylinux_2_34_x86_64.whl"
-    if not produced.is_file():
-        candidates = sorted(output_dir.glob("ttnn_shutov-*.whl"))
-        if len(candidates) != 1:
-            raise RuntimeError(f"Expected one repacked wheel in {output_dir}, found {candidates}")
-        produced = candidates[0]
+    candidates = sorted(output_dir.glob("ttnn_shutov-*.whl"))
+    if len(candidates) != 1:
+        raise RuntimeError(f"Expected one repacked wheel in {output_dir}, found {candidates}")
+    produced = candidates[0]
 
     subprocess.run([sys.executable, "-m", "twine", "check", str(produced)], check=True)
     return produced
@@ -150,13 +203,21 @@ def main() -> int:
         if args.source_wheel is None:
             download_wheel(args.download_url, source_wheel)
 
-        actual_sha256 = sha256_file(source_wheel)
-        if actual_sha256 != args.expected_sha256:
-            raise RuntimeError(
-                "SHA256 mismatch for source wheel: " f"expected {args.expected_sha256}, got {actual_sha256}"
-            )
+        if not args.skip_sha256_check:
+            actual_sha256 = sha256_file(source_wheel)
+            if actual_sha256 != args.expected_sha256:
+                raise RuntimeError(
+                    "SHA256 mismatch for source wheel: "
+                    f"expected {args.expected_sha256}, got {actual_sha256}"
+                )
 
-        produced = repack_wheel(source_wheel, args.version, args.output_dir)
+        source_version = args.source_version or parse_source_version(source_wheel)
+        produced = repack_wheel(
+            source_wheel,
+            source_version,
+            args.publish_version,
+            args.output_dir,
+        )
         print(f"Repacked wheel: {produced}")
         return 0
 

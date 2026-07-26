@@ -44,7 +44,7 @@ dependencies = [
 # Runtime ttnn comes from the ttnn-shutov distribution (import name stays ttnn).
 # NOTE: This line is automatically updated by .github/workflows/update-ttnn-wheel.yaml
 pypi = [
-    "ttnn-shutov==0.62.0.dev20250916 ; python_version==\"3.10\"",
+    "ttnn-shutov==0.65.0.dev20251205 ; python_version==\"3.10\"",
 ]
 
 dev = [
@@ -83,7 +83,7 @@ dev = [
 ]
 
 [project.urls]
-Repository = "https://github.com/shutovilyaep/pytorch2.0_ttnn"
+Repository = "https://github.com/RedOrangeSweater/ML.TT.PyTorchTtnn"
 
 [tool.scikit-build]
 cmake.version = ">=3.23"
