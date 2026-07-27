@@ -30,6 +30,36 @@ So the blocker is **not** "index unreachable from the public internet". The bloc
 1. Public PyPI/TestPyPI reject uploaded wheels whose metadata contains direct URL dependencies (`ttnn @ https://...`).
 2. The pinned wheel is built from tt-metal **`627c4eed5b`** (2025-09-16), while upstream's `tt-metal` submodule on main is **`33cbd50ba33`** (2025-05-04). Eager C++ is compiled against the submodule, not against that wheel revision.
 
+## How upstream CI actually resolves `tt-metal` (four versions in one commit)
+
+Verified on upstream `main` at `7fb5bbaaff` (2026-02-24). A single checkout encodes **four** divergent `ttnn` / `tt-metal` identities:
+
+| Source | Value |
+| --- | --- |
+| `.gitmodules` `branch =` | `v0.58.0-rc25` |
+| Submodule gitlink (what `git submodule update` checks out) | `33cbd50ba338b2ea784582d8cad7a3e19884b9db` (2025-05-04) |
+| `requirements.txt` direct-URL wheel | `ttnn-0.62.0rc36.dev247+g627c4eed5b-...` = tt-metal `627c4eed5b` (2025-09-17) |
+| `setup.py` `install_requires` | `ttnn==0.60.1` (and `torch==2.2.1+cpu`, while `requirements.txt` asks for `torch==2.7.1+cpu`) |
+
+Distance pin -> wheel: **3336** commits linearly (`git rev-list --left-right --count 33cbd50ba33...627c4eed5b` = `0 3336`; pin is a direct ancestor).
+
+### Decorative `.gitmodules` rewrite
+
+Two workflows rewrite `branch =` in `.gitmodules` by scraping the internal PyPI HTML or the GitHub releases API:
+
+- [`update-ttnn-wheel.yaml`](https://github.com/tenstorrent/pytorch2.0_ttnn/blob/main/.github/workflows/update-ttnn-wheel.yaml) job `build_cache_cpp_extension`, step `Update .gitsubmodules`
+- [`run-cpp-native-tests.yaml`](https://github.com/tenstorrent/pytorch2.0_ttnn/blob/main/.github/workflows/run-cpp-native-tests.yaml), step `Update .gitsubmodules`
+
+Both then run `git submodule sync && git submodule update --init --recursive`. The flag `--remote` does **not** appear anywhere in the repository. Without `--remote`, `git submodule update` checks out the recorded gitlink and **ignores** the `branch` field. The log line looks like "Updated .gitmodules with the latest version: v0.62.0rc36-247-g627c4eed5b", but the tree that is actually built remains `33cbd50ba33`. The substituted string is also a `git describe`-style label, not a published ref: tag `v0.62.0rc36*` is absent from public `tt-metal`, so even `--remote` would fail.
+
+### Editable overlay on top of the wheel
+
+[`build_cpp_extension.sh`](https://github.com/tenstorrent/pytorch2.0_ttnn/blob/main/torch_ttnn/cpp_extension/build_cpp_extension.sh) ends with `pip3 install -e $CUR_DIR/third-party/tt-metal/`. By that point `requirements-dev.txt` (which includes `-r requirements.txt`) has already installed the `627c4eed5b` wheel; the editable submodule install overlays it. In CI, tests therefore run against an editable build of the submodule pin, not against the wheel a `pip install` user receives.
+
+**Consequence:** upstream CI never exercises the configuration a public `pip install` user gets. CI tests editable submodule `33cbd50ba33`; a user who follows `requirements.txt` gets wheel `627c4eed5b` (3336 commits apart). The C++ extension is compiled against submodule headers, so the mismatch surfaces as a cross-ABI failure on the eager path - and is invisible inside CI.
+
+Public `torch-ttnn` on PyPI remains **0.5.6** with no `ttnn` dependency and no `[pypi]` extra. `ttnn==0.60.1` from `setup.py` does exist on public PyPI (66 releases total) - a third version, distinct from both the submodule pin and the requirements wheel. Internal index host returns HTTP 200.
+
 ## Public PyPI `torch-ttnn` and `ttnn`
 
 Installing `torch-ttnn` from https://pypi.org/project/torch-ttnn/ yields **0.5.6** without pulling `ttnn`. Metadata lists `provides_extra = ['dev']` only - no `[pypi]` and no `[ttnn]` extra on that release line.
