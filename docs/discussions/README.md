@@ -6,7 +6,7 @@
 | [`2026-07-14_pytorch2_ttnn_eager_event_log_draft_ru.md`](2026-07-14_pytorch2_ttnn_eager_event_log_draft_ru.md) | Detailed RU draft |
 | [`2026-07-14_pytorch2_ttnn_eager_event_log_final_en.md`](2026-07-14_pytorch2_ttnn_eager_event_log_final_en.md) | EN text for GitHub Discussion |
 
-**Published Discussion:** (filled after `gh` create on `shutovilyaep/pytorch2.0_ttnn`)
+**Published Discussion:** https://github.com/shutovilyaep/pytorch2.0_ttnn/discussions/15
 
 Also in this directory:
 
