@@ -141,7 +141,7 @@ The same message also appreciated the work. No PR, failing check, metric, review
 | Packaging / pip install record | https://github.com/shutovilyaep/pytorch2.0_ttnn/discussions/10 |
 | Evidence manifest (this package) | [evidence_manifest_eager_ci.md](../discussions/evidence_manifest_eager_ci.md) |
 
-Companion `tt-metal` event log (op migrations, silent bundled revert of `#33725`, UB handling): see `shutovilyaep/tt-metal` Discussions after the layernorm/UB package is published there.
+Companion `tt-metal` event log (op migrations, silent bundled revert of `#33725`, UB handling): https://github.com/shutovilyaep/tt-metal/discussions/3
 
 ---
 
